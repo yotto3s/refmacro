@@ -78,3 +78,46 @@ TEST(MathCompile, Runtime) {
     EXPECT_DOUBLE_EQ(fn(3.0), 10.0);
     EXPECT_DOUBLE_EQ(fn(0.0), 1.0);
 }
+
+// --- Pretty Printer tests ---
+
+#include <refmacro/pretty_print.hpp>
+
+TEST(PrettyPrint, Lit) {
+    constexpr auto e = Expr<>::lit(42.0);
+    constexpr auto s = pretty_print(e);
+    static_assert(s == "42");
+}
+
+TEST(PrettyPrint, Var) {
+    constexpr auto e = Expr<>::var("x");
+    constexpr auto s = pretty_print(e);
+    static_assert(s == "x");
+}
+
+TEST(PrettyPrint, BinaryInfix) {
+    constexpr auto e = Expr<>::var("x") + Expr<>::lit(1.0);
+    constexpr auto s = pretty_print(e);
+    static_assert(s == "(x + 1)");
+}
+
+TEST(PrettyPrint, Nested) {
+    constexpr auto x = Expr<>::var("x");
+    constexpr auto y = Expr<>::var("y");
+    constexpr auto e = x * x + 2.0 * y;
+    constexpr auto s = pretty_print(e);
+    static_assert(s == "((x * x) + (2 * y))");
+}
+
+TEST(PrettyPrint, Neg) {
+    constexpr auto e = -Expr<>::var("x");
+    constexpr auto s = pretty_print(e);
+    static_assert(s == "(-x)");
+}
+
+TEST(PrettyPrint, GenericTag) {
+    constexpr auto x = Expr<>::var("x");
+    constexpr auto e = make_node("custom", x);
+    constexpr auto s = pretty_print(e);
+    static_assert(s == "custom(x)");
+}
