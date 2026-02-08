@@ -55,16 +55,24 @@ consteval Expr<Cap> operator-(Expr<Cap> x) {
 }
 
 // double on LHS
-consteval Expr<> operator+(double lhs, Expr<> rhs) { return Expr<>::lit(lhs) + rhs; }
-consteval Expr<> operator-(double lhs, Expr<> rhs) { return Expr<>::lit(lhs) - rhs; }
-consteval Expr<> operator*(double lhs, Expr<> rhs) { return Expr<>::lit(lhs) * rhs; }
-consteval Expr<> operator/(double lhs, Expr<> rhs) { return Expr<>::lit(lhs) / rhs; }
+template <std::size_t Cap>
+consteval Expr<Cap> operator+(double lhs, Expr<Cap> rhs) { return Expr<Cap>::lit(lhs) + rhs; }
+template <std::size_t Cap>
+consteval Expr<Cap> operator-(double lhs, Expr<Cap> rhs) { return Expr<Cap>::lit(lhs) - rhs; }
+template <std::size_t Cap>
+consteval Expr<Cap> operator*(double lhs, Expr<Cap> rhs) { return Expr<Cap>::lit(lhs) * rhs; }
+template <std::size_t Cap>
+consteval Expr<Cap> operator/(double lhs, Expr<Cap> rhs) { return Expr<Cap>::lit(lhs) / rhs; }
 
 // double on RHS
-consteval Expr<> operator+(Expr<> lhs, double rhs) { return lhs + Expr<>::lit(rhs); }
-consteval Expr<> operator-(Expr<> lhs, double rhs) { return lhs - Expr<>::lit(rhs); }
-consteval Expr<> operator*(Expr<> lhs, double rhs) { return lhs * Expr<>::lit(rhs); }
-consteval Expr<> operator/(Expr<> lhs, double rhs) { return lhs / Expr<>::lit(rhs); }
+template <std::size_t Cap>
+consteval Expr<Cap> operator+(Expr<Cap> lhs, double rhs) { return lhs + Expr<Cap>::lit(rhs); }
+template <std::size_t Cap>
+consteval Expr<Cap> operator-(Expr<Cap> lhs, double rhs) { return lhs - Expr<Cap>::lit(rhs); }
+template <std::size_t Cap>
+consteval Expr<Cap> operator*(Expr<Cap> lhs, double rhs) { return lhs * Expr<Cap>::lit(rhs); }
+template <std::size_t Cap>
+consteval Expr<Cap> operator/(Expr<Cap> lhs, double rhs) { return lhs / Expr<Cap>::lit(rhs); }
 
 // --- Convenience: compile with all math macros ---
 
@@ -80,28 +88,51 @@ consteval double eval_op(std::string_view tag, double lhs, double rhs) {
     if (tag == "add") return lhs + rhs;
     if (tag == "sub") return lhs - rhs;
     if (tag == "mul") return lhs * rhs;
-    if (tag == "div") return lhs / rhs;
+    if (tag == "div") {
+        if (rhs == 0.0) throw "division by zero in constant folding";
+        return lhs / rhs;
+    }
     return 0.0;
 }
 } // namespace detail
 
 template <std::size_t Cap = 64>
 consteval Expr<Cap> simplify(Expr<Cap> e) {
-    return rewrite(e, [](NodeView<Cap> n) consteval -> std::optional<Expr<Cap>> {
-        if (n.tag() == "add" && n.child_count() == 2 && n.child(1).tag() == "lit" && n.child(1).payload() == 0.0) return to_expr(n, n.child(0));
-        if (n.tag() == "add" && n.child_count() == 2 && n.child(0).tag() == "lit" && n.child(0).payload() == 0.0) return to_expr(n, n.child(1));
-        if (n.tag() == "mul" && n.child_count() == 2 && n.child(1).tag() == "lit" && n.child(1).payload() == 1.0) return to_expr(n, n.child(0));
-        if (n.tag() == "mul" && n.child_count() == 2 && n.child(0).tag() == "lit" && n.child(0).payload() == 1.0) return to_expr(n, n.child(1));
-        if (n.tag() == "mul" && n.child_count() == 2 && n.child(0).tag() == "lit" && n.child(0).payload() == 0.0) return Expr<Cap>::lit(0.0);
-        if (n.tag() == "mul" && n.child_count() == 2 && n.child(1).tag() == "lit" && n.child(1).payload() == 0.0) return Expr<Cap>::lit(0.0);
-        if (n.tag() == "sub" && n.child_count() == 2 && n.child(1).tag() == "lit" && n.child(1).payload() == 0.0) return to_expr(n, n.child(0));
-        if (n.tag() == "div" && n.child_count() == 2 && n.child(1).tag() == "lit" && n.child(1).payload() == 1.0) return to_expr(n, n.child(0));
-        if (n.tag() == "neg" && n.child_count() == 1 && n.child(0).tag() == "neg") return to_expr(n, n.child(0).child(0));
-        if (n.tag() == "neg" && n.child_count() == 1 && n.child(0).tag() == "lit") return Expr<Cap>::lit(-n.child(0).payload());
-        if (n.child_count() == 2 && n.child(0).tag() == "lit" && n.child(1).tag() == "lit") {
+    auto is_lit = [](NodeView<Cap> v, double val) consteval {
+        return v.tag() == "lit" && v.payload() == val;
+    };
+    return rewrite(e, [is_lit](NodeView<Cap> n) consteval -> std::optional<Expr<Cap>> {
+        // x + 0 -> x, 0 + x -> x
+        if (n.tag() == "add" && n.child_count() == 2) {
+            if (is_lit(n.child(1), 0.0)) return to_expr(n, n.child(0));
+            if (is_lit(n.child(0), 0.0)) return to_expr(n, n.child(1));
+        }
+        // x * 1 -> x, 1 * x -> x, x * 0 -> 0, 0 * x -> 0
+        if (n.tag() == "mul" && n.child_count() == 2) {
+            if (is_lit(n.child(1), 1.0)) return to_expr(n, n.child(0));
+            if (is_lit(n.child(0), 1.0)) return to_expr(n, n.child(1));
+            if (is_lit(n.child(0), 0.0)) return Expr<Cap>::lit(0.0);
+            if (is_lit(n.child(1), 0.0)) return Expr<Cap>::lit(0.0);
+        }
+        // x - 0 -> x
+        if (n.tag() == "sub" && n.child_count() == 2 && is_lit(n.child(1), 0.0))
+            return to_expr(n, n.child(0));
+        // x / 1 -> x
+        if (n.tag() == "div" && n.child_count() == 2 && is_lit(n.child(1), 1.0))
+            return to_expr(n, n.child(0));
+        // --x -> x
+        if (n.tag() == "neg" && n.child_count() == 1 && n.child(0).tag() == "neg")
+            return to_expr(n, n.child(0).child(0));
+        // -lit -> lit
+        if (n.tag() == "neg" && n.child_count() == 1 && n.child(0).tag() == "lit")
+            return Expr<Cap>::lit(-n.child(0).payload());
+        // constant folding: lit op lit -> lit
+        if (n.child_count() == 2
+            && n.child(0).tag() == "lit" && n.child(1).tag() == "lit") {
             auto tag = n.tag();
             if (tag == "add" || tag == "sub" || tag == "mul" || tag == "div")
-                return Expr<Cap>::lit(detail::eval_op(tag, n.child(0).payload(), n.child(1).payload()));
+                return Expr<Cap>::lit(
+                    detail::eval_op(tag, n.child(0).payload(), n.child(1).payload()));
         }
         return std::nullopt;
     });

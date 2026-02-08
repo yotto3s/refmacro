@@ -51,6 +51,16 @@ TEST(Expr, MakeNodeLeaf) {
     static_assert(e.ast.nodes[e.id].child_count == 0);
 }
 
+TEST(Expr, MakeNodeQuaternary) {
+    constexpr auto a = Expr<>::var("a");
+    constexpr auto b = Expr<>::var("b");
+    constexpr auto c = Expr<>::var("c");
+    constexpr auto d = Expr<>::var("d");
+    constexpr auto e = make_node("quad", a, b, c, d);
+    static_assert(str_eq(e.ast.nodes[e.id].tag, "quad"));
+    static_assert(e.ast.nodes[e.id].child_count == 4);
+}
+
 TEST(Expr, NestedMakeNode) {
     constexpr auto x = Expr<>::var("x");
     constexpr auto one = Expr<>::lit(1.0);

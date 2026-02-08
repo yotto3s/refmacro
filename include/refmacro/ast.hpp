@@ -10,8 +10,10 @@ namespace refmacro {
 // --- Consteval string utilities ---
 
 consteval void copy_str(char* dst, const char* src, std::size_t max_len = 16) {
-    for (std::size_t i = 0; i < max_len - 1 && src[i] != '\0'; ++i)
+    std::size_t i = 0;
+    for (; i < max_len - 1 && src[i] != '\0'; ++i)
         dst[i] = src[i];
+    dst[i] = '\0';
 }
 
 consteval bool str_eq(const char* a, const char* b) {
@@ -33,7 +35,6 @@ struct ASTNode {
     char tag[16]{};
     double payload{};
     char name[16]{};
-    int scope{0};
     int children[8]{-1, -1, -1, -1, -1, -1, -1, -1};
     int child_count{0};
 };
@@ -44,17 +45,17 @@ template <std::size_t Cap = 64>
 struct AST {
     ASTNode nodes[Cap]{};
     std::size_t count{0};
-    int root{-1};
 
     consteval int add_node(ASTNode n) {
+        if (count >= Cap) throw "AST capacity exceeded";
         int idx = static_cast<int>(count);
         nodes[count++] = n;
-        root = idx;
         return idx;
     }
 
     consteval int add_tagged_node(const char* tag_name,
                                   std::initializer_list<int> children) {
+        if (children.size() > 8) throw "ASTNode supports at most 8 children";
         ASTNode n{};
         copy_str(n.tag, tag_name);
         int i = 0;
@@ -66,6 +67,7 @@ struct AST {
     }
 
     consteval int merge(const AST& other) {
+        if (count + other.count > Cap) throw "AST capacity exceeded in merge";
         int offset = static_cast<int>(count);
         for (std::size_t i = 0; i < other.count; ++i) {
             ASTNode n = other.nodes[i];

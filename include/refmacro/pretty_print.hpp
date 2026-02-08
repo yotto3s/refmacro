@@ -26,23 +26,23 @@ struct FixedString {
     }
     consteval void append_char(char c) { if (len < N - 1) data[len++] = c; }
 
-    consteval void append_int(int v) {
+    consteval void append_int(long long v) {
         if (v < 0) { append_char('-'); v = -v; }
         if (v == 0) { append_char('0'); return; }
         char buf[20]{};
         int pos = 0;
-        while (v > 0) { buf[pos++] = '0' + (v % 10); v /= 10; }
+        while (v > 0) { buf[pos++] = '0' + static_cast<char>(v % 10); v /= 10; }
         for (int i = pos - 1; i >= 0; --i) append_char(buf[i]);
     }
 
     consteval void append_double(double v) {
-        if (v < 0) { append_char('-'); v = -v; }
-        int integer_part = static_cast<int>(v);
-        double frac = v - integer_part;
+        if (v < 0.0) { append_char('-'); v = -v; }
+        long long integer_part = static_cast<long long>(v);
+        double frac = v - static_cast<double>(integer_part);
         append_int(integer_part);
-        if (frac > 0.0001) {
+        if (frac > 1e-9) {
             append_char('.');
-            for (int i = 0; i < 6 && frac > 0.0001; ++i) {
+            for (int i = 0; i < 6 && frac > 1e-9; ++i) {
                 frac *= 10.0;
                 int digit = static_cast<int>(frac);
                 append_char('0' + digit);

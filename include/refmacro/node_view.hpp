@@ -14,9 +14,10 @@ struct NodeView {
     consteval auto tag() const -> std::string_view { return ast.nodes[id].tag; }
     consteval auto name() const -> std::string_view { return ast.nodes[id].name; }
     consteval double payload() const { return ast.nodes[id].payload; }
-    consteval int scope() const { return ast.nodes[id].scope; }
     consteval int child_count() const { return ast.nodes[id].child_count; }
     consteval NodeView child(int i) const {
+        if (i < 0 || i >= ast.nodes[id].child_count)
+            throw "NodeView::child() index out of bounds";
         return NodeView{ast, ast.nodes[id].children[i]};
     }
 };

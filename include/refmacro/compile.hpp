@@ -35,23 +35,35 @@ struct VarMap {
     }
 };
 
+namespace detail {
 template <std::size_t Cap>
-consteval auto extract_var_map(const AST<Cap>& ast) {
-    VarMap<> vm{};
-    for (std::size_t i = 0; i < ast.count; ++i) {
-        if (str_eq(ast.nodes[i].tag, "var"))
-            vm.add(ast.nodes[i].name);
+consteval void collect_vars_dfs(const AST<Cap>& ast, int id, VarMap<>& vm) {
+    const auto& n = ast.nodes[id];
+    if (str_eq(n.tag, "var")) {
+        vm.add(n.name);
+        return;
     }
+    for (int i = 0; i < n.child_count; ++i) {
+        if (n.children[i] >= 0)
+            collect_vars_dfs(ast, n.children[i], vm);
+    }
+}
+} // namespace detail
+
+template <std::size_t Cap>
+consteval auto extract_var_map(const AST<Cap>& ast, int root_id) {
+    VarMap<> vm{};
+    detail::collect_vars_dfs(ast, root_id, vm);
     return vm;
 }
 
-// --- FixedStr: structural wrapper for char arrays (NTTP-compatible) ---
+// --- TagStr: structural wrapper for char arrays (NTTP-compatible) ---
 
-struct FixedStr {
+struct TagStr {
     char data[16]{};
 
-    consteval FixedStr() = default;
-    consteval FixedStr(const char (&src)[16]) {
+    consteval TagStr() = default;
+    consteval TagStr(const char (&src)[16]) {
         for (int i = 0; i < 16; ++i)
             data[i] = src[i];
     }
@@ -62,7 +74,7 @@ struct FixedStr {
 namespace detail {
 
 // Apply the first macro whose tag matches. If none match, compile error.
-template <FixedStr Tag, auto First, auto... Rest>
+template <TagStr Tag, auto First, auto... Rest>
 consteval auto apply_macro(auto children_tuple) {
     if constexpr (str_eq(Tag.data, First.tag)) {
         return std::apply(First.fn, children_tuple);
@@ -100,7 +112,7 @@ consteval auto compile_node() {
             };
         }(std::make_integer_sequence<int, n.child_count>{});
 
-        return apply_macro<FixedStr{n.tag}, Macros...>(children);
+        return apply_macro<TagStr{n.tag}, Macros...>(children);
     }
 }
 
@@ -110,7 +122,7 @@ consteval auto compile_node() {
 
 template <auto e, auto... Macros>
 consteval auto compile() {
-    constexpr auto vm = extract_var_map(e.ast);
+    constexpr auto vm = extract_var_map(e.ast, e.id);
     return detail::compile_node<e.ast, e.id, vm, Macros...>();
 }
 

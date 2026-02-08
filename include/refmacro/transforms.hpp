@@ -82,14 +82,32 @@ consteval Expr<Cap> to_expr(NodeView<Cap> root, NodeView<Cap> subtree) {
     return result;
 }
 
+// --- Tree comparison for fixed-point detection ---
+
+namespace detail {
+template <std::size_t Cap>
+consteval bool trees_equal(const AST<Cap>& a, int a_id,
+                           const AST<Cap>& b, int b_id) {
+    const auto& na = a.nodes[a_id];
+    const auto& nb = b.nodes[b_id];
+    if (!str_eq(na.tag, nb.tag)) return false;
+    if (na.payload != nb.payload) return false;
+    if (!str_eq(na.name, nb.name)) return false;
+    if (na.child_count != nb.child_count) return false;
+    for (int i = 0; i < na.child_count; ++i) {
+        if (!trees_equal(a, na.children[i], b, nb.children[i])) return false;
+    }
+    return true;
+}
+} // namespace detail
+
 // --- rewrite: bottom-up rule application until fixed point ---
 
 template <std::size_t Cap = 64, typename Rule>
 consteval Expr<Cap> rewrite(Expr<Cap> e, Rule rule, int max_iters = 100) {
     for (int iter = 0; iter < max_iters; ++iter) {
         auto result = detail::rebuild_bottom_up<Cap>(e.ast, e.id, rule);
-        auto check = detail::rebuild_bottom_up<Cap>(result.ast, result.id, rule);
-        if (check.ast.count == result.ast.count) {
+        if (detail::trees_equal(e.ast, e.id, result.ast, result.id)) {
             return result;
         }
         e = result;

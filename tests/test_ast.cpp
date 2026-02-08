@@ -21,7 +21,6 @@ TEST(ASTNode, DefaultConstructed) {
     constexpr ASTNode n{};
     static_assert(n.payload == 0.0);
     static_assert(n.child_count == 0);
-    static_assert(n.scope == 0);
 }
 
 TEST(ASTNode, LitNode) {
@@ -70,7 +69,6 @@ TEST(AST, AddNode) {
         return a;
     }();
     static_assert(ast.count == 1);
-    static_assert(ast.root == 0);
     static_assert(ast.nodes[0].payload == 7.0);
 }
 
