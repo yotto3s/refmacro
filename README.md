@@ -6,10 +6,13 @@ A header-only C++26 compile-time AST metaprogramming framework with Lisp-like ma
 
 - **Lisp-like macro system**: `defmacro(tag, lower_fn)` defines AST node types with deferred lowering
 - **Compile-time AST construction**: Build expression trees with `var()`, `lit()`, operator overloads, and `make_node()`
+- **Control-flow macros**: Conditionals (`MCond`), comparisons (`MEq`, `MLt`, `MGt`, `MLe`, `MGe`), logical operators (`MLand`, `MLor`, `MLnot`), sequencing (`MProgn`)
+- **Lambda/apply/let bindings**: First-class `lambda()`, `apply()`, and `let_()` for compile-time lexical scoping
 - **Symbolic differentiation**: `differentiate(expr, "x")` with algebraic `simplify()`
 - **Pretty printing**: Consteval AST-to-string rendering
 - **Tree transforms**: `rewrite()` (fixed-point) and `transform()` (structural recursion) primitives
 - **Pipe operator**: Chain transforms with `expr | differentiate | simplify`
+- **Operator overloads**: Arithmetic (`+`, `-`, `*`, `/`), comparison (`==`, `<`, `>`, `<=`, `>=`), and logical (`&&`, `||`, `!`) operators on `Expr`
 - **Extensible**: Define custom DSL nodes — everything beyond `var` and `lit` is user-defined via macros
 
 ## Requirements
@@ -96,7 +99,8 @@ static_assert(relu(3.0) == 3.0);
 | `ast.hpp` | `ASTNode`, `AST<Cap>`, consteval string utilities |
 | `expr.hpp` | `Expr<Cap>`, `lit()`, `var()`, `make_node()`, pipe operator |
 | `macro.hpp` | `defmacro()`, `Macro` type |
-| `compile.hpp` | `compile<expr, macros...>()`, `VarMap` |
+| `compile.hpp` | `compile<expr, macros...>()`, `VarMap`, `Scope`, `TagStr` |
+| `control.hpp` | Control-flow macros, `lambda()`, `apply()`, `let_()`, `full_compile<>()` |
 | `node_view.hpp` | `NodeView` cursor for tree walking |
 | `transforms.hpp` | `rewrite()`, `transform()` primitives |
 | `pretty_print.hpp` | Consteval AST rendering |

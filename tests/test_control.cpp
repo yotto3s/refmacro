@@ -274,6 +274,49 @@ TEST(LambdaApply, LetWithControlFlow) {
     EXPECT_DOUBLE_EQ(fn(5.0), 5.0);   // equal
 }
 
+TEST(LambdaApply, LetShadowing) {
+    // Inner let shadows outer binding: let x=1 in let x=2 in x -> 2
+    constexpr auto e = let_("x", Expr<>::lit(1.0),
+                        let_("x", Expr<>::lit(2.0),
+                            Expr<>::var("x")));
+    constexpr auto fn = full_compile<e>();
+    static_assert(fn() == 2.0);
+    EXPECT_DOUBLE_EQ(fn(), 2.0);
+}
+
+TEST(LambdaApply, StandaloneApplyLambda) {
+    // Directly use apply(lambda(...), ...) without let_ sugar
+    constexpr auto x = Expr<>::var("x");
+    constexpr auto e = apply(lambda("tmp", Expr<>::var("tmp") + Expr<>::var("tmp")),
+                             x * x);
+    constexpr auto fn = full_compile<e>();
+    static_assert(fn(3.0) == 18.0);
+    EXPECT_DOUBLE_EQ(fn(3.0), 18.0);
+    EXPECT_DOUBLE_EQ(fn(5.0), 50.0);
+}
+
+TEST(LambdaApply, LambdaBoundVarExcludedFromVarMap) {
+    // lambda("y", var("y") + var("x")): only x should be a free variable
+    constexpr auto x = Expr<>::var("x");
+    constexpr auto e = let_("y", Expr<>::lit(10.0), Expr<>::var("y") + x);
+    constexpr auto fn = full_compile<e>();
+    // fn takes 1 arg (x), y is bound by let
+    EXPECT_DOUBLE_EQ(fn(5.0), 15.0);  // y=10, x=5 -> 15
+}
+
+TEST(ControlMacros, CondTruthyValues) {
+    // Test various truthy/falsy values for MCond condition
+    constexpr auto x = Expr<>::var("x");
+    constexpr auto e = MCond(x, Expr<>::lit(1.0), Expr<>::lit(0.0));
+    constexpr auto fn = ctrl_compile<e>();
+    // Non-zero values are truthy
+    EXPECT_DOUBLE_EQ(fn(-1.0), 1.0);
+    EXPECT_DOUBLE_EQ(fn(0.5), 1.0);
+    EXPECT_DOUBLE_EQ(fn(100.0), 1.0);
+    // Zero is falsy
+    EXPECT_DOUBLE_EQ(fn(0.0), 0.0);
+}
+
 // --- Pretty-print for lambda/apply/let ---
 
 TEST(ControlPrettyPrint, Let) {

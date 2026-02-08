@@ -23,6 +23,8 @@ template <std::size_t MaxVars = 8> struct VarMap {
 
     consteval void add(const char* name) {
         if (!contains(name)) {
+            if (count >= MaxVars)
+                throw "VarMap capacity exceeded";
             copy_str(names[count], name);
             ++count;
         }
@@ -93,6 +95,8 @@ struct Scope {
     std::size_t count{0};
 
     consteval Scope push(TagStr name) const {
+        if (count >= 8)
+            throw "Scope capacity exceeded";
         Scope s = *this;
         s.names[s.count] = name;
         ++s.count;

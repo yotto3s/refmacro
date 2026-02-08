@@ -1,6 +1,15 @@
 #ifndef REFMACRO_CONTROL_HPP
 #define REFMACRO_CONTROL_HPP
 
+// Control-flow macros and first-class bindings for the refmacro AST framework.
+//
+// Provides: conditionals (MCond), comparisons (MEq, MLt, MGt, MLe, MGe),
+// logical operators (MLand, MLor, MLnot), sequencing (MProgn), and
+// lambda/apply/let for compile-time lexical scoping.
+//
+// ctrl_compile<e>()  — compile with control-flow macros only
+// full_compile<e>()  — compile with math + control-flow macros
+
 #include <refmacro/ast.hpp>
 #include <refmacro/compile.hpp>
 #include <refmacro/expr.hpp>
