@@ -32,7 +32,7 @@ int main() {
     std::cout << "\nstandalone lambda:\n";
     std::cout << "  " << pretty_print(inc).data << "\n";
 
-    // --- Basic let: compute x*x once, use twice ---
+    // --- Basic let: bind x*x to tmp (call-by-name, re-evaluated per use) ---
     constexpr auto square_sum_expr =
         let_("tmp", x * x, Expr<>::var("tmp") + Expr<>::var("tmp"));
     constexpr auto square_sum = full_compile<square_sum_expr>();

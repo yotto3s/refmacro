@@ -223,7 +223,7 @@ TEST(ControlMacros, Clamp) {
 TEST(LambdaApply, BasicLet) {
     // let tmp = x * x in tmp + tmp
     // Equivalent to: ((lambda tmp. tmp + tmp) (x * x))
-    // At runtime: computes x*x, adds it to itself
+    // Note: call-by-name semantics — x*x is re-evaluated per use of tmp
     constexpr auto x = Expr<>::var("x");
     constexpr auto e =
         let_("tmp", x * x, Expr<>::var("tmp") + Expr<>::var("tmp"));

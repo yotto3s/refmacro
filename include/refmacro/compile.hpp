@@ -91,11 +91,12 @@ struct TagStr {
 // --- Scope: compile-time tracking of locally-bound variables ---
 
 struct Scope {
-    TagStr names[8]{};
+    static constexpr std::size_t MaxLocals = 8;
+    TagStr names[MaxLocals]{};
     std::size_t count{0};
 
     consteval Scope push(TagStr name) const {
-        if (count >= 8)
+        if (count >= MaxLocals)
             throw "Scope capacity exceeded";
         Scope s = *this;
         s.names[s.count] = name;
@@ -154,6 +155,9 @@ consteval auto compile_node(auto locals) {
     else if constexpr (str_eq(n.tag, "apply") && n.child_count == 2 &&
                        str_eq(ast.nodes[n.children[0]].tag, "lambda")) {
         constexpr auto lambda_node = ast.nodes[n.children[0]];
+        static_assert(lambda_node.child_count == 2,
+                      "malformed AST: lambda node must have 2 children "
+                      "(param, body)");
         constexpr auto param_node = ast.nodes[lambda_node.children[0]];
         // Compile value with current scope
         auto val_fn =
