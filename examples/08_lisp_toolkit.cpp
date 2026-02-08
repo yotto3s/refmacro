@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <optional>
+#include <optional>
 #include <refmacro/refmacro.hpp>
 
 using namespace refmacro;
