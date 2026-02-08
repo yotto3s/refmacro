@@ -8,7 +8,6 @@
 
 #include <iostream>
 #include <optional>
-#include <optional>
 #include <refmacro/refmacro.hpp>
 
 using namespace refmacro;
@@ -39,7 +38,7 @@ int main() {
     static_assert(f_fn(3.0) == 12.0);
     static_assert(f_fn(10.0) == 110.0);
 
-    std::cout << "  ...and compile into a function:\n";
+    std::cout << "  ...and compiles into a function:\n";
     std::cout << "  f(3)  = " << f_fn(3.0) << "\n";
     std::cout << "  f(10) = " << f_fn(10.0) << "\n";
 
