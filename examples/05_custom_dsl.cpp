@@ -3,16 +3,15 @@
 // Shows: Multiple defmacro() nodes, expr() binding, compile<> with
 //        custom + math macros, building a mini-language.
 
-#include <refmacro/refmacro.hpp>
 #include <iostream>
+#include <refmacro/refmacro.hpp>
 
 using namespace refmacro;
 
 // "gt" node: gt(a, b) compiles to a > b ? 1.0 : 0.0
 constexpr auto Gt = defmacro("gt", [](auto lhs, auto rhs) {
-    return [=](auto... a) constexpr {
-        return lhs(a...) > rhs(a...) ? 1.0 : 0.0;
-    };
+    return
+        [=](auto... a) constexpr { return lhs(a...) > rhs(a...) ? 1.0 : 0.0; };
 });
 
 // "if_" node: if_(cond, then, else)
@@ -35,9 +34,11 @@ consteval Expr<> if_(Expr<> cond, Expr<> then_br, Expr<> else_br) {
 int main() {
     // relu(x) = if_(gt(x, 0), x, 0)
     constexpr auto x = Expr<>::var("x");
-    constexpr auto relu_expr = if_(gt(x, Expr<>::lit(0.0)), x, Expr<>::lit(0.0));
+    constexpr auto relu_expr =
+        if_(gt(x, Expr<>::lit(0.0)), x, Expr<>::lit(0.0));
 
-    constexpr auto relu = compile<relu_expr, MAdd, MSub, MMul, MDiv, MNeg, Gt, If>();
+    constexpr auto relu =
+        compile<relu_expr, MAdd, MSub, MMul, MDiv, MNeg, Gt, If>();
     static_assert(relu(-5.0) == 0.0);
     static_assert(relu(0.0) == 0.0);
     static_assert(relu(3.0) == 3.0);
@@ -48,12 +49,10 @@ int main() {
     }
 
     // step(x) = if_(gt(x*x, 1), 1, 0)  -- fires when |x| > 1
-    constexpr auto step_expr = if_(
-        gt(x * x, Expr<>::lit(1.0)),
-        Expr<>::lit(1.0),
-        Expr<>::lit(0.0)
-    );
-    constexpr auto step = compile<step_expr, MAdd, MSub, MMul, MDiv, MNeg, Gt, If>();
+    constexpr auto step_expr =
+        if_(gt(x * x, Expr<>::lit(1.0)), Expr<>::lit(1.0), Expr<>::lit(0.0));
+    constexpr auto step =
+        compile<step_expr, MAdd, MSub, MMul, MDiv, MNeg, Gt, If>();
 
     std::cout << "\nstep(x) = 1 if |x|>1, else 0\n";
     for (double v : {-2.0, -0.5, 0.0, 0.5, 2.0}) {

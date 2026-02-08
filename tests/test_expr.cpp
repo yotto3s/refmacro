@@ -1,5 +1,5 @@
-#include <refmacro/expr.hpp>
 #include <gtest/gtest.h>
+#include <refmacro/expr.hpp>
 
 using namespace refmacro;
 
@@ -32,8 +32,10 @@ TEST(Expr, MakeNodeBinary) {
     static_assert(str_eq(e.ast.nodes[e.id].tag, "add"));
     static_assert(e.ast.nodes[e.id].child_count == 2);
     // LHS is var("x"), RHS is var("y")
-    static_assert(str_eq(e.ast.nodes[e.ast.nodes[e.id].children[0]].tag, "var"));
-    static_assert(str_eq(e.ast.nodes[e.ast.nodes[e.id].children[1]].tag, "var"));
+    static_assert(
+        str_eq(e.ast.nodes[e.ast.nodes[e.id].children[0]].tag, "var"));
+    static_assert(
+        str_eq(e.ast.nodes[e.ast.nodes[e.id].children[1]].tag, "var"));
 }
 
 TEST(Expr, MakeNodeTernary) {

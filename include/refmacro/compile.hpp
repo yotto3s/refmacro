@@ -10,14 +10,14 @@ namespace refmacro {
 
 // --- VarMap: extract ordered unique variable names from AST ---
 
-template <std::size_t MaxVars = 8>
-struct VarMap {
+template <std::size_t MaxVars = 8> struct VarMap {
     char names[MaxVars][16]{};
     std::size_t count{0};
 
     consteval bool contains(const char* name) const {
         for (std::size_t i = 0; i < count; ++i)
-            if (str_eq(names[i], name)) return true;
+            if (str_eq(names[i], name))
+                return true;
         return false;
     }
 
@@ -30,7 +30,8 @@ struct VarMap {
 
     consteval int index_of(const char* name) const {
         for (std::size_t i = 0; i < count; ++i)
-            if (str_eq(names[i], name)) return static_cast<int>(i);
+            if (str_eq(names[i], name))
+                return static_cast<int>(i);
         return -1;
     }
 };
@@ -79,8 +80,7 @@ consteval auto apply_macro(auto children_tuple) {
     if constexpr (str_eq(Tag.data, First.tag)) {
         return std::apply(First.fn, children_tuple);
     } else {
-        static_assert(sizeof...(Rest) > 0,
-            "no macro defined for AST tag");
+        static_assert(sizeof...(Rest) > 0, "no macro defined for AST tag");
         return apply_macro<Tag, Rest...>(children_tuple);
     }
 }
@@ -108,8 +108,7 @@ consteval auto compile_node() {
         // Compile children bottom-up, then dispatch to matching macro
         auto children = [&]<int... Cs>(std::integer_sequence<int, Cs...>) {
             return std::tuple{
-                compile_node<ast, n.children[Cs], var_map, Macros...>()...
-            };
+                compile_node<ast, n.children[Cs], var_map, Macros...>()...};
         }(std::make_integer_sequence<int, n.child_count>{});
 
         return apply_macro<TagStr{n.tag}, Macros...>(children);
@@ -120,8 +119,7 @@ consteval auto compile_node() {
 
 // --- Public API ---
 
-template <auto e, auto... Macros>
-consteval auto compile() {
+template <auto e, auto... Macros> consteval auto compile() {
     constexpr auto vm = extract_var_map(e.ast, e.id);
     return detail::compile_node<e.ast, e.id, vm, Macros...>();
 }

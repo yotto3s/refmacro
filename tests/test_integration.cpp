@@ -1,5 +1,5 @@
-#include <refmacro/refmacro.hpp>
 #include <gtest/gtest.h>
+#include <refmacro/refmacro.hpp>
 
 using namespace refmacro;
 
@@ -40,7 +40,9 @@ TEST(Integration, LinearFunction) {
     static_assert(fn(2.0) == 11.0);
     static_assert(fn(0.0) == 5.0);
 
-    constexpr auto diff_x = [](Expr<> e) consteval { return differentiate(e, "x"); };
+    constexpr auto diff_x = [](Expr<> e) consteval {
+        return differentiate(e, "x");
+    };
     constexpr auto simp = [](Expr<> e) consteval { return simplify(e); };
     constexpr auto df = f | diff_x | simp;
     constexpr auto dfn = math_compile<df>();
@@ -53,7 +55,9 @@ TEST(Integration, QuadraticRoots) {
     constexpr auto fn = math_compile<f>();
     static_assert(fn(2.0) == 0.0);
 
-    constexpr auto diff_x = [](Expr<> e) consteval { return differentiate(e, "x"); };
+    constexpr auto diff_x = [](Expr<> e) consteval {
+        return differentiate(e, "x");
+    };
     constexpr auto simp = [](Expr<> e) consteval { return simplify(e); };
     constexpr auto df = f | diff_x | simp;
     constexpr auto dfn = math_compile<df>();
@@ -69,17 +73,21 @@ TEST(Integration, MultivarGradient) {
 
     constexpr auto dfx = simplify(differentiate(f, "x"));
     constexpr auto dfx_fn = math_compile<dfx>();
-    static_assert(dfx_fn(3.0) == 4.0); // y + 1, only y remains after simplification
+    static_assert(dfx_fn(3.0) ==
+                  4.0); // y + 1, only y remains after simplification
 
     constexpr auto dfy = simplify(differentiate(f, "y"));
     constexpr auto dfy_fn = math_compile<dfy>();
-    static_assert(dfy_fn(2.0) == 3.0); // x + 1, only x remains after simplification
+    static_assert(dfy_fn(2.0) ==
+                  3.0); // x + 1, only x remains after simplification
 }
 
 TEST(Integration, SecondDerivative) {
     constexpr auto x = Expr<>::var("x");
     constexpr auto f = x * x * x;
-    constexpr auto diff_x = [](Expr<> e) consteval { return differentiate(e, "x"); };
+    constexpr auto diff_x = [](Expr<> e) consteval {
+        return differentiate(e, "x");
+    };
     constexpr auto simp = [](Expr<> e) consteval { return simplify(e); };
     constexpr auto d2f = f | diff_x | simp | diff_x | simp;
     constexpr auto fn = math_compile<d2f>();
@@ -91,7 +99,8 @@ TEST(Integration, SecondDerivative) {
 TEST(Integration, CustomMacroWithMath) {
     constexpr auto x = Expr<>::var("x");
     // clamp(x * x - 10, 0, 100)
-    constexpr auto e = Clamp(x * x - 10.0, Expr<>::lit(0.0), Expr<>::lit(100.0));
+    constexpr auto e =
+        Clamp(x * x - 10.0, Expr<>::lit(0.0), Expr<>::lit(100.0));
     constexpr auto fn = compile<e, MAdd, MSub, MMul, MDiv, MNeg, Clamp>();
     static_assert(fn(1.0) == 0.0);    // 1-10 = -9, clamped to 0
     static_assert(fn(4.0) == 6.0);    // 16-10 = 6

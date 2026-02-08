@@ -1,7 +1,7 @@
-#include <refmacro/macro.hpp>
+#include <gtest/gtest.h>
 #include <refmacro/compile.hpp>
 #include <refmacro/expr.hpp>
-#include <gtest/gtest.h>
+#include <refmacro/macro.hpp>
 
 using namespace refmacro;
 
@@ -104,11 +104,12 @@ TEST(Compile, RuntimeCall) {
 
 // --- Test that macros are truly generic (custom DSL node) ---
 
-constexpr auto If = defmacro("if_", [](auto cond, auto then_val, auto else_val) {
-    return [=](auto... args) constexpr {
-        return cond(args...) ? then_val(args...) : else_val(args...);
-    };
-});
+constexpr auto If =
+    defmacro("if_", [](auto cond, auto then_val, auto else_val) {
+        return [=](auto... args) constexpr {
+            return cond(args...) ? then_val(args...) : else_val(args...);
+        };
+    });
 
 constexpr auto Gt = defmacro("gt", [](auto lhs, auto rhs) {
     return [=](auto... args) constexpr { return lhs(args...) > rhs(args...); };

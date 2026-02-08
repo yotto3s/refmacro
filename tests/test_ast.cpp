@@ -1,5 +1,5 @@
-#include <refmacro/ast.hpp>
 #include <gtest/gtest.h>
+#include <refmacro/ast.hpp>
 
 using namespace refmacro;
 
@@ -46,8 +46,7 @@ TEST(ASTNode, VarNode) {
 }
 
 // Verify ASTNode works as NTTP (critical for Backend dispatch)
-template <ASTNode N>
-consteval double nttp_payload() { return N.payload; }
+template <ASTNode N> consteval double nttp_payload() { return N.payload; }
 
 TEST(ASTNode, WorksAsNTTP) {
     constexpr auto n = [] consteval {

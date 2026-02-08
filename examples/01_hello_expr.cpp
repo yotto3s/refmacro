@@ -3,8 +3,8 @@
 // Shows: Expr::lit(), Expr::var(), operator sugar, pretty_print(),
 //        math_compile(), static_assert, runtime output.
 
-#include <refmacro/refmacro.hpp>
 #include <iostream>
+#include <refmacro/refmacro.hpp>
 
 using namespace refmacro;
 
@@ -21,8 +21,8 @@ int main() {
     constexpr auto fn = math_compile<f>();
 
     // Verify at compile time
-    static_assert(fn(0.0) == 1.0);   // (0+1)^2 = 1
-    static_assert(fn(3.0) == 16.0);  // (3+1)^2 = 16
+    static_assert(fn(0.0) == 1.0);  // (0+1)^2 = 1
+    static_assert(fn(3.0) == 16.0); // (3+1)^2 = 16
 
     // Use at runtime
     std::cout << "f(x) = " << text.data << "\n";

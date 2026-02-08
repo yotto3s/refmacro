@@ -1,10 +1,10 @@
 #ifndef REFMACRO_TRANSFORMS_HPP
 #define REFMACRO_TRANSFORMS_HPP
 
+#include <optional>
 #include <refmacro/ast.hpp>
 #include <refmacro/expr.hpp>
 #include <refmacro/node_view.hpp>
-#include <optional>
 
 namespace refmacro {
 
@@ -32,7 +32,8 @@ consteval Expr<Cap> rebuild_bottom_up(const AST<Cap>& ast, int id, Rule rule) {
     if (n.child_count == 0) {
         NodeView<Cap> view{ast, id};
         auto replacement = rule(view);
-        if (replacement) return *replacement;
+        if (replacement)
+            return *replacement;
         Expr<Cap> leaf;
         leaf.id = leaf.ast.add_node(n);
         return leaf;
@@ -68,7 +69,8 @@ consteval Expr<Cap> rebuild_bottom_up(const AST<Cap>& ast, int id, Rule rule) {
     // Try rule on rebuilt node
     NodeView<Cap> view{rebuilt.ast, rebuilt.id};
     auto replacement = rule(view);
-    if (replacement) return *replacement;
+    if (replacement)
+        return *replacement;
 
     return rebuilt;
 }
@@ -86,16 +88,21 @@ consteval Expr<Cap> to_expr(NodeView<Cap> root, NodeView<Cap> subtree) {
 
 namespace detail {
 template <std::size_t Cap>
-consteval bool trees_equal(const AST<Cap>& a, int a_id,
-                           const AST<Cap>& b, int b_id) {
+consteval bool trees_equal(const AST<Cap>& a, int a_id, const AST<Cap>& b,
+                           int b_id) {
     const auto& na = a.nodes[a_id];
     const auto& nb = b.nodes[b_id];
-    if (!str_eq(na.tag, nb.tag)) return false;
-    if (na.payload != nb.payload) return false;
-    if (!str_eq(na.name, nb.name)) return false;
-    if (na.child_count != nb.child_count) return false;
+    if (!str_eq(na.tag, nb.tag))
+        return false;
+    if (na.payload != nb.payload)
+        return false;
+    if (!str_eq(na.name, nb.name))
+        return false;
+    if (na.child_count != nb.child_count)
+        return false;
     for (int i = 0; i < na.child_count; ++i) {
-        if (!trees_equal(a, na.children[i], b, nb.children[i])) return false;
+        if (!trees_equal(a, na.children[i], b, nb.children[i]))
+            return false;
     }
     return true;
 }

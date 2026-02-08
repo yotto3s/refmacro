@@ -5,8 +5,7 @@
 
 namespace refmacro {
 
-template <std::size_t Cap = 64>
-struct Expr {
+template <std::size_t Cap = 64> struct Expr {
     AST<Cap> ast{};
     int id{-1};
 
@@ -32,8 +31,7 @@ struct Expr {
 // --- Generic node construction ---
 
 // Nullary (leaf)
-template <std::size_t Cap = 64>
-consteval Expr<Cap> make_node(const char* tag) {
+template <std::size_t Cap = 64> consteval Expr<Cap> make_node(const char* tag) {
     Expr<Cap> result;
     result.id = result.ast.add_tagged_node(tag, {});
     return result;
@@ -60,29 +58,28 @@ consteval Expr<Cap> make_node(const char* tag, Expr<Cap> c0, Expr<Cap> c1) {
 
 // Ternary
 template <std::size_t Cap = 64>
-consteval Expr<Cap> make_node(const char* tag,
-                               Expr<Cap> c0, Expr<Cap> c1, Expr<Cap> c2) {
+consteval Expr<Cap> make_node(const char* tag, Expr<Cap> c0, Expr<Cap> c1,
+                              Expr<Cap> c2) {
     Expr<Cap> result;
     result.ast = c0.ast;
     int off1 = result.ast.merge(c1.ast);
     int off2 = result.ast.merge(c2.ast);
-    result.id = result.ast.add_tagged_node(tag,
-        {c0.id, c1.id + off1, c2.id + off2});
+    result.id =
+        result.ast.add_tagged_node(tag, {c0.id, c1.id + off1, c2.id + off2});
     return result;
 }
 
 // Quaternary
 template <std::size_t Cap = 64>
-consteval Expr<Cap> make_node(const char* tag,
-                               Expr<Cap> c0, Expr<Cap> c1,
-                               Expr<Cap> c2, Expr<Cap> c3) {
+consteval Expr<Cap> make_node(const char* tag, Expr<Cap> c0, Expr<Cap> c1,
+                              Expr<Cap> c2, Expr<Cap> c3) {
     Expr<Cap> result;
     result.ast = c0.ast;
     int off1 = result.ast.merge(c1.ast);
     int off2 = result.ast.merge(c2.ast);
     int off3 = result.ast.merge(c3.ast);
-    result.id = result.ast.add_tagged_node(tag,
-        {c0.id, c1.id + off1, c2.id + off2, c3.id + off3});
+    result.id = result.ast.add_tagged_node(
+        tag, {c0.id, c1.id + off1, c2.id + off2, c3.id + off3});
     return result;
 }
 
@@ -103,8 +100,7 @@ consteval auto operator|(Expr<Cap> e, F transform_fn) {
 // explicitly.
 
 // Unary: one parameter
-template <typename F>
-consteval auto expr(F f, const char* name0) {
+template <typename F> consteval auto expr(F f, const char* name0) {
     return f(Expr<>::var(name0));
 }
 
@@ -116,7 +112,8 @@ consteval auto expr(F f, const char* name0, const char* name1) {
 
 // Ternary: three parameters
 template <typename F>
-consteval auto expr(F f, const char* name0, const char* name1, const char* name2) {
+consteval auto expr(F f, const char* name0, const char* name1,
+                    const char* name2) {
     return f(Expr<>::var(name0), Expr<>::var(name1), Expr<>::var(name2));
 }
 
@@ -124,8 +121,8 @@ consteval auto expr(F f, const char* name0, const char* name1, const char* name2
 template <typename F>
 consteval auto expr(F f, const char* name0, const char* name1,
                     const char* name2, const char* name3) {
-    return f(Expr<>::var(name0), Expr<>::var(name1),
-             Expr<>::var(name2), Expr<>::var(name3));
+    return f(Expr<>::var(name0), Expr<>::var(name1), Expr<>::var(name2),
+             Expr<>::var(name3));
 }
 
 } // namespace refmacro
