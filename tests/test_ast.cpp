@@ -119,3 +119,56 @@ TEST(AST, Merge) {
     static_assert(result.second == 1);
     static_assert(result.first.nodes[1].payload == 2.0);
 }
+
+#include <refmacro/node_view.hpp>
+
+TEST(NodeView, TagAndPayload) {
+    static constexpr auto e = [] consteval {
+        AST<16> a{};
+        ASTNode n{};
+        copy_str(n.tag, "lit");
+        n.payload = 3.14;
+        a.add_node(n);
+        return a;
+    }();
+    constexpr NodeView v{e, 0};
+    static_assert(v.tag() == "lit");
+    static_assert(v.payload() == 3.14);
+}
+
+TEST(NodeView, ChildAccess) {
+    static constexpr auto e = [] consteval {
+        AST<16> a{};
+        ASTNode lit1{};
+        copy_str(lit1.tag, "lit");
+        lit1.payload = 1.0;
+        int id1 = a.add_node(lit1);
+
+        ASTNode lit2{};
+        copy_str(lit2.tag, "lit");
+        lit2.payload = 2.0;
+        int id2 = a.add_node(lit2);
+
+        a.add_tagged_node("add", {id1, id2});
+        return a;
+    }();
+    constexpr NodeView root{e, 2};
+    static_assert(root.tag() == "add");
+    static_assert(root.child_count() == 2);
+    static_assert(root.child(0).tag() == "lit");
+    static_assert(root.child(0).payload() == 1.0);
+    static_assert(root.child(1).payload() == 2.0);
+}
+
+TEST(NodeView, Name) {
+    static constexpr auto e = [] consteval {
+        AST<16> a{};
+        ASTNode n{};
+        copy_str(n.tag, "var");
+        copy_str(n.name, "x");
+        a.add_node(n);
+        return a;
+    }();
+    constexpr NodeView v{e, 0};
+    static_assert(v.name() == "x");
+}
