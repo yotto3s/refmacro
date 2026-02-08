@@ -1,0 +1,8 @@
+build/
+.git/
+.claude/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
