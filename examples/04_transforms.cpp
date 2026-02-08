@@ -10,24 +10,21 @@
 using namespace refmacro;
 
 int main() {
-    constexpr auto x = Expr<>::var("x");
-    constexpr auto y = Expr<>::var("y");
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
 
     // --- rewrite: custom constant folding rule ---
     // Eliminate additions of zero: (e + 0) → e
-    constexpr auto remove_add_zero = [](Expr<> e) consteval {
-        return rewrite(e,
-                       [](NodeView<64> n) consteval -> std::optional<Expr<>> {
-                           if (n.tag() == "add" && n.child_count() == 2) {
-                               if (n.child(1).tag() == "lit" &&
-                                   n.child(1).payload() == 0.0)
-                                   return to_expr(n, n.child(0));
-                               if (n.child(0).tag() == "lit" &&
-                                   n.child(0).payload() == 0.0)
-                                   return to_expr(n, n.child(1));
-                           }
-                           return std::nullopt;
-                       });
+    constexpr auto remove_add_zero = [](Expr e) consteval {
+        return rewrite(e, [](NodeView<64> n) consteval -> std::optional<Expr> {
+            if (n.tag() == "add" && n.child_count() == 2) {
+                if (n.child(1).tag() == "lit" && n.child(1).payload() == 0.0)
+                    return to_expr(n, n.child(0));
+                if (n.child(0).tag() == "lit" && n.child(0).payload() == 0.0)
+                    return to_expr(n, n.child(1));
+            }
+            return std::nullopt;
+        });
     };
 
     constexpr auto e1 = (x + 0.0) * (0.0 + y);
@@ -40,19 +37,18 @@ int main() {
     static_assert(fn(3.0, 4.0) == 12.0); // x * y
 
     // --- transform: scale all literals by 2 ---
-    constexpr auto double_lits = [](Expr<> e) consteval {
-        return transform(
-            e, [](NodeView<64> n, auto recurse) consteval -> Expr<> {
-                if (n.tag() == "lit")
-                    return Expr<>::lit(n.payload() * 2.0);
-                if (n.tag() == "var")
-                    return Expr<>::var(n.name().data());
-                if (n.tag() == "add")
-                    return recurse(n.child(0)) + recurse(n.child(1));
-                if (n.tag() == "mul")
-                    return recurse(n.child(0)) * recurse(n.child(1));
-                return Expr<>::lit(0.0);
-            });
+    constexpr auto double_lits = [](Expr e) consteval {
+        return transform(e, [](NodeView<64> n, auto recurse) consteval -> Expr {
+            if (n.tag() == "lit")
+                return Expr::lit(n.payload() * 2.0);
+            if (n.tag() == "var")
+                return Expr::var(n.name().data());
+            if (n.tag() == "add")
+                return recurse(n.child(0)) + recurse(n.child(1));
+            if (n.tag() == "mul")
+                return recurse(n.child(0)) * recurse(n.child(1));
+            return Expr::lit(0.0);
+        });
     };
 
     // f(x) = x * 3 + 1  →  x * 6 + 2

@@ -25,43 +25,43 @@ constexpr auto Mul = defmacro("mul", [](auto lhs, auto rhs) {
 // --- Test defmacro as AST builder ---
 
 TEST(Defmacro, BuildsASTNode) {
-    constexpr auto x = Expr<>::var("x");
+    constexpr auto x = Expr::var("x");
     constexpr auto e = Neg(x);
     static_assert(str_eq(e.ast.nodes[e.id].tag, "neg"));
     static_assert(e.ast.nodes[e.id].child_count == 1);
 }
 
 TEST(Defmacro, BuildsBinaryNode) {
-    constexpr auto x = Expr<>::var("x");
-    constexpr auto y = Expr<>::var("y");
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
     constexpr auto e = Add(x, y);
     static_assert(str_eq(e.ast.nodes[e.id].tag, "add"));
     static_assert(e.ast.nodes[e.id].child_count == 2);
 }
 
 TEST(Defmacro, NestedConstruction) {
-    constexpr auto x = Expr<>::var("x");
-    constexpr auto e = Neg(Add(x, Expr<>::lit(1.0)));
+    constexpr auto x = Expr::var("x");
+    constexpr auto e = Neg(Add(x, Expr::lit(1.0)));
     static_assert(str_eq(e.ast.nodes[e.id].tag, "neg"));
 }
 
 // --- Test compile ---
 
 TEST(Compile, LitBuiltIn) {
-    constexpr auto e = Expr<>::lit(42.0);
+    constexpr auto e = Expr::lit(42.0);
     constexpr auto fn = compile<e>();
     static_assert(fn() == 42.0);
 }
 
 TEST(Compile, SingleVar) {
-    constexpr auto e = Expr<>::var("x");
+    constexpr auto e = Expr::var("x");
     constexpr auto fn = compile<e>();
     static_assert(fn(5.0) == 5.0);
 }
 
 TEST(Compile, TwoVars) {
-    constexpr auto x = Expr<>::var("x");
-    constexpr auto y = Expr<>::var("y");
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
     // Build with macro: Add(x, y)
     constexpr auto e = Add(x, y);
     constexpr auto fn = compile<e, Add>();
@@ -69,15 +69,15 @@ TEST(Compile, TwoVars) {
 }
 
 TEST(Compile, UnaryMacro) {
-    constexpr auto x = Expr<>::var("x");
+    constexpr auto x = Expr::var("x");
     constexpr auto e = Neg(x);
     constexpr auto fn = compile<e, Neg>();
     static_assert(fn(5.0) == -5.0);
 }
 
 TEST(Compile, NestedMacros) {
-    constexpr auto x = Expr<>::var("x");
-    constexpr auto y = Expr<>::var("y");
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
     // neg(add(x, y))
     constexpr auto e = Neg(Add(x, y));
     constexpr auto fn = compile<e, Neg, Add>();
@@ -85,17 +85,17 @@ TEST(Compile, NestedMacros) {
 }
 
 TEST(Compile, ComplexExpression) {
-    constexpr auto x = Expr<>::var("x");
-    constexpr auto y = Expr<>::var("y");
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
     // x * x + 2 * y
-    constexpr auto e = Add(Mul(x, x), Mul(Expr<>::lit(2.0), y));
+    constexpr auto e = Add(Mul(x, x), Mul(Expr::lit(2.0), y));
     constexpr auto fn = compile<e, Add, Mul>();
     static_assert(fn(3.0, 4.0) == 17.0); // 9 + 8
 }
 
 TEST(Compile, RuntimeCall) {
-    constexpr auto x = Expr<>::var("x");
-    constexpr auto y = Expr<>::var("y");
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
     constexpr auto e = Add(Mul(x, x), y);
     constexpr auto fn = compile<e, Add, Mul>();
     EXPECT_DOUBLE_EQ(fn(3.0, 1.0), 10.0);
@@ -116,9 +116,9 @@ constexpr auto Gt = defmacro("gt", [](auto lhs, auto rhs) {
 });
 
 TEST(Compile, CustomDSLNode) {
-    constexpr auto x = Expr<>::var("x");
+    constexpr auto x = Expr::var("x");
     // if_(x > 0, x, neg(x))  -- absolute value
-    constexpr auto e = If(Gt(x, Expr<>::lit(0.0)), x, Neg(x));
+    constexpr auto e = If(Gt(x, Expr::lit(0.0)), x, Neg(x));
     constexpr auto fn = compile<e, If, Gt, Neg>();
     static_assert(fn(5.0) == 5.0);
     static_assert(fn(-3.0) == 3.0);

@@ -9,11 +9,11 @@
 using namespace refmacro;
 
 int main() {
-    constexpr auto x = Expr<>::var("x");
-    constexpr auto y = Expr<>::var("y");
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
 
     // --- abs(x) via conditional ---
-    constexpr auto abs_expr = MCond(x < Expr<>::lit(0.0), -x, x);
+    constexpr auto abs_expr = MCond(x < Expr::lit(0.0), -x, x);
     constexpr auto abs_fn = full_compile<abs_expr>();
     static_assert(abs_fn(-3.0) == 3.0);
     static_assert(abs_fn(5.0) == 5.0);
@@ -23,8 +23,8 @@ int main() {
         std::cout << "  abs(" << v << ") = " << abs_fn(v) << "\n";
 
     // --- clamp(x, lo=0, hi=10) ---
-    constexpr auto lo = Expr<>::var("lo");
-    constexpr auto hi = Expr<>::var("hi");
+    constexpr auto lo = Expr::var("lo");
+    constexpr auto hi = Expr::var("hi");
     constexpr auto clamp_expr = MCond(x < lo, lo, MCond(x > hi, hi, x));
     constexpr auto clamp_fn = full_compile<clamp_expr>();
 
@@ -37,7 +37,7 @@ int main() {
     // --- safe division: avoid divide-by-zero ---
     // DFS visits y first (in y == 0), so arg order is (y, x)
     constexpr auto safe_div_expr =
-        MCond(y == Expr<>::lit(0.0), Expr<>::lit(0.0), x / y);
+        MCond(y == Expr::lit(0.0), Expr::lit(0.0), x / y);
     constexpr auto safe_div = full_compile<safe_div_expr>();
 
     std::cout << "\nsafe_div(x, y) = " << pretty_print(safe_div_expr).data

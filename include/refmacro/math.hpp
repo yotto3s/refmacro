@@ -34,59 +34,60 @@ inline constexpr auto MNeg = defmacro("neg", [](auto x) {
 // --- Operator sugar (creates AST nodes, no lowering) ---
 
 template <std::size_t Cap>
-consteval Expr<Cap> operator+(Expr<Cap> lhs, Expr<Cap> rhs) {
+consteval Expression<Cap> operator+(Expression<Cap> lhs, Expression<Cap> rhs) {
     return make_node("add", lhs, rhs);
 }
 template <std::size_t Cap>
-consteval Expr<Cap> operator-(Expr<Cap> lhs, Expr<Cap> rhs) {
+consteval Expression<Cap> operator-(Expression<Cap> lhs, Expression<Cap> rhs) {
     return make_node("sub", lhs, rhs);
 }
 template <std::size_t Cap>
-consteval Expr<Cap> operator*(Expr<Cap> lhs, Expr<Cap> rhs) {
+consteval Expression<Cap> operator*(Expression<Cap> lhs, Expression<Cap> rhs) {
     return make_node("mul", lhs, rhs);
 }
 template <std::size_t Cap>
-consteval Expr<Cap> operator/(Expr<Cap> lhs, Expr<Cap> rhs) {
+consteval Expression<Cap> operator/(Expression<Cap> lhs, Expression<Cap> rhs) {
     return make_node("div", lhs, rhs);
 }
-template <std::size_t Cap> consteval Expr<Cap> operator-(Expr<Cap> x) {
+template <std::size_t Cap>
+consteval Expression<Cap> operator-(Expression<Cap> x) {
     return make_node("neg", x);
 }
 
 // double on LHS
 template <std::size_t Cap>
-consteval Expr<Cap> operator+(double lhs, Expr<Cap> rhs) {
-    return Expr<Cap>::lit(lhs) + rhs;
+consteval Expression<Cap> operator+(double lhs, Expression<Cap> rhs) {
+    return Expression<Cap>::lit(lhs) + rhs;
 }
 template <std::size_t Cap>
-consteval Expr<Cap> operator-(double lhs, Expr<Cap> rhs) {
-    return Expr<Cap>::lit(lhs) - rhs;
+consteval Expression<Cap> operator-(double lhs, Expression<Cap> rhs) {
+    return Expression<Cap>::lit(lhs) - rhs;
 }
 template <std::size_t Cap>
-consteval Expr<Cap> operator*(double lhs, Expr<Cap> rhs) {
-    return Expr<Cap>::lit(lhs) * rhs;
+consteval Expression<Cap> operator*(double lhs, Expression<Cap> rhs) {
+    return Expression<Cap>::lit(lhs) * rhs;
 }
 template <std::size_t Cap>
-consteval Expr<Cap> operator/(double lhs, Expr<Cap> rhs) {
-    return Expr<Cap>::lit(lhs) / rhs;
+consteval Expression<Cap> operator/(double lhs, Expression<Cap> rhs) {
+    return Expression<Cap>::lit(lhs) / rhs;
 }
 
 // double on RHS
 template <std::size_t Cap>
-consteval Expr<Cap> operator+(Expr<Cap> lhs, double rhs) {
-    return lhs + Expr<Cap>::lit(rhs);
+consteval Expression<Cap> operator+(Expression<Cap> lhs, double rhs) {
+    return lhs + Expression<Cap>::lit(rhs);
 }
 template <std::size_t Cap>
-consteval Expr<Cap> operator-(Expr<Cap> lhs, double rhs) {
-    return lhs - Expr<Cap>::lit(rhs);
+consteval Expression<Cap> operator-(Expression<Cap> lhs, double rhs) {
+    return lhs - Expression<Cap>::lit(rhs);
 }
 template <std::size_t Cap>
-consteval Expr<Cap> operator*(Expr<Cap> lhs, double rhs) {
-    return lhs * Expr<Cap>::lit(rhs);
+consteval Expression<Cap> operator*(Expression<Cap> lhs, double rhs) {
+    return lhs * Expression<Cap>::lit(rhs);
 }
 template <std::size_t Cap>
-consteval Expr<Cap> operator/(Expr<Cap> lhs, double rhs) {
-    return lhs / Expr<Cap>::lit(rhs);
+consteval Expression<Cap> operator/(Expression<Cap> lhs, double rhs) {
+    return lhs / Expression<Cap>::lit(rhs);
 }
 
 // --- Convenience: compile with all math macros ---
@@ -114,12 +115,14 @@ consteval double eval_op(std::string_view tag, double lhs, double rhs) {
 }
 } // namespace detail
 
-template <std::size_t Cap = 64> consteval Expr<Cap> simplify(Expr<Cap> e) {
+template <std::size_t Cap = 64>
+consteval Expression<Cap> simplify(Expression<Cap> e) {
     auto is_lit = [](NodeView<Cap> v, double val) consteval {
         return v.tag() == "lit" && v.payload() == val;
     };
     return rewrite(
-        e, [is_lit](NodeView<Cap> n) consteval -> std::optional<Expr<Cap>> {
+        e,
+        [is_lit](NodeView<Cap> n) consteval -> std::optional<Expression<Cap>> {
             // x + 0 -> x, 0 + x -> x
             if (n.tag() == "add" && n.child_count() == 2) {
                 if (is_lit(n.child(1), 0.0))
@@ -134,9 +137,9 @@ template <std::size_t Cap = 64> consteval Expr<Cap> simplify(Expr<Cap> e) {
                 if (is_lit(n.child(0), 1.0))
                     return to_expr(n, n.child(1));
                 if (is_lit(n.child(0), 0.0))
-                    return Expr<Cap>::lit(0.0);
+                    return Expression<Cap>::lit(0.0);
                 if (is_lit(n.child(1), 0.0))
-                    return Expr<Cap>::lit(0.0);
+                    return Expression<Cap>::lit(0.0);
             }
             // x - 0 -> x
             if (n.tag() == "sub" && n.child_count() == 2 &&
@@ -153,14 +156,14 @@ template <std::size_t Cap = 64> consteval Expr<Cap> simplify(Expr<Cap> e) {
             // -lit -> lit
             if (n.tag() == "neg" && n.child_count() == 1 &&
                 n.child(0).tag() == "lit")
-                return Expr<Cap>::lit(-n.child(0).payload());
+                return Expression<Cap>::lit(-n.child(0).payload());
             // constant folding: lit op lit -> lit
             if (n.child_count() == 2 && n.child(0).tag() == "lit" &&
                 n.child(1).tag() == "lit") {
                 auto tag = n.tag();
                 if (tag == "add" || tag == "sub" || tag == "mul" ||
                     tag == "div")
-                    return Expr<Cap>::lit(detail::eval_op(
+                    return Expression<Cap>::lit(detail::eval_op(
                         tag, n.child(0).payload(), n.child(1).payload()));
             }
             return std::nullopt;
@@ -170,13 +173,13 @@ template <std::size_t Cap = 64> consteval Expr<Cap> simplify(Expr<Cap> e) {
 // --- differentiate: symbolic differentiation via structural recursion ---
 
 template <std::size_t Cap = 64>
-consteval Expr<Cap> differentiate(Expr<Cap> e, const char* var) {
+consteval Expression<Cap> differentiate(Expression<Cap> e, const char* var) {
     return transform(
-        e, [var](NodeView<Cap> n, auto recurse) consteval -> Expr<Cap> {
+        e, [var](NodeView<Cap> n, auto recurse) consteval -> Expression<Cap> {
             if (n.tag() == "lit")
-                return Expr<Cap>::lit(0.0);
+                return Expression<Cap>::lit(0.0);
             if (n.tag() == "var")
-                return Expr<Cap>::lit(n.name() == var ? 1.0 : 0.0);
+                return Expression<Cap>::lit(n.name() == var ? 1.0 : 0.0);
             if (n.tag() == "neg" && n.child_count() == 1)
                 return -recurse(n.child(0));
             if (n.tag() == "add" && n.child_count() == 2)
@@ -194,7 +197,7 @@ consteval Expr<Cap> differentiate(Expr<Cap> e, const char* var) {
                 return (recurse(n.child(0)) * g - f * recurse(n.child(1))) /
                        (g * g);
             }
-            return Expr<Cap>::lit(0.0);
+            return Expression<Cap>::lit(0.0);
         });
 }
 

@@ -26,7 +26,8 @@ consteval int copy_subtree(AST<Cap>& dst, const AST<Cap>& src, int src_id) {
 }
 
 template <std::size_t Cap, typename Rule>
-consteval Expr<Cap> rebuild_bottom_up(const AST<Cap>& ast, int id, Rule rule) {
+consteval Expression<Cap> rebuild_bottom_up(const AST<Cap>& ast, int id,
+                                            Rule rule) {
     ASTNode n = ast.nodes[id];
 
     if (n.child_count == 0) {
@@ -34,19 +35,19 @@ consteval Expr<Cap> rebuild_bottom_up(const AST<Cap>& ast, int id, Rule rule) {
         auto replacement = rule(view);
         if (replacement)
             return *replacement;
-        Expr<Cap> leaf;
+        Expression<Cap> leaf;
         leaf.id = leaf.ast.add_node(n);
         return leaf;
     }
 
     // Rebuild children first (bottom-up)
-    Expr<Cap> child_exprs[8];
+    Expression<Cap> child_exprs[8];
     for (int i = 0; i < n.child_count; ++i) {
         child_exprs[i] = rebuild_bottom_up<Cap>(ast, n.children[i], rule);
     }
 
     // Merge rebuilt children into a new AST
-    Expr<Cap> rebuilt;
+    Expression<Cap> rebuilt;
     int new_child_ids[8]{-1, -1, -1, -1, -1, -1, -1, -1};
 
     // Start with the first child's AST
@@ -78,8 +79,8 @@ consteval Expr<Cap> rebuild_bottom_up(const AST<Cap>& ast, int id, Rule rule) {
 } // namespace detail
 
 template <std::size_t Cap>
-consteval Expr<Cap> to_expr(NodeView<Cap> root, NodeView<Cap> subtree) {
-    Expr<Cap> result;
+consteval Expression<Cap> to_expr(NodeView<Cap> root, NodeView<Cap> subtree) {
+    Expression<Cap> result;
     result.id = detail::copy_subtree(result.ast, root.ast, subtree.id);
     return result;
 }
@@ -111,7 +112,8 @@ consteval bool trees_equal(const AST<Cap>& a, int a_id, const AST<Cap>& b,
 // --- rewrite: bottom-up rule application until fixed point ---
 
 template <std::size_t Cap = 64, typename Rule>
-consteval Expr<Cap> rewrite(Expr<Cap> e, Rule rule, int max_iters = 100) {
+consteval Expression<Cap> rewrite(Expression<Cap> e, Rule rule,
+                                  int max_iters = 100) {
     for (int iter = 0; iter < max_iters; ++iter) {
         auto result = detail::rebuild_bottom_up<Cap>(e.ast, e.id, rule);
         if (detail::trees_equal(e.ast, e.id, result.ast, result.id)) {
@@ -125,10 +127,10 @@ consteval Expr<Cap> rewrite(Expr<Cap> e, Rule rule, int max_iters = 100) {
 // --- transform: structural recursion with user visitor ---
 
 template <std::size_t Cap = 64, typename Visitor>
-consteval Expr<Cap> transform(Expr<Cap> e, Visitor visitor) {
-    auto recurse = [&](auto self, int id) consteval -> Expr<Cap> {
+consteval Expression<Cap> transform(Expression<Cap> e, Visitor visitor) {
+    auto recurse = [&](auto self, int id) consteval -> Expression<Cap> {
         NodeView<Cap> view{e.ast, id};
-        auto rec = [&](NodeView<Cap> child) consteval -> Expr<Cap> {
+        auto rec = [&](NodeView<Cap> child) consteval -> Expression<Cap> {
             return self(self, child.id);
         };
         return visitor(view, rec);

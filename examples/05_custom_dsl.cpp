@@ -23,19 +23,16 @@ constexpr auto If = defmacro("if_", [](auto cond, auto then_br, auto else_br) {
 });
 
 // Helper to build "gt" and "if_" nodes in expressions
-consteval Expr<> gt(Expr<> lhs, Expr<> rhs) {
-    return make_node("gt", lhs, rhs);
-}
+consteval Expr gt(Expr lhs, Expr rhs) { return make_node("gt", lhs, rhs); }
 
-consteval Expr<> if_(Expr<> cond, Expr<> then_br, Expr<> else_br) {
+consteval Expr if_(Expr cond, Expr then_br, Expr else_br) {
     return make_node("if_", cond, then_br, else_br);
 }
 
 int main() {
     // relu(x) = if_(gt(x, 0), x, 0)
-    constexpr auto x = Expr<>::var("x");
-    constexpr auto relu_expr =
-        if_(gt(x, Expr<>::lit(0.0)), x, Expr<>::lit(0.0));
+    constexpr auto x = Expr::var("x");
+    constexpr auto relu_expr = if_(gt(x, Expr::lit(0.0)), x, Expr::lit(0.0));
 
     constexpr auto relu =
         compile<relu_expr, MAdd, MSub, MMul, MDiv, MNeg, Gt, If>();
@@ -50,7 +47,7 @@ int main() {
 
     // step(x) = if_(gt(x*x, 1), 1, 0)  -- fires when |x| > 1
     constexpr auto step_expr =
-        if_(gt(x * x, Expr<>::lit(1.0)), Expr<>::lit(1.0), Expr<>::lit(0.0));
+        if_(gt(x * x, Expr::lit(1.0)), Expr::lit(1.0), Expr::lit(0.0));
     constexpr auto step =
         compile<step_expr, MAdd, MSub, MMul, MDiv, MNeg, Gt, If>();
 

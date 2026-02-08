@@ -66,8 +66,8 @@ inline constexpr auto MProgn = defmacro("progn", [](auto a, auto b) {
 // --- Lambda / Apply / Let (first-class AST nodes, handled by compile_node) ---
 
 template <std::size_t Cap = 64>
-consteval Expr<Cap> lambda(const char* param, Expr<Cap> body) {
-    Expr<Cap> result;
+consteval Expression<Cap> lambda(const char* param, Expression<Cap> body) {
+    Expression<Cap> result;
     result.ast = body.ast;
     ASTNode param_node{};
     copy_str(param_node.tag, "var");
@@ -78,12 +78,13 @@ consteval Expr<Cap> lambda(const char* param, Expr<Cap> body) {
 }
 
 template <std::size_t Cap = 64>
-consteval Expr<Cap> apply(Expr<Cap> fn, Expr<Cap> arg) {
+consteval Expression<Cap> apply(Expression<Cap> fn, Expression<Cap> arg) {
     return make_node("apply", fn, arg);
 }
 
 template <std::size_t Cap = 64>
-consteval Expr<Cap> let_(const char* name, Expr<Cap> val, Expr<Cap> body) {
+consteval Expression<Cap> let_(const char* name, Expression<Cap> val,
+                               Expression<Cap> body) {
     return apply(lambda(name, body), val);
 }
 

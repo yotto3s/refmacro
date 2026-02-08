@@ -216,7 +216,7 @@ consteval FixedString<256> pp_node(const AST<Cap>& ast, int id) {
 } // namespace detail
 
 template <std::size_t Cap = 64>
-consteval FixedString<256> pretty_print(const Expr<Cap>& e) {
+consteval FixedString<256> pretty_print(const Expression<Cap>& e) {
     return detail::pp_node(e.ast, e.id);
 }
 

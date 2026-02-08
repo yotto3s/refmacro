@@ -24,7 +24,7 @@ constexpr auto Clamp = defmacro("clamp", [](auto val, auto lo, auto hi) {
 // --- End-to-end with defmacro ---
 
 TEST(Integration, CustomAbsViaMacro) {
-    constexpr auto x = Expr<>::var("x");
+    constexpr auto x = Expr::var("x");
     constexpr auto e = Abs(x);
     constexpr auto fn = compile<e, Abs>();
     static_assert(fn(5.0) == 5.0);
@@ -34,39 +34,39 @@ TEST(Integration, CustomAbsViaMacro) {
 // --- End-to-end math pipeline ---
 
 TEST(Integration, LinearFunction) {
-    constexpr auto x = Expr<>::var("x");
+    constexpr auto x = Expr::var("x");
     constexpr auto f = 3.0 * x + 5.0;
     constexpr auto fn = math_compile<f>();
     static_assert(fn(2.0) == 11.0);
     static_assert(fn(0.0) == 5.0);
 
-    constexpr auto diff_x = [](Expr<> e) consteval {
+    constexpr auto diff_x = [](Expr e) consteval {
         return differentiate(e, "x");
     };
-    constexpr auto simp = [](Expr<> e) consteval { return simplify(e); };
+    constexpr auto simp = [](Expr e) consteval { return simplify(e); };
     constexpr auto df = f | diff_x | simp;
     constexpr auto dfn = math_compile<df>();
     static_assert(dfn(100.0) == 3.0);
 }
 
 TEST(Integration, QuadraticRoots) {
-    constexpr auto x = Expr<>::var("x");
+    constexpr auto x = Expr::var("x");
     constexpr auto f = x * x - 4.0 * x + 4.0;
     constexpr auto fn = math_compile<f>();
     static_assert(fn(2.0) == 0.0);
 
-    constexpr auto diff_x = [](Expr<> e) consteval {
+    constexpr auto diff_x = [](Expr e) consteval {
         return differentiate(e, "x");
     };
-    constexpr auto simp = [](Expr<> e) consteval { return simplify(e); };
+    constexpr auto simp = [](Expr e) consteval { return simplify(e); };
     constexpr auto df = f | diff_x | simp;
     constexpr auto dfn = math_compile<df>();
     static_assert(dfn(2.0) == 0.0); // minimum
 }
 
 TEST(Integration, MultivarGradient) {
-    constexpr auto x = Expr<>::var("x");
-    constexpr auto y = Expr<>::var("y");
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
     constexpr auto f = x * y + x + y;
     constexpr auto fn = math_compile<f>();
     static_assert(fn(2.0, 3.0) == 11.0);
@@ -83,12 +83,12 @@ TEST(Integration, MultivarGradient) {
 }
 
 TEST(Integration, SecondDerivative) {
-    constexpr auto x = Expr<>::var("x");
+    constexpr auto x = Expr::var("x");
     constexpr auto f = x * x * x;
-    constexpr auto diff_x = [](Expr<> e) consteval {
+    constexpr auto diff_x = [](Expr e) consteval {
         return differentiate(e, "x");
     };
-    constexpr auto simp = [](Expr<> e) consteval { return simplify(e); };
+    constexpr auto simp = [](Expr e) consteval { return simplify(e); };
     constexpr auto d2f = f | diff_x | simp | diff_x | simp;
     constexpr auto fn = math_compile<d2f>();
     static_assert(fn(2.0) == 12.0); // 6*2
@@ -97,10 +97,9 @@ TEST(Integration, SecondDerivative) {
 // --- Mixing custom macros with math ---
 
 TEST(Integration, CustomMacroWithMath) {
-    constexpr auto x = Expr<>::var("x");
+    constexpr auto x = Expr::var("x");
     // clamp(x * x - 10, 0, 100)
-    constexpr auto e =
-        Clamp(x * x - 10.0, Expr<>::lit(0.0), Expr<>::lit(100.0));
+    constexpr auto e = Clamp(x * x - 10.0, Expr::lit(0.0), Expr::lit(100.0));
     constexpr auto fn = compile<e, MAdd, MSub, MMul, MDiv, MNeg, Clamp>();
     static_assert(fn(1.0) == 0.0);    // 1-10 = -9, clamped to 0
     static_assert(fn(4.0) == 6.0);    // 16-10 = 6
@@ -108,15 +107,15 @@ TEST(Integration, CustomMacroWithMath) {
 }
 
 TEST(Integration, PrettyPrint) {
-    constexpr auto x = Expr<>::var("x");
+    constexpr auto x = Expr::var("x");
     constexpr auto e = x * x + 1.0;
     constexpr auto s = pretty_print(e);
     static_assert(s == "((x * x) + 1)");
 }
 
 TEST(Integration, RuntimeCalls) {
-    constexpr auto x = Expr<>::var("x");
-    constexpr auto y = Expr<>::var("y");
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
     constexpr auto f = x * x + y * y;
     constexpr auto fn = math_compile<f>();
     EXPECT_DOUBLE_EQ(fn(3.0, 4.0), 25.0);

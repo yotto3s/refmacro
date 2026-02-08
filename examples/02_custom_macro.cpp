@@ -27,7 +27,7 @@ constexpr auto Clamp = defmacro("clamp", [](auto val, auto lo, auto hi) {
 });
 
 int main() {
-    constexpr auto x = Expr<>::var("x");
+    constexpr auto x = Expr::var("x");
 
     // --- Use Abs alone ---
     constexpr auto e1 = Abs(x);
@@ -37,8 +37,7 @@ int main() {
 
     // --- Mix custom macros with math ---
     // clamp(x^2 - 10, 0, 100)
-    constexpr auto e2 =
-        Clamp(x * x - 10.0, Expr<>::lit(0.0), Expr<>::lit(100.0));
+    constexpr auto e2 = Clamp(x * x - 10.0, Expr::lit(0.0), Expr::lit(100.0));
     constexpr auto fn2 = compile<e2, MAdd, MSub, MMul, MDiv, MNeg, Clamp>();
 
     static_assert(fn2(1.0) == 0.0);    // 1-10 = -9 → clamped to 0

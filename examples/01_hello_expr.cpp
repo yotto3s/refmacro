@@ -10,7 +10,7 @@ using namespace refmacro;
 
 int main() {
     // --- Build an expression: f(x) = x^2 + 2x + 1 ---
-    constexpr auto x = Expr<>::var("x");
+    constexpr auto x = Expr::var("x");
     constexpr auto f = x * x + 2.0 * x + 1.0;
 
     // Pretty-print the AST at compile time
