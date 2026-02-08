@@ -1,7 +1,84 @@
 #ifndef REFMACRO_AST_HPP
 #define REFMACRO_AST_HPP
 
+#include <cstddef>
+#include <initializer_list>
+#include <utility>
+
 namespace refmacro {
+
+// --- Consteval string utilities ---
+
+consteval void copy_str(char* dst, const char* src, std::size_t max_len = 16) {
+    for (std::size_t i = 0; i < max_len - 1 && src[i] != '\0'; ++i)
+        dst[i] = src[i];
+}
+
+consteval bool str_eq(const char* a, const char* b) {
+    for (std::size_t i = 0;; ++i) {
+        if (a[i] != b[i]) return false;
+        if (a[i] == '\0') return true;
+    }
+}
+
+consteval std::size_t str_len(const char* s) {
+    std::size_t len = 0;
+    while (s[len] != '\0') ++len;
+    return len;
+}
+
+// --- AST Node (structural type — works as NTTP) ---
+
+struct ASTNode {
+    char tag[16]{};
+    double payload{};
+    char name[16]{};
+    int scope{0};
+    int children[8]{-1, -1, -1, -1, -1, -1, -1, -1};
+    int child_count{0};
+};
+
+// --- Flat AST Storage (structural type — works as NTTP) ---
+
+template <std::size_t Cap = 64>
+struct AST {
+    ASTNode nodes[Cap]{};
+    std::size_t count{0};
+    int root{-1};
+
+    consteval int add_node(ASTNode n) {
+        int idx = static_cast<int>(count);
+        nodes[count++] = n;
+        root = idx;
+        return idx;
+    }
+
+    consteval int add_tagged_node(const char* tag_name,
+                                  std::initializer_list<int> children) {
+        ASTNode n{};
+        copy_str(n.tag, tag_name);
+        int i = 0;
+        for (int c : children) {
+            n.children[i++] = c;
+        }
+        n.child_count = static_cast<int>(children.size());
+        return add_node(n);
+    }
+
+    consteval int merge(const AST& other) {
+        int offset = static_cast<int>(count);
+        for (std::size_t i = 0; i < other.count; ++i) {
+            ASTNode n = other.nodes[i];
+            for (int c = 0; c < n.child_count; ++c) {
+                if (n.children[c] >= 0)
+                    n.children[c] += offset;
+            }
+            nodes[count++] = n;
+        }
+        return offset;
+    }
+};
+
 } // namespace refmacro
 
 #endif // REFMACRO_AST_HPP
