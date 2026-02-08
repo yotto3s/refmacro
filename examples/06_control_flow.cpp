@@ -52,6 +52,6 @@ int main() {
     std::cout << "\nin_range(x, lo, hi) = " << pretty_print(in_range_expr).data
               << "\n";
     for (double v : {-1.0, 0.0, 5.0, 10.0, 11.0})
-        std::cout << "  in_range(" << v << ", 0, 10) = " << in_range(v, 0.0, 10.0)
-                  << "\n";
+        std::cout << "  in_range(" << v
+                  << ", 0, 10) = " << in_range(v, 0.0, 10.0) << "\n";
 }

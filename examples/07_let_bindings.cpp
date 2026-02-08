@@ -45,10 +45,9 @@ int main() {
 
     // --- Nested let: quadratic formula pieces ---
     // let a = x*x in let b = a + a in b + 1
-    constexpr auto nested_expr =
-        let_("a", x * x,
-            let_("b", Expr<>::var("a") + Expr<>::var("a"),
-                Expr<>::var("b") + 1.0));
+    constexpr auto nested_expr = let_(
+        "a", x * x,
+        let_("b", Expr<>::var("a") + Expr<>::var("a"), Expr<>::var("b") + 1.0));
     constexpr auto nested_fn = full_compile<nested_expr>();
 
     std::cout << "\nlet a = x*x in let b = a+a in b+1\n";
@@ -74,8 +73,8 @@ int main() {
     std::cout << "  AST: " << pretty_print(smoothstep_expr).data << "\n";
     // DFS order: x, edge0, edge1
     for (double v : {0.0, 0.25, 0.5, 0.75, 1.0, 1.5})
-        std::cout << "  smoothstep(" << v << ", 0, 1) = "
-                  << smoothstep(v, 0.0, 1.0) << "\n";
+        std::cout << "  smoothstep(" << v
+                  << ", 0, 1) = " << smoothstep(v, 0.0, 1.0) << "\n";
 
     // --- Constant let: no free variables ---
     constexpr auto const_expr =

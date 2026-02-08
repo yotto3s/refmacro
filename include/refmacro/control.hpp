@@ -20,9 +20,12 @@ namespace refmacro {
 
 // --- Control-flow macros (lowering to lambdas) ---
 
-inline constexpr auto MCond = defmacro("cond", [](auto test, auto then_, auto else_) {
-    return [=](auto... a) constexpr { return test(a...) ? then_(a...) : else_(a...); };
-});
+inline constexpr auto MCond =
+    defmacro("cond", [](auto test, auto then_, auto else_) {
+        return [=](auto... a) constexpr {
+            return test(a...) ? then_(a...) : else_(a...);
+        };
+    });
 
 inline constexpr auto MLand = defmacro("land", [](auto lhs, auto rhs) {
     return [=](auto... a) constexpr { return lhs(a...) && rhs(a...); };
@@ -87,14 +90,15 @@ consteval Expr<Cap> let_(const char* name, Expr<Cap> val, Expr<Cap> body) {
 // --- Convenience: compile with all control-flow macros ---
 
 template <auto e> consteval auto ctrl_compile() {
-    return compile<e, MCond, MLand, MLor, MLnot, MEq, MLt, MGt, MLe, MGe, MProgn>();
+    return compile<e, MCond, MLand, MLor, MLnot, MEq, MLt, MGt, MLe, MGe,
+                   MProgn>();
 }
 
 // --- Full compile: math + control-flow macros ---
 
 template <auto e> consteval auto full_compile() {
-    return compile<e, MAdd, MSub, MMul, MDiv, MNeg,
-                      MCond, MLand, MLor, MLnot, MEq, MLt, MGt, MLe, MGe, MProgn>();
+    return compile<e, MAdd, MSub, MMul, MDiv, MNeg, MCond, MLand, MLor, MLnot,
+                   MEq, MLt, MGt, MLe, MGe, MProgn>();
 }
 
 } // namespace refmacro

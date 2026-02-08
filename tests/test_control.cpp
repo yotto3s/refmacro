@@ -1,7 +1,7 @@
+#include <gtest/gtest.h>
 #include <refmacro/control.hpp>
 #include <refmacro/math.hpp>
 #include <refmacro/pretty_print.hpp>
-#include <gtest/gtest.h>
 
 using namespace refmacro;
 
@@ -9,14 +9,16 @@ using namespace refmacro;
 
 TEST(ControlMacros, CondTrueBranch) {
     // cond(true, 1.0, 2.0) -> 1.0
-    constexpr auto e = MCond(Expr<>::lit(1.0), Expr<>::lit(10.0), Expr<>::lit(20.0));
+    constexpr auto e =
+        MCond(Expr<>::lit(1.0), Expr<>::lit(10.0), Expr<>::lit(20.0));
     constexpr auto fn = ctrl_compile<e>();
     static_assert(fn() == 10.0);
     EXPECT_DOUBLE_EQ(fn(), 10.0);
 }
 
 TEST(ControlMacros, CondFalseBranch) {
-    constexpr auto e = MCond(Expr<>::lit(0.0), Expr<>::lit(10.0), Expr<>::lit(20.0));
+    constexpr auto e =
+        MCond(Expr<>::lit(0.0), Expr<>::lit(10.0), Expr<>::lit(20.0));
     constexpr auto fn = ctrl_compile<e>();
     static_assert(fn() == 20.0);
     EXPECT_DOUBLE_EQ(fn(), 20.0);
@@ -196,7 +198,8 @@ TEST(ControlMacros, SafeDiv) {
     // Note: DFS visits y first (in y == 0 check), so y=arg0, x=arg1
     constexpr auto x = Expr<>::var("x");
     constexpr auto y = Expr<>::var("y");
-    constexpr auto safe_div = MCond(y == Expr<>::lit(0.0), Expr<>::lit(0.0), x / y);
+    constexpr auto safe_div =
+        MCond(y == Expr<>::lit(0.0), Expr<>::lit(0.0), x / y);
     constexpr auto fn = full_compile<safe_div>();
     // fn(y, x) due to DFS ordering
     EXPECT_DOUBLE_EQ(fn(2.0, 10.0), 5.0);
@@ -222,11 +225,12 @@ TEST(LambdaApply, BasicLet) {
     // Equivalent to: ((lambda tmp. tmp + tmp) (x * x))
     // At runtime: computes x*x, adds it to itself
     constexpr auto x = Expr<>::var("x");
-    constexpr auto e = let_("tmp", x * x, Expr<>::var("tmp") + Expr<>::var("tmp"));
+    constexpr auto e =
+        let_("tmp", x * x, Expr<>::var("tmp") + Expr<>::var("tmp"));
     constexpr auto fn = full_compile<e>();
     static_assert(fn(3.0) == 18.0);
-    EXPECT_DOUBLE_EQ(fn(3.0), 18.0);  // 9 + 9
-    EXPECT_DOUBLE_EQ(fn(5.0), 50.0);  // 25 + 25
+    EXPECT_DOUBLE_EQ(fn(3.0), 18.0); // 9 + 9
+    EXPECT_DOUBLE_EQ(fn(5.0), 50.0); // 25 + 25
 }
 
 TEST(LambdaApply, LetWithConstant) {
@@ -244,9 +248,7 @@ TEST(LambdaApply, NestedLet) {
     constexpr auto x = Expr<>::var("x");
     constexpr auto a = Expr<>::var("a");
     constexpr auto b = Expr<>::var("b");
-    constexpr auto e = let_("a", x + 1.0,
-                        let_("b", a * 2.0,
-                            b + a));
+    constexpr auto e = let_("a", x + 1.0, let_("b", a * 2.0, b + a));
     constexpr auto fn = full_compile<e>();
     // x=3: a=4, b=8, result=12
     EXPECT_DOUBLE_EQ(fn(3.0), 12.0);
@@ -256,8 +258,8 @@ TEST(LambdaApply, NestedLet) {
 
 TEST(LambdaApply, LetNoFreeVars) {
     // let x = 10 in x + x (no free variables — 0-arg function)
-    constexpr auto e = let_("x", Expr<>::lit(10.0),
-                            Expr<>::var("x") + Expr<>::var("x"));
+    constexpr auto e =
+        let_("x", Expr<>::lit(10.0), Expr<>::var("x") + Expr<>::var("x"));
     constexpr auto fn = full_compile<e>();
     EXPECT_DOUBLE_EQ(fn(), 20.0);
 }
@@ -266,19 +268,17 @@ TEST(LambdaApply, LetWithControlFlow) {
     // let threshold = 5 in cond(x > threshold, x, threshold)
     constexpr auto x = Expr<>::var("x");
     constexpr auto t = Expr<>::var("threshold");
-    constexpr auto e = let_("threshold", Expr<>::lit(5.0),
-                            MCond(x > t, x, t));
+    constexpr auto e = let_("threshold", Expr<>::lit(5.0), MCond(x > t, x, t));
     constexpr auto fn = full_compile<e>();
-    EXPECT_DOUBLE_EQ(fn(3.0), 5.0);   // below threshold
-    EXPECT_DOUBLE_EQ(fn(7.0), 7.0);   // above threshold
-    EXPECT_DOUBLE_EQ(fn(5.0), 5.0);   // equal
+    EXPECT_DOUBLE_EQ(fn(3.0), 5.0); // below threshold
+    EXPECT_DOUBLE_EQ(fn(7.0), 7.0); // above threshold
+    EXPECT_DOUBLE_EQ(fn(5.0), 5.0); // equal
 }
 
 TEST(LambdaApply, LetShadowing) {
     // Inner let shadows outer binding: let x=1 in let x=2 in x -> 2
     constexpr auto e = let_("x", Expr<>::lit(1.0),
-                        let_("x", Expr<>::lit(2.0),
-                            Expr<>::var("x")));
+                            let_("x", Expr<>::lit(2.0), Expr<>::var("x")));
     constexpr auto fn = full_compile<e>();
     static_assert(fn() == 2.0);
     EXPECT_DOUBLE_EQ(fn(), 2.0);
@@ -287,8 +287,8 @@ TEST(LambdaApply, LetShadowing) {
 TEST(LambdaApply, StandaloneApplyLambda) {
     // Directly use apply(lambda(...), ...) without let_ sugar
     constexpr auto x = Expr<>::var("x");
-    constexpr auto e = apply(lambda("tmp", Expr<>::var("tmp") + Expr<>::var("tmp")),
-                             x * x);
+    constexpr auto e =
+        apply(lambda("tmp", Expr<>::var("tmp") + Expr<>::var("tmp")), x * x);
     constexpr auto fn = full_compile<e>();
     static_assert(fn(3.0) == 18.0);
     EXPECT_DOUBLE_EQ(fn(3.0), 18.0);
@@ -301,7 +301,7 @@ TEST(LambdaApply, LambdaBoundVarExcludedFromVarMap) {
     constexpr auto e = let_("y", Expr<>::lit(10.0), Expr<>::var("y") + x);
     constexpr auto fn = full_compile<e>();
     // fn takes 1 arg (x), y is bound by let
-    EXPECT_DOUBLE_EQ(fn(5.0), 15.0);  // y=10, x=5 -> 15
+    EXPECT_DOUBLE_EQ(fn(5.0), 15.0); // y=10, x=5 -> 15
 }
 
 TEST(ControlMacros, CondTruthyValues) {
@@ -321,7 +321,8 @@ TEST(ControlMacros, CondTruthyValues) {
 
 TEST(ControlPrettyPrint, Let) {
     constexpr auto x = Expr<>::var("x");
-    constexpr auto e = let_("tmp", x * x, Expr<>::var("tmp") + Expr<>::var("tmp"));
+    constexpr auto e =
+        let_("tmp", x * x, Expr<>::var("tmp") + Expr<>::var("tmp"));
     constexpr auto s = pretty_print(e);
     EXPECT_STREQ(s.data, "(let tmp (x * x) (tmp + tmp))");
 }
