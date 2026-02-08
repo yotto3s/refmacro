@@ -1,0 +1,116 @@
+#ifndef REFMACRO_TRANSFORMS_HPP
+#define REFMACRO_TRANSFORMS_HPP
+
+#include <refmacro/ast.hpp>
+#include <refmacro/expr.hpp>
+#include <refmacro/node_view.hpp>
+#include <optional>
+
+namespace refmacro {
+
+// --- to_expr: extract a subtree into a standalone Expr ---
+
+namespace detail {
+
+template <std::size_t Cap>
+consteval int copy_subtree(AST<Cap>& dst, const AST<Cap>& src, int src_id) {
+    ASTNode n = src.nodes[src_id];
+    int new_children[8]{-1, -1, -1, -1, -1, -1, -1, -1};
+    for (int i = 0; i < n.child_count; ++i) {
+        new_children[i] = copy_subtree(dst, src, n.children[i]);
+    }
+    for (int i = 0; i < n.child_count; ++i) {
+        n.children[i] = new_children[i];
+    }
+    return dst.add_node(n);
+}
+
+template <std::size_t Cap, typename Rule>
+consteval Expr<Cap> rebuild_bottom_up(const AST<Cap>& ast, int id, Rule rule) {
+    ASTNode n = ast.nodes[id];
+
+    if (n.child_count == 0) {
+        NodeView<Cap> view{ast, id};
+        auto replacement = rule(view);
+        if (replacement) return *replacement;
+        Expr<Cap> leaf;
+        leaf.id = leaf.ast.add_node(n);
+        return leaf;
+    }
+
+    // Rebuild children first (bottom-up)
+    Expr<Cap> child_exprs[8];
+    for (int i = 0; i < n.child_count; ++i) {
+        child_exprs[i] = rebuild_bottom_up<Cap>(ast, n.children[i], rule);
+    }
+
+    // Merge rebuilt children into a new AST
+    Expr<Cap> rebuilt;
+    int new_child_ids[8]{-1, -1, -1, -1, -1, -1, -1, -1};
+
+    // Start with the first child's AST
+    rebuilt.ast = child_exprs[0].ast;
+    new_child_ids[0] = child_exprs[0].id;
+
+    // Merge remaining children
+    for (int i = 1; i < n.child_count; ++i) {
+        int offset = rebuilt.ast.merge(child_exprs[i].ast);
+        new_child_ids[i] = child_exprs[i].id + offset;
+    }
+
+    // Build the parent node with updated child indices
+    ASTNode rebuilt_node = n;
+    for (int i = 0; i < n.child_count; ++i) {
+        rebuilt_node.children[i] = new_child_ids[i];
+    }
+    rebuilt.id = rebuilt.ast.add_node(rebuilt_node);
+
+    // Try rule on rebuilt node
+    NodeView<Cap> view{rebuilt.ast, rebuilt.id};
+    auto replacement = rule(view);
+    if (replacement) return *replacement;
+
+    return rebuilt;
+}
+
+} // namespace detail
+
+template <std::size_t Cap>
+consteval Expr<Cap> to_expr(NodeView<Cap> root, NodeView<Cap> subtree) {
+    Expr<Cap> result;
+    result.id = detail::copy_subtree(result.ast, root.ast, subtree.id);
+    return result;
+}
+
+// --- rewrite: bottom-up rule application until fixed point ---
+
+template <std::size_t Cap = 64, typename Rule>
+consteval Expr<Cap> rewrite(Expr<Cap> e, Rule rule, int max_iters = 100) {
+    for (int iter = 0; iter < max_iters; ++iter) {
+        auto result = detail::rebuild_bottom_up<Cap>(e.ast, e.id, rule);
+        auto check = detail::rebuild_bottom_up<Cap>(result.ast, result.id, rule);
+        if (check.ast.count == result.ast.count) {
+            return result;
+        }
+        e = result;
+    }
+    return e;
+}
+
+// --- transform: structural recursion with user visitor ---
+
+template <std::size_t Cap = 64, typename Visitor>
+consteval Expr<Cap> transform(Expr<Cap> e, Visitor visitor) {
+    auto recurse = [&](auto self, int id) consteval -> Expr<Cap> {
+        NodeView<Cap> view{e.ast, id};
+        auto rec = [&](NodeView<Cap> child) consteval -> Expr<Cap> {
+            return self(self, child.id);
+        };
+        return visitor(view, rec);
+    };
+    return recurse(recurse, e.id);
+}
+
+} // namespace refmacro
+
+#endif // REFMACRO_TRANSFORMS_HPP
