@@ -24,3 +24,8 @@ add_executable(test_transforms test_transforms.cpp)
 target_link_libraries(test_transforms PRIVATE refmacro::refmacro GTest::gtest_main)
 target_compile_options(test_transforms PRIVATE -Wall -Wextra -Werror)
 gtest_discover_tests(test_transforms PROPERTIES TIMEOUT 60)
+
+add_executable(test_integration test_integration.cpp)
+target_link_libraries(test_integration PRIVATE refmacro::refmacro GTest::gtest_main)
+target_compile_options(test_integration PRIVATE -Wall -Wextra -Werror)
+gtest_discover_tests(test_integration PROPERTIES TIMEOUT 120)
