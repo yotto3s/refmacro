@@ -92,6 +92,42 @@ consteval auto operator|(Expr<Cap> e, F transform_fn) {
     return transform_fn(e);
 }
 
+// --- expr(): bind variable names to lambda parameters ---
+//
+// Sugar so users can write:
+//   expr([](auto x, auto y) { return x * x + y; }, "x", "y")
+// instead of manually creating Expr<>::var("x"), Expr<>::var("y").
+//
+// Note: C++26 reflection (P2996) cannot yet extract parameter names from
+// generic lambdas in GCC's current implementation, so names are passed
+// explicitly.
+
+// Unary: one parameter
+template <typename F>
+consteval auto expr(F f, const char* name0) {
+    return f(Expr<>::var(name0));
+}
+
+// Binary: two parameters
+template <typename F>
+consteval auto expr(F f, const char* name0, const char* name1) {
+    return f(Expr<>::var(name0), Expr<>::var(name1));
+}
+
+// Ternary: three parameters
+template <typename F>
+consteval auto expr(F f, const char* name0, const char* name1, const char* name2) {
+    return f(Expr<>::var(name0), Expr<>::var(name1), Expr<>::var(name2));
+}
+
+// Quaternary: four parameters
+template <typename F>
+consteval auto expr(F f, const char* name0, const char* name1,
+                    const char* name2, const char* name3) {
+    return f(Expr<>::var(name0), Expr<>::var(name1),
+             Expr<>::var(name2), Expr<>::var(name3));
+}
+
 } // namespace refmacro
 
 #endif // REFMACRO_EXPR_HPP

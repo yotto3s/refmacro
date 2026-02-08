@@ -181,3 +181,26 @@ TEST(Pipeline, SecondDerivative) {
     constexpr auto fn = math_compile<d2f>();
     static_assert(fn(2.0) == 12.0);  // 6*2
 }
+
+// --- expr() binding tests ---
+
+TEST(ExprBinding, SingleVar) {
+    constexpr auto e = expr([](auto x) { return x * x; }, "x");
+    constexpr auto fn = math_compile<e>();
+    static_assert(fn(3.0) == 9.0);
+}
+
+TEST(ExprBinding, TwoVars) {
+    constexpr auto e = expr([](auto x, auto y) { return x * x + 2.0 * y; }, "x", "y");
+    constexpr auto fn = math_compile<e>();
+    static_assert(fn(3.0, 4.0) == 17.0);
+}
+
+TEST(ExprBinding, Pipeline) {
+    constexpr auto f = expr([](auto x) { return x * x + 2.0 * x + 1.0; }, "x");
+    constexpr auto diff_x = [](Expr<> e) consteval { return differentiate(e, "x"); };
+    constexpr auto simp = [](Expr<> e) consteval { return simplify(e); };
+    constexpr auto df = f | diff_x | simp;
+    constexpr auto fn = math_compile<df>();
+    static_assert(fn(3.0) == 8.0);
+}
