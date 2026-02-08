@@ -81,7 +81,9 @@ namespace detail {
 
 consteval bool is_infix(const char* tag) {
     return str_eq(tag, "add") || str_eq(tag, "sub") || str_eq(tag, "mul") ||
-           str_eq(tag, "div");
+           str_eq(tag, "div") || str_eq(tag, "eq") || str_eq(tag, "lt") ||
+           str_eq(tag, "gt") || str_eq(tag, "le") || str_eq(tag, "ge") ||
+           str_eq(tag, "land") || str_eq(tag, "lor");
 }
 
 consteval const char* infix_sym(const char* tag) {
@@ -93,6 +95,20 @@ consteval const char* infix_sym(const char* tag) {
         return " * ";
     if (str_eq(tag, "div"))
         return " / ";
+    if (str_eq(tag, "eq"))
+        return " == ";
+    if (str_eq(tag, "lt"))
+        return " < ";
+    if (str_eq(tag, "gt"))
+        return " > ";
+    if (str_eq(tag, "le"))
+        return " <= ";
+    if (str_eq(tag, "ge"))
+        return " >= ";
+    if (str_eq(tag, "land"))
+        return " && ";
+    if (str_eq(tag, "lor"))
+        return " || ";
     return " ? ";
 }
 
@@ -113,6 +129,65 @@ consteval FixedString<256> pp_node(const AST<Cap>& ast, int id) {
     if (str_eq(n.tag, "neg") && n.child_count == 1) {
         s.append("(-");
         s.append(pp_node(ast, n.children[0]));
+        s.append_char(')');
+        return s;
+    }
+
+    if (str_eq(n.tag, "lnot") && n.child_count == 1) {
+        s.append("(!");
+        s.append(pp_node(ast, n.children[0]));
+        s.append_char(')');
+        return s;
+    }
+
+    if (str_eq(n.tag, "cond") && n.child_count == 3) {
+        s.append("(cond ");
+        s.append(pp_node(ast, n.children[0]));
+        s.append_char(' ');
+        s.append(pp_node(ast, n.children[1]));
+        s.append_char(' ');
+        s.append(pp_node(ast, n.children[2]));
+        s.append_char(')');
+        return s;
+    }
+
+    if (str_eq(n.tag, "progn") && n.child_count == 2) {
+        s.append("(progn ");
+        s.append(pp_node(ast, n.children[0]));
+        s.append_char(' ');
+        s.append(pp_node(ast, n.children[1]));
+        s.append_char(')');
+        return s;
+    }
+
+    // let detection: apply(lambda(x, body), val) -> (let x val body)
+    if (str_eq(n.tag, "apply") && n.child_count == 2) {
+        auto fn_node = ast.nodes[n.children[0]];
+        if (str_eq(fn_node.tag, "lambda") && fn_node.child_count == 2) {
+            auto param_node = ast.nodes[fn_node.children[0]];
+            s.append("(let ");
+            s.append(param_node.name);
+            s.append_char(' ');
+            s.append(pp_node(ast, n.children[1]));
+            s.append_char(' ');
+            s.append(pp_node(ast, fn_node.children[1]));
+            s.append_char(')');
+            return s;
+        }
+        s.append("(apply ");
+        s.append(pp_node(ast, n.children[0]));
+        s.append_char(' ');
+        s.append(pp_node(ast, n.children[1]));
+        s.append_char(')');
+        return s;
+    }
+
+    if (str_eq(n.tag, "lambda") && n.child_count == 2) {
+        auto param_node = ast.nodes[n.children[0]];
+        s.append("(lambda (");
+        s.append(param_node.name);
+        s.append(") ");
+        s.append(pp_node(ast, n.children[1]));
         s.append_char(')');
         return s;
     }

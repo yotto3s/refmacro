@@ -83,6 +83,87 @@ consteval Expr<Cap> make_node(const char* tag, Expr<Cap> c0, Expr<Cap> c1,
     return result;
 }
 
+// --- Comparison operator sugar (creates AST nodes) ---
+
+template <std::size_t Cap>
+consteval Expr<Cap> operator==(Expr<Cap> lhs, Expr<Cap> rhs) {
+    return make_node("eq", lhs, rhs);
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator<(Expr<Cap> lhs, Expr<Cap> rhs) {
+    return make_node("lt", lhs, rhs);
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator>(Expr<Cap> lhs, Expr<Cap> rhs) {
+    return make_node("gt", lhs, rhs);
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator<=(Expr<Cap> lhs, Expr<Cap> rhs) {
+    return make_node("le", lhs, rhs);
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator>=(Expr<Cap> lhs, Expr<Cap> rhs) {
+    return make_node("ge", lhs, rhs);
+}
+
+// double on LHS (comparison)
+template <std::size_t Cap>
+consteval Expr<Cap> operator==(double lhs, Expr<Cap> rhs) {
+    return Expr<Cap>::lit(lhs) == rhs;
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator<(double lhs, Expr<Cap> rhs) {
+    return Expr<Cap>::lit(lhs) < rhs;
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator>(double lhs, Expr<Cap> rhs) {
+    return Expr<Cap>::lit(lhs) > rhs;
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator<=(double lhs, Expr<Cap> rhs) {
+    return Expr<Cap>::lit(lhs) <= rhs;
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator>=(double lhs, Expr<Cap> rhs) {
+    return Expr<Cap>::lit(lhs) >= rhs;
+}
+
+// double on RHS (comparison)
+template <std::size_t Cap>
+consteval Expr<Cap> operator==(Expr<Cap> lhs, double rhs) {
+    return lhs == Expr<Cap>::lit(rhs);
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator<(Expr<Cap> lhs, double rhs) {
+    return lhs < Expr<Cap>::lit(rhs);
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator>(Expr<Cap> lhs, double rhs) {
+    return lhs > Expr<Cap>::lit(rhs);
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator<=(Expr<Cap> lhs, double rhs) {
+    return lhs <= Expr<Cap>::lit(rhs);
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator>=(Expr<Cap> lhs, double rhs) {
+    return lhs >= Expr<Cap>::lit(rhs);
+}
+
+// --- Logical operator sugar ---
+
+template <std::size_t Cap>
+consteval Expr<Cap> operator&&(Expr<Cap> lhs, Expr<Cap> rhs) {
+    return make_node("land", lhs, rhs);
+}
+template <std::size_t Cap>
+consteval Expr<Cap> operator||(Expr<Cap> lhs, Expr<Cap> rhs) {
+    return make_node("lor", lhs, rhs);
+}
+template <std::size_t Cap> consteval Expr<Cap> operator!(Expr<Cap> x) {
+    return make_node("lnot", x);
+}
+
 // Pipe operator for transform composition
 template <std::size_t Cap, typename F>
 consteval auto operator|(Expr<Cap> e, F transform_fn) {

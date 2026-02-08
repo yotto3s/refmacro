@@ -29,9 +29,10 @@ Everything else is user-defined via macros.
 ### Headers
 
 - `ast.hpp` — ASTNode, AST<Cap>, consteval string utilities
-- `expr.hpp` — Expr, lit(), var(), make_node()
+- `expr.hpp` — Expr, lit(), var(), make_node(), arithmetic/comparison/logical operator overloads
 - `macro.hpp` — defmacro(), Macro type
-- `compile.hpp` — compile<expr, macros...>(), VarMap
+- `compile.hpp` — compile<expr, macros...>(), VarMap, Scope, TagStr
+- `control.hpp` — Control-flow macros (MCond, comparisons, logical), lambda(), apply(), let_(), full_compile<>()
 - `node_view.hpp` — NodeView cursor for tree walking
 - `transforms.hpp` — rewrite(), transform() primitives
 - `pretty_print.hpp` — consteval AST rendering

@@ -3,6 +3,7 @@
 
 #include <refmacro/ast.hpp>
 #include <refmacro/compile.hpp>
+#include <refmacro/control.hpp>
 #include <refmacro/expr.hpp>
 #include <refmacro/macro.hpp>
 #include <refmacro/math.hpp>
