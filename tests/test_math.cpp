@@ -121,3 +121,63 @@ TEST(PrettyPrint, GenericTag) {
     constexpr auto s = pretty_print(e);
     static_assert(s == "custom(x)");
 }
+
+#include <refmacro/transforms.hpp>
+
+consteval auto root_tag(const Expr<>& e) -> std::string_view {
+    return e.ast.nodes[e.id].tag;
+}
+consteval double root_payload(const Expr<>& e) {
+    return e.ast.nodes[e.id].payload;
+}
+consteval auto root_name(const Expr<>& e) -> std::string_view {
+    return e.ast.nodes[e.id].name;
+}
+
+// --- simplify ---
+TEST(Simplify, AddZero)     { static_assert(root_tag(simplify(Expr<>::var("x") + 0.0)) == "var"); }
+TEST(Simplify, ZeroAdd)     { static_assert(root_tag(simplify(0.0 + Expr<>::var("x"))) == "var"); }
+TEST(Simplify, MulOne)      { static_assert(root_tag(simplify(Expr<>::var("x") * 1.0)) == "var"); }
+TEST(Simplify, OneMul)      { static_assert(root_tag(simplify(1.0 * Expr<>::var("x"))) == "var"); }
+TEST(Simplify, MulZero)     { static_assert(root_payload(simplify(0.0 * Expr<>::var("x"))) == 0.0); }
+TEST(Simplify, SubZero)     { static_assert(root_tag(simplify(Expr<>::var("x") - 0.0)) == "var"); }
+TEST(Simplify, DivOne)      { static_assert(root_tag(simplify(Expr<>::var("x") / 1.0)) == "var"); }
+TEST(Simplify, DoubleNeg)   { static_assert(root_tag(simplify(-(-Expr<>::var("x")))) == "var"); }
+TEST(Simplify, ConstFold)   { static_assert(root_payload(simplify(Expr<>::lit(3.0) + 4.0)) == 7.0); }
+TEST(Simplify, Nested)      { static_assert(root_tag(simplify((Expr<>::var("x") + 0.0) * 1.0)) == "var"); }
+
+// --- differentiate ---
+TEST(Diff, Lit)           { static_assert(root_payload(differentiate(Expr<>::lit(5.0), "x")) == 0.0); }
+TEST(Diff, VarSelf)       { static_assert(root_payload(differentiate(Expr<>::var("x"), "x")) == 1.0); }
+TEST(Diff, VarOther)      { static_assert(root_payload(differentiate(Expr<>::var("y"), "x")) == 0.0); }
+TEST(Diff, SumSimplified)  {
+    static_assert(root_payload(simplify(differentiate(Expr<>::var("x") + Expr<>::var("y"), "x"))) == 1.0);
+}
+TEST(Diff, ConstTimesVar) {
+    static_assert(root_payload(simplify(differentiate(2.0 * Expr<>::var("x"), "x"))) == 2.0);
+}
+TEST(Diff, NegVar) {
+    static_assert(root_payload(simplify(differentiate(-Expr<>::var("x"), "x"))) == -1.0);
+}
+
+// --- Full pipeline: build -> differentiate -> simplify -> compile ---
+TEST(Pipeline, Quadratic) {
+    constexpr auto x = Expr<>::var("x");
+    constexpr auto f = x * x + 2.0 * x + 1.0;
+    constexpr auto diff_x = [](Expr<> e) consteval { return differentiate(e, "x"); };
+    constexpr auto simp = [](Expr<> e) consteval { return simplify(e); };
+    constexpr auto df = f | diff_x | simp;
+    constexpr auto fn = math_compile<df>();
+    static_assert(fn(3.0) == 8.0);  // 2*3 + 2
+    static_assert(fn(0.0) == 2.0);
+}
+
+TEST(Pipeline, SecondDerivative) {
+    constexpr auto x = Expr<>::var("x");
+    constexpr auto f = x * x * x;
+    constexpr auto diff_x = [](Expr<> e) consteval { return differentiate(e, "x"); };
+    constexpr auto simp = [](Expr<> e) consteval { return simplify(e); };
+    constexpr auto d2f = f | diff_x | simp | diff_x | simp;
+    constexpr auto fn = math_compile<d2f>();
+    static_assert(fn(2.0) == 12.0);  // 6*2
+}
