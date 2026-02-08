@@ -79,3 +79,17 @@ TEST(Transform, IdentityPreservesStructure) {
         });
     static_assert(root_tag(result) == "mul");
 }
+
+// --- fold tests ---
+
+TEST(Fold, CountNodes) {
+    // lit(3) + lit(4) => 3 nodes: add, lit, lit
+    constexpr auto e = Expr::lit(3.0) + Expr::lit(4.0);
+    constexpr auto count = fold(e, [](NodeView<64>, auto children) consteval {
+        int sum = 0;
+        for (int i = 0; i < children.count; ++i)
+            sum += children[i];
+        return sum + 1; // this node
+    });
+    static_assert(count == 3);
+}
