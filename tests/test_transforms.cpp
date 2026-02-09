@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <refmacro/control.hpp>
 #include <refmacro/math.hpp>
 #include <refmacro/transforms.hpp>
 
@@ -92,4 +93,78 @@ TEST(Fold, CountNodes) {
         return sum + 1; // this node
     });
     static_assert(count == 3);
+}
+
+TEST(Fold, SumLiterals) {
+    constexpr auto e = Expr::lit(3.0) + Expr::lit(4.0);
+    constexpr auto total = fold(e, [](NodeView<64> n, auto children) consteval {
+        double sum = 0.0;
+        for (int i = 0; i < children.count; ++i)
+            sum += children[i];
+        if (n.tag() == "lit")
+            sum += n.payload();
+        return sum;
+    });
+    static_assert(total == 7.0);
+}
+
+TEST(Fold, CollectVarNames) {
+    constexpr auto e = (Expr::var("x") + Expr::var("y")) * Expr::var("x");
+    constexpr auto vars = fold(e, [](NodeView<64> n, auto children) consteval {
+        VarMap<> vm;
+        for (int i = 0; i < children.count; ++i) {
+            if constexpr (requires { children[i].count; }) {
+                auto child_vm = children[i];
+                for (std::size_t j = 0; j < child_vm.count; ++j)
+                    vm.add(child_vm.names[j]);
+            }
+        }
+        if (n.tag() == "var")
+            vm.add(n.name().data());
+        return vm;
+    });
+    static_assert(vars.count == 2);
+    static_assert(vars.contains("x"));
+    static_assert(vars.contains("y"));
+}
+
+TEST(Fold, TreeDepth) {
+    constexpr auto e = (Expr::var("x") + Expr::var("y")) * Expr::var("z");
+    constexpr auto depth = fold(e, [](NodeView<64>, auto children) consteval {
+        int max_child = 0;
+        for (int i = 0; i < children.count; ++i) {
+            if (children[i] > max_child)
+                max_child = children[i];
+        }
+        return max_child + 1;
+    });
+    static_assert(depth == 3);
+}
+
+TEST(Fold, PipeOperator) {
+    constexpr auto count_nodes = [](auto e) consteval {
+        return fold(e, [](NodeView<64>, auto children) consteval {
+            int sum = 0;
+            for (int i = 0; i < children.count; ++i)
+                sum += children[i];
+            return sum + 1;
+        });
+    };
+    constexpr auto e = Expr::lit(1.0) + Expr::lit(2.0);
+    constexpr auto count = e | count_nodes;
+    static_assert(count == 3);
+}
+
+TEST(Fold, CountNodesWithLet) {
+    // let x = 5 in (x + 1) => apply(lambda(x, add(x, 1)), 5)
+    // nodes: apply, lambda, var(x-param), add, var(x), lit(1), lit(5) = 7
+    constexpr auto e = let_("x", Expr::lit(5.0),
+                            Expr::var("x") + Expr::lit(1.0));
+    constexpr auto count = fold(e, [](NodeView<64>, auto children) consteval {
+        int sum = 0;
+        for (int i = 0; i < children.count; ++i)
+            sum += children[i];
+        return sum + 1;
+    });
+    static_assert(count == 7);
 }
