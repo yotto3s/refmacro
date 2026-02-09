@@ -158,8 +158,8 @@ TEST(Fold, PipeOperator) {
 TEST(Fold, CountNodesWithLet) {
     // let x = 5 in (x + 1) => apply(lambda(x, add(x, 1)), 5)
     // nodes: apply, lambda, var(x-param), add, var(x), lit(1), lit(5) = 7
-    constexpr auto e = let_("x", Expr::lit(5.0),
-                            Expr::var("x") + Expr::lit(1.0));
+    constexpr auto e =
+        let_("x", Expr::lit(5.0), Expr::var("x") + Expr::lit(1.0));
     constexpr auto count = fold(e, [](NodeView<64>, auto children) consteval {
         int sum = 0;
         for (int i = 0; i < children.count; ++i)
