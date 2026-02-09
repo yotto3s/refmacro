@@ -27,7 +27,7 @@ A header-only C++26 compile-time AST metaprogramming framework with Lisp-like ma
 using namespace refmacro;
 
 // Build an expression: f(x) = x^2 + 2x + 1
-constexpr auto x = Expr<>::var("x");
+constexpr auto x = Expr::var("x");
 constexpr auto f = x * x + 2.0 * x + 1.0;
 
 // Pretty-print at compile time
@@ -48,7 +48,7 @@ constexpr auto Abs = defmacro("abs", [](auto x) {
     };
 });
 
-constexpr auto e = Abs(Expr<>::var("x"));
+constexpr auto e = Abs(Expr::var("x"));
 constexpr auto fn = compile<e, Abs>();
 static_assert(fn(-3.0) == 3.0);
 ```
@@ -56,11 +56,11 @@ static_assert(fn(-3.0) == 3.0);
 ## Symbolic Differentiation
 
 ```cpp
-constexpr auto x = Expr<>::var("x");
+constexpr auto x = Expr::var("x");
 constexpr auto f = x * x * x;
 
-constexpr auto diff_x = [](Expr<> e) consteval { return differentiate(e, "x"); };
-constexpr auto simp   = [](Expr<> e) consteval { return simplify(e); };
+constexpr auto diff_x = [](Expr e) consteval { return differentiate(e, "x"); };
+constexpr auto simp   = [](Expr e) consteval { return simplify(e); };
 
 constexpr auto df  = f | diff_x | simp;   // f'(x)  = 3x^2
 constexpr auto d2f = df | diff_x | simp;  // f''(x) = 6x
@@ -81,12 +81,12 @@ constexpr auto If = defmacro("if_", [](auto cond, auto then_br, auto else_br) {
     };
 });
 
-consteval Expr<> gt(Expr<> lhs, Expr<> rhs) { return make_node("gt", lhs, rhs); }
-consteval Expr<> if_(Expr<> c, Expr<> t, Expr<> e) { return make_node("if_", c, t, e); }
+consteval Expr gt(Expr lhs, Expr rhs) { return make_node("gt", lhs, rhs); }
+consteval Expr if_(Expr c, Expr t, Expr e) { return make_node("if_", c, t, e); }
 
 // relu(x) = if_(gt(x, 0), x, 0)
-constexpr auto x = Expr<>::var("x");
-constexpr auto relu_expr = if_(gt(x, Expr<>::lit(0.0)), x, Expr<>::lit(0.0));
+constexpr auto x = Expr::var("x");
+constexpr auto relu_expr = if_(gt(x, Expr::lit(0.0)), x, Expr::lit(0.0));
 constexpr auto relu = compile<relu_expr, MAdd, MSub, MMul, MDiv, MNeg, Gt, If>();
 static_assert(relu(-5.0) == 0.0);
 static_assert(relu(3.0) == 3.0);
@@ -97,12 +97,12 @@ static_assert(relu(3.0) == 3.0);
 | Header | Description |
 |--------|-------------|
 | `ast.hpp` | `ASTNode`, `AST<Cap>`, consteval string utilities |
-| `expr.hpp` | `Expr<Cap>`, `lit()`, `var()`, `make_node()`, pipe operator |
+| `expr.hpp` | `Expr`, `lit()`, `var()`, `make_node()`, pipe operator |
 | `macro.hpp` | `defmacro()`, `Macro` type |
 | `compile.hpp` | `compile<expr, macros...>()`, `VarMap`, `Scope`, `TagStr` |
 | `control.hpp` | Control-flow macros, `lambda()`, `apply()`, `let_()`, `full_compile<>()` |
 | `node_view.hpp` | `NodeView` cursor for tree walking |
-| `transforms.hpp` | `rewrite()`, `transform()` primitives |
+| `transforms.hpp` | `rewrite()`, `transform()`, `fold()` primitives |
 | `pretty_print.hpp` | Consteval AST rendering |
 | `math.hpp` | Math macros, operators, `simplify()`, `differentiate()` |
 | `refmacro.hpp` | Umbrella include |

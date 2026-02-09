@@ -124,6 +124,37 @@ consteval Expression<Cap> rewrite(Expression<Cap> e, Rule rule,
     return e;
 }
 
+// --- fold: bottom-up accumulation over AST ---
+
+template <typename T, int MaxChildren = 8> struct FoldChildren {
+    static constexpr int capacity = MaxChildren;
+    T values[MaxChildren]{};
+    int count{0};
+
+    consteval T operator[](int i) const {
+        if (i < 0 || i >= count)
+            throw "FoldChildren: index out of bounds";
+        return values[i];
+    }
+};
+
+template <std::size_t Cap = 64, typename Visitor>
+consteval auto fold(Expression<Cap> e, Visitor visitor) {
+    using R = decltype(visitor(NodeView<Cap>{e.ast, 0}, FoldChildren<int>{}));
+    auto recurse = [&](auto self, int id) consteval -> R {
+        NodeView<Cap> view{e.ast, id};
+        FoldChildren<R> children;
+        auto n = e.ast.nodes[id];
+        for (int i = 0; i < n.child_count; ++i) {
+            if (children.count >= children.capacity)
+                throw "FoldChildren: capacity exceeded";
+            children.values[children.count++] = self(self, n.children[i]);
+        }
+        return visitor(view, children);
+    };
+    return recurse(recurse, e.id);
+}
+
 // --- transform: structural recursion with user visitor ---
 
 template <std::size_t Cap = 64, typename Visitor>
