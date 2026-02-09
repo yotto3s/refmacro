@@ -1,7 +1,8 @@
-// 04_transforms.cpp — Rewriting and transforming AST nodes
+// 04_transforms.cpp — Rewriting, transforming, and folding AST nodes
 //
 // Shows: rewrite() with custom rules, transform() with visitor,
-//        NodeView, to_expr(), chaining transforms.
+//        fold() for bottom-up accumulation, NodeView, to_expr(),
+//        chaining transforms.
 
 #include <iostream>
 #include <optional>
@@ -62,4 +63,45 @@ int main() {
     static_assert(fn2(1.0) == 8.0); // 1*6 + 2
 
     std::cout << "f(1) = " << fn2(1.0) << " (expected 8)\n";
+
+    // --- fold: count nodes in an expression ---
+    // fold() walks bottom-up, passing each node its children's results.
+    constexpr auto e3 = (x + y) * x;
+    constexpr auto node_count =
+        fold(e3, [](NodeView<64>, auto children) consteval {
+            int sum = 0;
+            for (int i = 0; i < children.count; ++i)
+                sum += children[i];
+            return sum + 1;
+        });
+    static_assert(node_count == 5); // mul, add, x, y, x
+
+    std::cout << "\n(x + y) * x has " << node_count << " nodes\n";
+
+    // --- fold: collect variable names ---
+    // Accumulate into VarMap — demonstrates folding into a structured type.
+    constexpr auto vars = fold(e3, [](NodeView<64> n, auto children) consteval {
+        VarMap<> vm{};
+        for (int i = 0; i < children.count; ++i) {
+            if constexpr (requires { children[i].count; }) {
+                auto child_vm = children[i];
+                for (std::size_t j = 0; j < child_vm.count; ++j)
+                    vm.add(child_vm.names[j]);
+            }
+        }
+        if (n.tag() == "var")
+            vm.add(n.name().data());
+        return vm;
+    });
+    static_assert(vars.count == 2);
+    static_assert(vars.contains("x"));
+    static_assert(vars.contains("y"));
+
+    std::cout << "(x + y) * x uses " << vars.count << " variables: ";
+    for (std::size_t i = 0; i < vars.count; ++i) {
+        if (i > 0)
+            std::cout << ", ";
+        std::cout << vars.names[i];
+    }
+    std::cout << "\n";
 }
