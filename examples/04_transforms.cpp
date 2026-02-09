@@ -83,6 +83,8 @@ int main() {
     constexpr auto vars = fold(e3, [](NodeView<64> n, auto children) consteval {
         VarMap<> vm{};
         for (int i = 0; i < children.count; ++i) {
+            // fold() deduces R by probing with FoldChildren<int>,
+            // so the body must compile even when children[i] is int.
             if constexpr (requires { children[i].count; }) {
                 auto child_vm = children[i];
                 for (std::size_t j = 0; j < child_vm.count; ++j)
