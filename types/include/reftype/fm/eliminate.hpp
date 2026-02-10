@@ -88,11 +88,11 @@ consteval InequalitySystem<MaxIneqs, MaxVars> eliminate_variable(
     result.vars = sys.vars;
 
     // Partition: find indices and coefficients for lower/upper/unrelated
-    int lower_idx[MaxIneqs]{};
+    std::size_t lower_idx[MaxIneqs]{};
     double lower_coeff[MaxIneqs]{};
     std::size_t lower_count = 0;
 
-    int upper_idx[MaxIneqs]{};
+    std::size_t upper_idx[MaxIneqs]{};
     double upper_abs_coeff[MaxIneqs]{};
     std::size_t upper_count = 0;
 
@@ -106,11 +106,11 @@ consteval InequalitySystem<MaxIneqs, MaxVars> eliminate_variable(
         }
 
         if (coeff > 0.0) {
-            lower_idx[lower_count] = static_cast<int>(i);
+            lower_idx[lower_count] = i;
             lower_coeff[lower_count] = coeff;
             ++lower_count;
         } else if (coeff < 0.0) {
-            upper_idx[upper_count] = static_cast<int>(i);
+            upper_idx[upper_count] = i;
             upper_abs_coeff[upper_count] = -coeff;
             ++upper_count;
         } else {
@@ -122,13 +122,11 @@ consteval InequalitySystem<MaxIneqs, MaxVars> eliminate_variable(
     // Integer rounding: tighten bounds before combining
     if (sys.vars.is_integer[static_cast<std::size_t>(var_id)]) {
         for (std::size_t li = 0; li < lower_count; ++li)
-            sys.ineqs[static_cast<std::size_t>(lower_idx[li])] =
-                round_integer_bound(
-                    sys.ineqs[static_cast<std::size_t>(lower_idx[li])], true);
+            sys.ineqs[lower_idx[li]] =
+                round_integer_bound(sys.ineqs[lower_idx[li]], true);
         for (std::size_t ui = 0; ui < upper_count; ++ui)
-            sys.ineqs[static_cast<std::size_t>(upper_idx[ui])] =
-                round_integer_bound(
-                    sys.ineqs[static_cast<std::size_t>(upper_idx[ui])], false);
+            sys.ineqs[upper_idx[ui]] =
+                round_integer_bound(sys.ineqs[upper_idx[ui]], false);
     }
 
     // Combine each (lower, upper) pair
