@@ -14,7 +14,7 @@ refmacro/
 ├── CMakeLists.txt           # core build (add_subdirectory(types) gated by option)
 │
 └── types/                   # refinement type system (NEW)
-    ├── include/refmacro/types/
+    ├── include/reftype/
     │   ├── types.hpp            # Phase 1: type AST nodes
     │   ├── pretty.hpp           # Phase 1: type pretty-print
     │   ├── type_env.hpp         # Phase 2: TypeEnv
@@ -113,14 +113,14 @@ Phase 8 (errors) ── integrated
 ### `types/CMakeLists.txt`
 
 ```cmake
-add_library(refmacro_types INTERFACE)
-add_library(refmacro_types::refmacro_types ALIAS refmacro_types)
+add_library(reftype INTERFACE)
+add_library(reftype::reftype ALIAS reftype)
 
-target_include_directories(refmacro_types INTERFACE
+target_include_directories(reftype INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
-target_link_libraries(refmacro_types INTERFACE refmacro::refmacro)
+target_link_libraries(reftype INTERFACE refmacro::refmacro)
 
 if(REFMACRO_BUILD_TESTS)
     add_subdirectory(tests)

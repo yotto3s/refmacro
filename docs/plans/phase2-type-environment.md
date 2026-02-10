@@ -4,7 +4,7 @@
 
 **Goal:** Build a compile-time map from variable names to their types (as Expression ASTs).
 
-**File:** `include/refmacro/types/type_env.hpp`
+**File:** `include/reftype/type_env.hpp`
 
 **Depends on:** Phase 1 (type representation)
 
@@ -22,7 +22,7 @@
 ## Data Structure
 
 ```cpp
-namespace refmacro::types {
+namespace reftype {
 
 template <std::size_t Cap = 128, int MaxBindings = 16>
 struct TypeEnv {
@@ -55,7 +55,7 @@ struct TypeEnv {
     }
 };
 
-} // namespace refmacro::types
+} // namespace reftype
 ```
 
 ## Design Notes

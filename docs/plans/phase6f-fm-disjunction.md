@@ -4,7 +4,7 @@
 
 **Goal:** Handle disjunctions (||) in formulas by splitting into independent FM queries.
 
-**File:** `types/include/refmacro/types/fm/disjunction.hpp`
+**File:** `types/include/reftype/fm/disjunction.hpp`
 
 **Depends on:** Phase 6a-e (all prior FM sub-phases)
 
@@ -35,7 +35,7 @@ FM natively handles conjunctions. For disjunctions, we split:
 ## Implementation
 
 ```cpp
-namespace refmacro::types::fm {
+namespace reftype::fm {
 
 // Normalize formula: push negations inward, distribute to DNF
 // Returns a list of conjunctive clauses (the disjuncts of DNF)
@@ -66,7 +66,7 @@ consteval bool is_unsat_dnf(Expression<Cap> formula) {
     return true;
 }
 
-} // namespace refmacro::types::fm
+} // namespace reftype::fm
 ```
 
 ## DNF Explosion Control

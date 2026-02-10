@@ -4,7 +4,7 @@
 
 **Goal:** Provide the public API for checking satisfiability and validity of linear arithmetic formulas.
 
-**File:** `types/include/refmacro/types/fm/solver.hpp`
+**File:** `types/include/reftype/fm/solver.hpp`
 
 **Depends on:** Phase 6a-d (data structures, parser, core, rounding)
 
@@ -13,7 +13,7 @@
 ## Public API
 
 ```cpp
-namespace refmacro::types::fm {
+namespace reftype::fm {
 
 // Check if a system of inequalities has no solution
 template <int MaxIneqs = 64, int MaxVars = 16>
@@ -50,7 +50,7 @@ consteval bool is_valid(Expression<Cap> formula) {
     return is_unsat(system);
 }
 
-} // namespace refmacro::types::fm
+} // namespace reftype::fm
 ```
 
 ## Usage from Type Checker

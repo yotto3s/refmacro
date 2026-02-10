@@ -5,8 +5,8 @@
 **Goal:** Define type AST nodes (tint, tbool, treal, tref, tarr, ann) as ordinary refmacro expressions, plus convenience constructors and pretty-print support.
 
 **Files:**
-- `include/refmacro/types/types.hpp` — type constructors and constants
-- Extend `pretty_print.hpp` or add `include/refmacro/types/pretty.hpp` — type node rendering
+- `include/reftype/types.hpp` — type constructors and constants
+- Extend `pretty_print.hpp` or add `include/reftype/pretty.hpp` — type node rendering
 
 **Depends on:** Nothing (Phase 0 fold already merged)
 
@@ -35,7 +35,7 @@
 ## API
 
 ```cpp
-namespace refmacro::types {
+namespace reftype {
 
 // Base type constants (leaf nodes — Cap doesn't matter, merge handles it)
 inline constexpr auto TInt  = make_node("tint");
@@ -69,7 +69,7 @@ consteval Expression<Cap> ann(Expression<Cap> e, Expression<Cap> type) {
     return make_node("ann", e, type);
 }
 
-} // namespace refmacro::types
+} // namespace reftype
 ```
 
 ## Pretty-Print Rules

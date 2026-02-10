@@ -4,7 +4,7 @@
 
 **Goal:** Define the constraint data structures that the type checker emits and the solver consumes.
 
-**File:** `include/refmacro/types/constraints.hpp`
+**File:** `include/reftype/constraints.hpp`
 
 **Depends on:** Phase 1 (type representation)
 
@@ -21,7 +21,7 @@
 ## Data Structures
 
 ```cpp
-namespace refmacro::types {
+namespace reftype {
 
 template <std::size_t Cap = 128>
 struct Constraint {
@@ -50,7 +50,7 @@ struct ConstraintSet {
     }
 };
 
-} // namespace refmacro::types
+} // namespace reftype
 ```
 
 ## Constraint Semantics

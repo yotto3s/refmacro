@@ -85,7 +85,7 @@ Track 3 — Integration (steps 12-14):
 
 ```
 types/
-├── include/refmacro/types/
+├── include/reftype/
 │   ├── types.hpp            # Phase 1
 │   ├── pretty.hpp           # Phase 1
 │   ├── type_env.hpp         # Phase 2
