@@ -36,3 +36,5 @@ Note: 6c (FM core) can be tested with hand-built InequalitySystems before the pa
 - Disjunctions via DNF splitting
 - Expression ASTs parsed into inequality systems at solve time
 - All data structures are structural types (NTTP-compatible)
+- No int/float mixing: all variables in a constraint system must be the same type (all integer or all real). Validated by VarInfo::find_or_add
+- Pre-combination rounding for integer variables (not post-elimination)

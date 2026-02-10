@@ -1,6 +1,7 @@
 #ifndef REFTYPE_FM_ELIMINATE_HPP
 #define REFTYPE_FM_ELIMINATE_HPP
 
+#include <reftype/fm/rounding.hpp>
 #include <reftype/fm/types.hpp>
 
 namespace reftype::fm {
@@ -116,6 +117,18 @@ consteval InequalitySystem<MaxIneqs, MaxVars> eliminate_variable(
             // Unrelated — copy directly
             result = result.add(sys.ineqs[i]);
         }
+    }
+
+    // Integer rounding: tighten bounds before combining
+    if (sys.vars.is_integer[static_cast<std::size_t>(var_id)]) {
+        for (std::size_t li = 0; li < lower_count; ++li)
+            sys.ineqs[static_cast<std::size_t>(lower_idx[li])] =
+                round_integer_bound(
+                    sys.ineqs[static_cast<std::size_t>(lower_idx[li])], true);
+        for (std::size_t ui = 0; ui < upper_count; ++ui)
+            sys.ineqs[static_cast<std::size_t>(upper_idx[ui])] =
+                round_integer_bound(
+                    sys.ineqs[static_cast<std::size_t>(upper_idx[ui])], false);
     }
 
     // Combine each (lower, upper) pair

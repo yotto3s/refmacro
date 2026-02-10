@@ -290,7 +290,7 @@ TEST(FmIsUnsat, StrictOpenInterval) {
     // x > 0 && x < 1 → SAT for reals (0 < x < 1)
     constexpr auto sys = [] {
         InequalitySystem<> s{};
-        int x = s.vars.find_or_add("x");
+        int x = s.vars.find_or_add("x", false);
         return s
             .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))    // x > 0
             .add(LinearInequality::make({LinearTerm{x, -1.0}}, 1.0, true));  // -x + 1 > 0

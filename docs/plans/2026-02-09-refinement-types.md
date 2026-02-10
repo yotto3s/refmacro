@@ -42,6 +42,8 @@ All open questions from the original design have been resolved:
 | Error messages | Structured with context, built via `FixedString<>` |
 | Pretty-print | Type node rendering included in Phase 1 |
 | File organization | `types/` subdirectory with own CMake target |
+| Type mixing | No int/float mixing in refinement constraints. All variables in a system must be the same type. Validated at compile time |
+| FM rounding | Pre-combination: tighten bounds before combining in eliminate_variable, not after |
 
 ---
 

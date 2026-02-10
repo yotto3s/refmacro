@@ -1,10 +1,12 @@
 # Phase 6d: FM Solver — Integer Rounding
 
-> **Status:** Work in progress — this plan should be refined before implementation.
+> **Status:** Implemented
 
-**Goal:** After FM variable elimination, tighten bounds for integer-typed variables.
+**Goal:** Tighten bounds for integer-typed variables before combining in FM elimination.
 
-**File:** `types/include/reftype/fm/rounding.hpp`
+**Files:**
+- `types/include/reftype/fm/rounding.hpp` — ceil/floor/tighten utilities
+- `types/include/reftype/fm/eliminate.hpp` — FM core with pre-combination rounding
 
 **Depends on:** Phase 6a (data structures), Phase 6c (FM core)
 
@@ -12,7 +14,7 @@
 
 ## Algorithm
 
-After eliminating an integer-typed variable, the resulting constant bounds may be non-integer. Tighten them:
+Before combining bounds during variable elimination, tighten each bound for integer variables:
 
 | Inequality | Integer rounding |
 |-----------|-----------------|
@@ -30,13 +32,25 @@ General rule:
 - Upper bound (coefficient < 0): round constant down (floor), make non-strict
 - Strict integer inequalities always become non-strict (integers have no "between" values)
 
+## Design Constraint: No Int/Float Mixing
+
+The refinement type system enforces that integer and floating-point variables cannot
+be mixed in operations or comparisons. All variables in a given constraint system
+share the same type. This is validated at compile time by `VarInfo::find_or_add`.
+
+Consequence: when the eliminated variable is integer, ALL variables are integer,
+so the LHS of any inequality is always an integer value. We can safely round the
+constant of ALL bounds (including multi-variable) without checking for mixed terms.
+
 ## Integration with FM Core
 
-Two approaches:
-1. **Post-elimination rounding:** After eliminating variable x, if x was integer, round the resulting constant bounds
-2. **Pre-combination rounding:** Before combining bounds in the elimination step, round each bound
+**Pre-combination rounding** — tighten each bound BEFORE combining in `eliminate_variable`.
 
-Option 1 is simpler: apply rounding to the combined inequalities after each elimination step.
+Post-elimination rounding does NOT work: after combining bounds, the eliminated
+variable is gone. The resulting constant inequality cannot distinguish integer
+vs real feasibility. Example: `x > 2 && x < 3` combines to `1 > 0` (SAT for
+reals), but should be UNSAT for integers. Pre-combination rounding tightens to
+`x >= 3 && x <= 2` first, then combines to `-1 >= 0` (UNSAT). ✓
 
 ## Implementation
 
@@ -55,17 +69,30 @@ consteval double floor_val(double x) {
     return truncated;
 }
 
-// Apply integer rounding to an inequality's constant
-consteval LinearInequality integer_round(LinearInequality ineq, bool is_lower_bound) {
-    if (is_lower_bound) {
-        // x >= c or x > c → x >= ceil(c)
-        ineq.constant = ceil_val(ineq.constant);
-        ineq.strict = false;
+consteval bool is_integer_val(double x) {
+    return x == static_cast<double>(static_cast<long long>(x));
+}
+
+// Round a bound inequality's constant for integer variable elimination.
+// is_lower: true for lower bound (coeff > 0), false for upper bound (coeff < 0).
+// Only modifies constant and strict flag; coefficients unchanged.
+consteval LinearInequality round_integer_bound(
+    LinearInequality ineq, bool is_lower) {
+    if (is_lower) {
+        // LHS + constant >= 0 means LHS >= -constant
+        double bound = -ineq.constant;
+        if (ineq.strict && is_integer_val(bound))
+            ineq.constant = -(bound + 1.0);  // x > 2 → x >= 3
+        else
+            ineq.constant = -ceil_val(bound); // x >= 2.5 → x >= 3
     } else {
-        // x <= c or x < c → x <= floor(c)
-        ineq.constant = floor_val(ineq.constant);
-        ineq.strict = false;
+        // -LHS + constant >= 0 means LHS <= constant
+        if (ineq.strict && is_integer_val(ineq.constant))
+            ineq.constant -= 1.0;             // x < 3 → x <= 2
+        else
+            ineq.constant = floor_val(ineq.constant); // x <= 3.5 → x <= 3
     }
+    ineq.strict = false;
     return ineq;
 }
 
@@ -80,3 +107,5 @@ consteval LinearInequality integer_round(LinearInequality ineq, bool is_lower_bo
 - `x > 0 && x < 1` with x integer → rounds to `x >= 1 && x <= 0` → UNSAT
 - `x > -0.5 && x < 0.5` with x integer → rounds to `x >= 0 && x <= 0` → SAT (x=0)
 - Real variable: no rounding applied, `x > 0 && x < 1` → SAT
+- `x + y > 4, x + y < 6`, both integer → SAT (x+y = 5)
+- `x + y > 4, x + y < 5`, both integer → UNSAT
