@@ -4,7 +4,7 @@
 
 **Goal:** Strip type annotations after type checking, then compile normally. Wire up the full composable pipeline.
 
-**File:** `include/reftype/strip.hpp`
+**File:** `types/include/reftype/strip.hpp`
 
 **Depends on:** Phases 4-6
 

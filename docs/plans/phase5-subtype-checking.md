@@ -4,7 +4,7 @@
 
 **Goal:** Implement full subtype checking: same-base refinement implication, base widening, arrow contravariance, and type join.
 
-**File:** `include/reftype/subtype.hpp`
+**File:** `types/include/reftype/subtype.hpp`
 
 **Depends on:** Phase 3 (constraints), Phase 6 (FM solver for refinement implication)
 

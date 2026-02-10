@@ -5,8 +5,8 @@
 **Goal:** Define type AST nodes (tint, tbool, treal, tref, tarr, ann) as ordinary refmacro expressions, plus convenience constructors and pretty-print support.
 
 **Files:**
-- `include/reftype/types.hpp` — type constructors and constants
-- Extend `pretty_print.hpp` or add `include/reftype/pretty.hpp` — type node rendering
+- `types/include/reftype/types.hpp` — type constructors and constants
+- Extend `pretty_print.hpp` or add `types/include/reftype/pretty.hpp` — type node rendering
 
 **Depends on:** Nothing (Phase 0 fold already merged)
 

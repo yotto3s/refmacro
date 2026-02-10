@@ -2,24 +2,32 @@
 #define REFTYPE_FM_ROUNDING_HPP
 
 #include <reftype/fm/types.hpp>
+#include <limits>
 
 namespace reftype::fm {
 
+consteval void check_ll_range(double x, const char* fn) {
+    constexpr auto lo = static_cast<double>(std::numeric_limits<long long>::min());
+    constexpr auto hi = static_cast<double>(std::numeric_limits<long long>::max());
+    if (x < lo || x > hi) throw fn;
+}
+
 consteval double ceil_val(double x) {
+    check_ll_range(x, "ceil_val: input out of range for long long");
     double truncated = static_cast<double>(static_cast<long long>(x));
     if (x > truncated) return truncated + 1.0;
     return truncated;
 }
 
 consteval double floor_val(double x) {
+    check_ll_range(x, "floor_val: input out of range for long long");
     double truncated = static_cast<double>(static_cast<long long>(x));
     if (x < truncated) return truncated - 1.0;
     return truncated;
 }
 
-// Assumes values are small enough to fit in long long without precision loss.
-// Safe for refinement-type constants (small integers, simple fractions).
 consteval bool is_integer_val(double x) {
+    check_ll_range(x, "is_integer_val: input out of range for long long");
     return x == static_cast<double>(static_cast<long long>(x));
 }
 

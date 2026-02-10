@@ -84,6 +84,9 @@ template <std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
 consteval InequalitySystem<MaxIneqs, MaxVars> eliminate_variable(
     InequalitySystem<MaxIneqs, MaxVars> sys, int var_id) {
 
+    if (var_id < 0 || static_cast<std::size_t>(var_id) >= sys.vars.count)
+        throw "eliminate_variable: var_id out of range";
+
     InequalitySystem<MaxIneqs, MaxVars> result{};
     result.vars = sys.vars;
 
