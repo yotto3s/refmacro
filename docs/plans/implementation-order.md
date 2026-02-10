@@ -157,3 +157,23 @@ Each step is a logical unit of work suitable for a single branch/PR:
 - `feature/type-representation` (steps 7-9)
 - `feature/type-checker` (steps 10-11)
 - `feature/type-pipeline` (steps 12-14)
+
+**All development branches must be based on `feature/refinement-types`.**
+**Development should be done in git worktrees.**
+
+## TODO
+
+- [ ] Step 1 — FM data structures ([phase6a-fm-data-structures.md](phase6a-fm-data-structures.md))
+- [ ] Step 2 — FM core: eliminate_variable, has_contradiction ([phase6c-fm-core.md](phase6c-fm-core.md))
+- [ ] Step 3 — Integer rounding: ceil/floor tightening ([phase6d-fm-integer-rounding.md](phase6d-fm-integer-rounding.md))
+- [ ] Step 4 — Expression → inequality parser ([phase6b-fm-parser.md](phase6b-fm-parser.md))
+- [ ] Step 5 — Validity/SAT public API ([phase6e-fm-validity.md](phase6e-fm-validity.md))
+- [ ] Step 6 — Disjunction handling: DNF splitting ([phase6f-fm-disjunction.md](phase6f-fm-disjunction.md))
+- [ ] Step 7 — Type AST nodes + constants + pretty-print ([phase1-type-representation.md](phase1-type-representation.md))
+- [ ] Step 8 — TypeEnv (bind, lookup, shadowing) ([phase2-type-environment.md](phase2-type-environment.md))
+- [ ] Step 9 — Constraint / ConstraintSet ([phase3-constraints.md](phase3-constraints.md))
+- [ ] Step 10 — Subtype checking ([phase5-subtype-checking.md](phase5-subtype-checking.md))
+- [ ] Step 11 — Bidirectional type checker + def_typerule ([phase4-type-checker.md](phase4-type-checker.md))
+- [ ] Step 12 — strip_types + pipeline wiring ([phase7-strip-compile-pipeline.md](phase7-strip-compile-pipeline.md))
+- [ ] Step 13 — Error reporting ([phase8-error-reporting.md](phase8-error-reporting.md))
+- [ ] Step 14 — End-to-end integration test + example
