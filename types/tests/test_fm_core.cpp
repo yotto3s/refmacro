@@ -176,9 +176,7 @@ TEST(EliminateVariable, TwoVarsSAT) {
             .add(LinearInequality::make({LinearTerm{y, 1.0}}, 0.0))
             .add(LinearInequality::make({LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 10.0));
     }();
-    // Eliminate x: lower={ineq0}, upper={ineq2}, unrelated={ineq1}
-    // Combined: 0*1 + (-(- y) + 10)*1 = y + 10... wait let me think
-    // Actually, after eliminating both via fm_is_unsat:
+    // Eliminate x first, then y via fm_is_unsat — system is satisfiable
     static_assert(!fm_is_unsat(sys));
 }
 
@@ -269,6 +267,22 @@ TEST(FmIsUnsat, MultipleBoundsOnSameVar) {
             .add(LinearInequality::make({LinearTerm{x, -1.0}}, 5.0))
             .add(LinearInequality::make({LinearTerm{x, -1.0}}, 3.0));
     }();
+    static_assert(!fm_is_unsat(sys));
+}
+
+TEST(EliminateVariable, UpperBoundsOnlyPassThrough) {
+    // y <= 5, y <= 3 — eliminate x (not present) → both pass through unchanged
+    constexpr auto sys = [] {
+        InequalitySystem<> s{};
+        s.vars.find_or_add("x");
+        int y = s.vars.find_or_add("y");
+        return s
+            .add(LinearInequality::make({LinearTerm{y, -1.0}}, 5.0))   // -y + 5 >= 0
+            .add(LinearInequality::make({LinearTerm{y, -1.0}}, 3.0));  // -y + 3 >= 0
+    }();
+    constexpr auto result = eliminate_variable(sys, 0);
+    // x has no bounds, so both inequalities are unrelated and pass through
+    static_assert(result.count == 2);
     static_assert(!fm_is_unsat(sys));
 }
 

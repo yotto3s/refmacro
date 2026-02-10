@@ -64,6 +64,15 @@ consteval LinearInequality combine_bounds(
     }
 
     result.constant = lower.constant * upper_abs_coeff + upper.constant * lower_coeff;
+
+    // Prune zero-coefficient terms to avoid wasting capacity across elimination rounds
+    std::size_t write = 0;
+    for (std::size_t i = 0; i < result.term_count; ++i) {
+        if (result.terms[i].coeff != 0.0)
+            result.terms[write++] = result.terms[i];
+    }
+    result.term_count = write;
+
     return result;
 }
 
@@ -130,8 +139,8 @@ template <std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
 consteval bool has_contradiction(InequalitySystem<MaxIneqs, MaxVars> sys) {
     for (std::size_t i = 0; i < sys.count; ++i) {
         const auto& ineq = sys.ineqs[i];
-        // After elimination, all variable terms should be gone.
-        // The inequality is: constant >= 0 (or > 0 if strict)
+        if (ineq.term_count != 0)
+            throw "has_contradiction: system still has variable terms";
         if (ineq.strict && ineq.constant <= 0.0) return true;
         if (!ineq.strict && ineq.constant < 0.0) return true;
     }
