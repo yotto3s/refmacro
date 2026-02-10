@@ -30,8 +30,8 @@ struct LinearInequality {
     bool strict{false}; // true for < and >, false for <= and >=
 
     // Build an inequality from terms, enforcing term_count invariant.
-    static consteval LinearInequality
-    make(std::initializer_list<LinearTerm> ts, double c, bool s = false) {
+    static consteval LinearInequality make(std::initializer_list<LinearTerm> ts,
+                                           double c, bool s = false) {
         LinearInequality result{};
         if (ts.size() > MaxTermsPerIneq)
             throw "LinearInequality: too many terms";
@@ -45,8 +45,7 @@ struct LinearInequality {
 
 // Variable metadata: name + integer/real type.
 // MaxVars: max variables tracked. 16 covers most refinement-type systems.
-template <std::size_t MaxVars = 16>
-struct VarInfo {
+template <std::size_t MaxVars = 16> struct VarInfo {
     char names[MaxVars][16]{};
     bool is_integer[MaxVars]{};
     std::size_t count{0};
@@ -59,7 +58,7 @@ struct VarInfo {
             throw "VarInfo capacity exceeded";
         if (refmacro::str_len(name) >= sizeof(names[0]))
             throw "VarInfo name too long";
-        refmacro::copy_str(names[count], name);
+        refmacro::copy_str(names[count], name, sizeof(names[0]));
         is_integer[count] = integer;
         return static_cast<int>(count++);
     }
