@@ -53,6 +53,17 @@ TEST(LinearInequality, StrictInequality) {
     static_assert(ineq.strict == true);
 }
 
+TEST(LinearInequality, MakeBuilder) {
+    // make() enforces term_count invariant
+    constexpr auto ineq =
+        LinearInequality::make({LinearTerm{0, 2.0}, LinearTerm{1, -1.0}}, 3.0, true);
+    static_assert(ineq.term_count == 2);
+    static_assert(ineq.terms[0].coeff == 2.0);
+    static_assert(ineq.terms[1].coeff == -1.0);
+    static_assert(ineq.constant == 3.0);
+    static_assert(ineq.strict == true);
+}
+
 // --- VarInfo ---
 
 TEST(VarInfo, FindOrAdd) {
@@ -68,14 +79,16 @@ TEST(VarInfo, FindOrAdd) {
 }
 
 TEST(VarInfo, FindOrAddDuplicate) {
-    constexpr auto vars = [] {
+    constexpr auto result = [] {
         VarInfo<> v{};
-        v.find_or_add("x");
-        v.find_or_add("x"); // duplicate — should return existing
-        return v;
+        int first = v.find_or_add("x");
+        int second = v.find_or_add("x"); // duplicate — should return existing
+        return std::pair{v, std::pair{first, second}};
     }();
-    static_assert(vars.count == 1);
-    static_assert(vars.find("x") == 0);
+    static_assert(result.first.count == 1);
+    static_assert(result.first.find("x") == 0);
+    static_assert(result.second.first == 0);
+    static_assert(result.second.second == 0);
 }
 
 TEST(VarInfo, FindMissing) {
@@ -140,6 +153,26 @@ TEST(InequalitySystem, AddMultiple) {
     static_assert(sys.ineqs[1].constant == 20.0);
 }
 
+TEST(InequalitySystem, WithPopulatedVars) {
+    // Build a system with both variables and inequalities
+    // Represents: x >= 0, y >= 0, x + y - 10 <= 0 (negated: -x - y + 10 >= 0)
+    constexpr auto sys = [] {
+        InequalitySystem<> s{};
+        int x = s.vars.find_or_add("x");
+        int y = s.vars.find_or_add("y");
+        return s
+            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))            // x >= 0
+            .add(LinearInequality::make({LinearTerm{y, 1.0}}, 0.0))            // y >= 0
+            .add(LinearInequality::make({LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 10.0)); // -x-y+10>=0
+    }();
+    static_assert(sys.count == 3);
+    static_assert(sys.vars.count == 2);
+    static_assert(sys.vars.find("x") == 0);
+    static_assert(sys.vars.find("y") == 1);
+    static_assert(sys.ineqs[2].terms[0].coeff == -1.0);
+    static_assert(sys.ineqs[2].constant == 10.0);
+}
+
 // --- NTTP compatibility ---
 
 template <LinearTerm T>
@@ -149,7 +182,17 @@ consteval double get_coeff() {
 
 template <LinearInequality I>
 consteval int get_term_count() {
-    return I.term_count;
+    return static_cast<int>(I.term_count);
+}
+
+template <VarInfo<> V>
+consteval std::size_t get_var_count() {
+    return V.count;
+}
+
+template <InequalitySystem<> S>
+consteval std::size_t get_ineq_count() {
+    return S.count;
 }
 
 TEST(NTTPCompatibility, LinearTermAsNTTP) {
@@ -163,5 +206,25 @@ TEST(NTTPCompatibility, LinearInequalityAsNTTP) {
         .term_count = 1,
     };
     constexpr auto n = get_term_count<ineq>();
+    static_assert(n == 1);
+}
+
+TEST(NTTPCompatibility, VarInfoAsNTTP) {
+    static constexpr auto vars = [] {
+        VarInfo<> v{};
+        v.find_or_add("x");
+        v.find_or_add("y");
+        return v;
+    }();
+    constexpr auto n = get_var_count<vars>();
+    static_assert(n == 2);
+}
+
+TEST(NTTPCompatibility, InequalitySystemAsNTTP) {
+    static constexpr auto sys = [] {
+        InequalitySystem<> s{};
+        return s.add(LinearInequality::make({LinearTerm{0, 1.0}}, 0.0));
+    }();
+    constexpr auto n = get_ineq_count<sys>();
     static_assert(n == 1);
 }
