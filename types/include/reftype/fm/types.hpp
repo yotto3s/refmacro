@@ -12,8 +12,8 @@ struct LinearTerm {
     double coeff{0.0};
 };
 
-// Max terms per inequality. FM elimination combines two inequalities,
-// so the result can have up to 2*(MaxTerms-1) terms in the worst case.
+// Max terms stored per inequality. The FM elimination step must
+// merge/simplify combined terms to fit within this cap.
 // 8 is sufficient for typical refinement-type constraints.
 inline constexpr std::size_t MaxTermsPerIneq = 8;
 
@@ -55,6 +55,8 @@ struct VarInfo {
                 return static_cast<int>(i);
         if (count >= MaxVars)
             throw "VarInfo capacity exceeded";
+        if (refmacro::str_len(name) >= sizeof(names[0]))
+            throw "VarInfo name too long";
         refmacro::copy_str(names[count], name);
         is_integer[count] = integer;
         return static_cast<int>(count++);
