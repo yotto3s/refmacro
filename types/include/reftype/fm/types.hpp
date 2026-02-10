@@ -2,6 +2,7 @@
 #define REFTYPE_FM_TYPES_HPP
 
 #include <cstddef>
+#include <initializer_list>
 #include <optional>
 #include <refmacro/ast.hpp>
 

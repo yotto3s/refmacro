@@ -1,4 +1,6 @@
 #include <gtest/gtest.h>
+#include <utility>
+
 #include <reftype/fm/types.hpp>
 
 using namespace reftype::fm;
@@ -67,7 +69,7 @@ TEST(LinearInequality, MakeBuilder) {
 // --- VarInfo ---
 
 TEST(VarInfo, FindOrAdd) {
-    constexpr auto vars = [] {
+    constexpr auto vars = [] consteval {
         VarInfo<> v{};
         v.find_or_add("x");
         v.find_or_add("y");
@@ -79,7 +81,7 @@ TEST(VarInfo, FindOrAdd) {
 }
 
 TEST(VarInfo, FindOrAddDuplicate) {
-    constexpr auto result = [] {
+    constexpr auto result = [] consteval {
         VarInfo<> v{};
         int first = v.find_or_add("x");
         int second = v.find_or_add("x"); // duplicate — should return existing
@@ -92,7 +94,7 @@ TEST(VarInfo, FindOrAddDuplicate) {
 }
 
 TEST(VarInfo, FindMissing) {
-    constexpr auto vars = [] {
+    constexpr auto vars = [] consteval {
         VarInfo<> v{};
         v.find_or_add("x");
         return v;
@@ -101,7 +103,7 @@ TEST(VarInfo, FindMissing) {
 }
 
 TEST(VarInfo, IntegerFlag) {
-    constexpr auto vars = [] {
+    constexpr auto vars = [] consteval {
         VarInfo<> v{};
         v.find_or_add("n", true);  // integer
         v.find_or_add("r", false); // real
@@ -120,7 +122,7 @@ TEST(InequalitySystem, Empty) {
 }
 
 TEST(InequalitySystem, Add) {
-    constexpr auto sys = [] {
+    constexpr auto sys = [] consteval {
         InequalitySystem<> s{};
         LinearInequality ineq{
             .terms = {LinearTerm{0, 1.0}},
@@ -134,7 +136,7 @@ TEST(InequalitySystem, Add) {
 }
 
 TEST(InequalitySystem, AddMultiple) {
-    constexpr auto sys = [] {
+    constexpr auto sys = [] consteval {
         InequalitySystem<> s{};
         LinearInequality a{
             .terms = {LinearTerm{0, 1.0}},
@@ -156,7 +158,7 @@ TEST(InequalitySystem, AddMultiple) {
 TEST(InequalitySystem, WithPopulatedVars) {
     // Build a system with both variables and inequalities
     // Represents: x >= 0, y >= 0, x + y - 10 <= 0 (negated: -x - y + 10 >= 0)
-    constexpr auto sys = [] {
+    constexpr auto sys = [] consteval {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
         int y = s.vars.find_or_add("y");
@@ -210,7 +212,7 @@ TEST(NTTPCompatibility, LinearInequalityAsNTTP) {
 }
 
 TEST(NTTPCompatibility, VarInfoAsNTTP) {
-    static constexpr auto vars = [] {
+    static constexpr auto vars = [] consteval {
         VarInfo<> v{};
         v.find_or_add("x");
         v.find_or_add("y");
@@ -221,7 +223,7 @@ TEST(NTTPCompatibility, VarInfoAsNTTP) {
 }
 
 TEST(NTTPCompatibility, InequalitySystemAsNTTP) {
-    static constexpr auto sys = [] {
+    static constexpr auto sys = [] consteval {
         InequalitySystem<> s{};
         return s.add(LinearInequality::make({LinearTerm{0, 1.0}}, 0.0));
     }();
