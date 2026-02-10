@@ -2,6 +2,7 @@
 #define REFTYPE_FM_TYPES_HPP
 
 #include <cstddef>
+#include <optional>
 #include <refmacro/ast.hpp>
 
 namespace reftype::fm {
@@ -62,11 +63,11 @@ struct VarInfo {
         return static_cast<int>(count++);
     }
 
-    consteval int find(const char* name) const {
+    consteval std::optional<std::size_t> find(const char* name) const {
         for (std::size_t i = 0; i < count; ++i)
             if (refmacro::str_eq(names[i], name))
-                return static_cast<int>(i);
-        return -1;
+                return i;
+        return std::nullopt;
     }
 };
 

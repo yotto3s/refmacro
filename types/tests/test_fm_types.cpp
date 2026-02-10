@@ -74,8 +74,8 @@ TEST(VarInfo, FindOrAdd) {
         return v;
     }();
     static_assert(vars.count == 2);
-    static_assert(vars.find("x") == 0);
-    static_assert(vars.find("y") == 1);
+    static_assert(vars.find("x") == std::optional<std::size_t>{0});
+    static_assert(vars.find("y") == std::optional<std::size_t>{1});
 }
 
 TEST(VarInfo, FindOrAddDuplicate) {
@@ -86,7 +86,7 @@ TEST(VarInfo, FindOrAddDuplicate) {
         return std::pair{v, std::pair{first, second}};
     }();
     static_assert(result.first.count == 1);
-    static_assert(result.first.find("x") == 0);
+    static_assert(result.first.find("x") == std::optional<std::size_t>{0});
     static_assert(result.second.first == 0);
     static_assert(result.second.second == 0);
 }
@@ -97,7 +97,7 @@ TEST(VarInfo, FindMissing) {
         v.find_or_add("x");
         return v;
     }();
-    static_assert(vars.find("z") == -1);
+    static_assert(vars.find("z") == std::nullopt);
 }
 
 TEST(VarInfo, IntegerFlag) {
@@ -167,8 +167,8 @@ TEST(InequalitySystem, WithPopulatedVars) {
     }();
     static_assert(sys.count == 3);
     static_assert(sys.vars.count == 2);
-    static_assert(sys.vars.find("x") == 0);
-    static_assert(sys.vars.find("y") == 1);
+    static_assert(sys.vars.find("x") == std::optional<std::size_t>{0});
+    static_assert(sys.vars.find("y") == std::optional<std::size_t>{1});
     static_assert(sys.ineqs[2].terms[0].coeff == -1.0);
     static_assert(sys.ineqs[2].constant == 10.0);
 }
