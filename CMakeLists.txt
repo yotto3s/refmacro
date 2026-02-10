@@ -42,3 +42,8 @@ option(REFMACRO_BUILD_EXAMPLES "Build examples" ON)
 if(REFMACRO_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
+
+option(REFMACRO_BUILD_TYPES "Build refinement type system" ON)
+if(REFMACRO_BUILD_TYPES)
+    add_subdirectory(types)
+endif()
