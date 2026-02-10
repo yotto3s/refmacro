@@ -4,7 +4,7 @@
 
 **Goal:** Implement the core Fourier-Motzkin variable elimination algorithm.
 
-**File:** `types/include/refmacro/types/fm/eliminate.hpp`
+**File:** `types/include/reftype/fm/eliminate.hpp`
 
 **Depends on:** Phase 6a (data structures)
 
@@ -46,10 +46,10 @@ Before elimination, normalize each inequality so the variable being eliminated h
 ## Implementation
 
 ```cpp
-namespace refmacro::types::fm {
+namespace reftype::fm {
 
 // Eliminate a single variable from the system
-template <int MaxIneqs, int MaxVars>
+template <std::size_t MaxIneqs, std::size_t MaxVars>
 consteval InequalitySystem<MaxIneqs, MaxVars> eliminate_variable(
     InequalitySystem<MaxIneqs, MaxVars> sys, int var_id) {
 
@@ -69,17 +69,17 @@ consteval InequalitySystem<MaxIneqs, MaxVars> eliminate_variable(
 }
 
 // Eliminate all variables and check for contradiction
-template <int MaxIneqs, int MaxVars>
+template <std::size_t MaxIneqs, std::size_t MaxVars>
 consteval bool fm_is_unsat(InequalitySystem<MaxIneqs, MaxVars> sys) {
-    for (int v = 0; v < sys.vars.count; ++v)
-        sys = eliminate_variable(sys, v);
+    for (std::size_t v = 0; v < sys.vars.count; ++v)
+        sys = eliminate_variable(sys, static_cast<int>(v));
     return has_contradiction(sys);
 }
 
 // Check constant-only system for contradictions
-template <int MaxIneqs, int MaxVars>
+template <std::size_t MaxIneqs, std::size_t MaxVars>
 consteval bool has_contradiction(InequalitySystem<MaxIneqs, MaxVars> sys) {
-    for (int i = 0; i < sys.count; ++i) {
+    for (std::size_t i = 0; i < sys.count; ++i) {
         auto& ineq = sys.ineqs[i];
         // All terms should have been eliminated — only constant remains
         double val = ineq.constant;
@@ -89,7 +89,7 @@ consteval bool has_contradiction(InequalitySystem<MaxIneqs, MaxVars> sys) {
     return false;
 }
 
-} // namespace refmacro::types::fm
+} // namespace reftype::fm
 ```
 
 ## Complexity Notes

@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <optional>
-#include <refmacro/ast.hpp>
+#include <refmacro/str_utils.hpp>
 
 namespace reftype::fm {
 
@@ -63,10 +63,10 @@ template <std::size_t MaxVars = 16> struct VarInfo {
         return static_cast<int>(count++);
     }
 
-    consteval std::optional<std::size_t> find(const char* name) const {
+    consteval std::optional<int> find(const char* name) const {
         for (std::size_t i = 0; i < count; ++i)
             if (refmacro::str_eq(names[i], name))
-                return i;
+                return static_cast<int>(i);
         return std::nullopt;
     }
 };
@@ -74,6 +74,13 @@ template <std::size_t MaxVars = 16> struct VarInfo {
 // A system of linear inequalities.
 // MaxIneqs: max constraints. FM elimination can grow quadratically
 // per variable eliminated — 64 handles moderate-size systems.
+//
+// Usage: add() returns an immutable copy with the new inequality appended.
+// Since vars is copied along with the system, register all variables on
+// the base system *before* chaining add() calls:
+//   auto s = InequalitySystem<>{};
+//   int x = s.vars.find_or_add("x");
+//   auto s2 = s.add(ineq1).add(ineq2);  // s2.vars contains x
 template <std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
 struct InequalitySystem {
     LinearInequality ineqs[MaxIneqs]{};

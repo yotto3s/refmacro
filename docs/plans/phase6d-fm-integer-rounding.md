@@ -4,7 +4,7 @@
 
 **Goal:** After FM variable elimination, tighten bounds for integer-typed variables.
 
-**File:** `types/include/refmacro/types/fm/rounding.hpp`
+**File:** `types/include/reftype/fm/rounding.hpp`
 
 **Depends on:** Phase 6a (data structures), Phase 6c (FM core)
 
@@ -41,7 +41,7 @@ Option 1 is simpler: apply rounding to the combined inequalities after each elim
 ## Implementation
 
 ```cpp
-namespace refmacro::types::fm {
+namespace reftype::fm {
 
 consteval double ceil_val(double x) {
     double truncated = static_cast<double>(static_cast<long long>(x));
@@ -69,7 +69,7 @@ consteval LinearInequality integer_round(LinearInequality ineq, bool is_lower_bo
     return ineq;
 }
 
-} // namespace refmacro::types::fm
+} // namespace reftype::fm
 ```
 
 ## Testing Strategy

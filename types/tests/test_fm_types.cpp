@@ -76,8 +76,8 @@ TEST(VarInfo, FindOrAdd) {
         return v;
     }();
     static_assert(vars.count == 2);
-    static_assert(vars.find("x") == std::optional<std::size_t>{0});
-    static_assert(vars.find("y") == std::optional<std::size_t>{1});
+    static_assert(vars.find("x") == std::optional<int>{0});
+    static_assert(vars.find("y") == std::optional<int>{1});
 }
 
 TEST(VarInfo, FindOrAddDuplicate) {
@@ -88,7 +88,7 @@ TEST(VarInfo, FindOrAddDuplicate) {
         return std::pair{v, std::pair{first, second}};
     }();
     static_assert(result.first.count == 1);
-    static_assert(result.first.find("x") == std::optional<std::size_t>{0});
+    static_assert(result.first.find("x") == std::optional<int>{0});
     static_assert(result.second.first == 0);
     static_assert(result.second.second == 0);
 }
@@ -169,8 +169,8 @@ TEST(InequalitySystem, WithPopulatedVars) {
     }();
     static_assert(sys.count == 3);
     static_assert(sys.vars.count == 2);
-    static_assert(sys.vars.find("x") == std::optional<std::size_t>{0});
-    static_assert(sys.vars.find("y") == std::optional<std::size_t>{1});
+    static_assert(sys.vars.find("x") == std::optional<int>{0});
+    static_assert(sys.vars.find("y") == std::optional<int>{1});
     static_assert(sys.ineqs[2].terms[0].coeff == -1.0);
     static_assert(sys.ineqs[2].constant == 10.0);
 }
@@ -229,4 +229,48 @@ TEST(NTTPCompatibility, InequalitySystemAsNTTP) {
     }();
     constexpr auto n = get_ineq_count<sys>();
     static_assert(n == 1);
+}
+
+// --- Boundary conditions ---
+
+TEST(LinearInequality, MakeEmpty) {
+    constexpr auto ineq = LinearInequality::make({}, 5.0);
+    static_assert(ineq.term_count == 0);
+    static_assert(ineq.constant == 5.0);
+}
+
+TEST(LinearInequality, MakeMaxTerms) {
+    // Exactly MaxTermsPerIneq (8) terms — should succeed
+    constexpr auto ineq = LinearInequality::make(
+        {LinearTerm{0, 1.0}, LinearTerm{1, 2.0}, LinearTerm{2, 3.0}, LinearTerm{3, 4.0},
+         LinearTerm{4, 5.0}, LinearTerm{5, 6.0}, LinearTerm{6, 7.0}, LinearTerm{7, 8.0}},
+        0.0);
+    static_assert(ineq.term_count == MaxTermsPerIneq);
+    static_assert(ineq.terms[7].coeff == 8.0);
+}
+
+TEST(VarInfo, SmallCapacity) {
+    constexpr auto vars = [] consteval {
+        VarInfo<4> v{};
+        v.find_or_add("a");
+        v.find_or_add("b");
+        v.find_or_add("c");
+        v.find_or_add("d");
+        return v;
+    }();
+    static_assert(vars.count == 4);
+    static_assert(vars.find("d") == std::optional<int>{3});
+}
+
+TEST(InequalitySystem, SmallCapacity) {
+    constexpr auto sys = [] consteval {
+        InequalitySystem<4, 4> s{};
+        return s
+            .add(LinearInequality::make({LinearTerm{0, 1.0}}, 0.0))
+            .add(LinearInequality::make({LinearTerm{0, -1.0}}, 10.0))
+            .add(LinearInequality::make({LinearTerm{1, 1.0}}, 0.0))
+            .add(LinearInequality::make({LinearTerm{1, -1.0}}, 5.0));
+    }();
+    static_assert(sys.count == 4);
+    static_assert(sys.ineqs[3].constant == 5.0);
 }

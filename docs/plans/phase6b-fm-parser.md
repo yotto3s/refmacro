@@ -4,7 +4,7 @@
 
 **Goal:** Parse refmacro Expression ASTs (boolean formulas) into linear inequality systems.
 
-**File:** `types/include/refmacro/types/fm/parser.hpp`
+**File:** `types/include/reftype/fm/parser.hpp`
 
 **Depends on:** Phase 6a (data structures), core refmacro (Expression, NodeView)
 
@@ -64,22 +64,22 @@
 ## Implementation
 
 ```cpp
-namespace refmacro::types::fm {
+namespace reftype::fm {
 
 // Intermediate: linear expression (before comparison)
-template <int MaxVars = 16>
+template <std::size_t MaxVars = 16>
 struct LinearExpr {
     double coeffs[MaxVars]{};  // indexed by var_id
     double constant{0.0};
 };
 
 // Parse an arithmetic sub-expression into a LinearExpr
-template <std::size_t Cap, int MaxVars>
+template <std::size_t Cap, std::size_t MaxVars>
 consteval LinearExpr<MaxVars> parse_arith(
     NodeView<Cap> node, VarInfo<MaxVars>& vars) { ... }
 
 // Parse a boolean formula into an InequalitySystem
-template <std::size_t Cap, int MaxIneqs, int MaxVars>
+template <std::size_t Cap, std::size_t MaxIneqs, std::size_t MaxVars>
 consteval InequalitySystem<MaxIneqs, MaxVars> parse_formula(
     NodeView<Cap> node, VarInfo<MaxVars>& vars) { ... }
 
@@ -90,7 +90,7 @@ consteval auto parse_to_system(Expression<Cap> formula) {
     return parse_formula(NodeView<Cap>{formula.ast, formula.id}, vars);
 }
 
-} // namespace refmacro::types::fm
+} // namespace reftype::fm
 ```
 
 ## Testing Strategy
