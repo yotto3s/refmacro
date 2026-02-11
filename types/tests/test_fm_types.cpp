@@ -103,14 +103,23 @@ TEST(VarInfo, FindMissing) {
 }
 
 TEST(VarInfo, IntegerFlag) {
-    constexpr auto vars = [] consteval {
+    constexpr auto int_vars = [] consteval {
         VarInfo<> v{};
-        v.find_or_add("n", true);  // integer
-        v.find_or_add("r", false); // real
+        v.find_or_add("n", true);
+        v.find_or_add("m", true);
         return v;
     }();
-    static_assert(vars.is_integer[0] == true);
-    static_assert(vars.is_integer[1] == false);
+    static_assert(int_vars.is_integer[0] == true);
+    static_assert(int_vars.is_integer[1] == true);
+
+    constexpr auto real_vars = [] consteval {
+        VarInfo<> v{};
+        v.find_or_add("r", false);
+        v.find_or_add("s", false);
+        return v;
+    }();
+    static_assert(real_vars.is_integer[0] == false);
+    static_assert(real_vars.is_integer[1] == false);
 }
 
 // --- InequalitySystem ---

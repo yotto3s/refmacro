@@ -50,7 +50,7 @@ type error: subtype check failed
 ## Implementation
 
 ```cpp
-namespace refmacro::types {
+namespace reftype {
 
 template <int N = 512>
 consteval void report_error(const char* category,
@@ -81,7 +81,7 @@ consteval void assert_subtype(Expression<Cap> sub, Expression<Cap> super,
     }
 }
 
-} // namespace refmacro::types
+} // namespace reftype
 ```
 
 ## Integration with Constraint Origin
