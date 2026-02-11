@@ -1,6 +1,6 @@
 # Phase 1: Type Representation as AST Nodes
 
-> **Status:** Work in progress — this plan should be refined before implementation.
+> **Status:** Implemented
 
 **Goal:** Define type AST nodes (tint, tbool, treal, tref, tarr, ann) as ordinary refmacro expressions, plus convenience constructors and pretty-print support.
 

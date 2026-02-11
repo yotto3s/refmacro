@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 
+#include <type_traits>
+
+#include <refmacro/math.hpp>
 #include <reftype/pretty.hpp>
 #include <reftype/types.hpp>
 
@@ -11,6 +14,12 @@ using reftype::TBool;
 using reftype::TInt;
 using reftype::TReal;
 using reftype::tref;
+
+// --- TypedExpr alias ---
+
+TEST(TypeAlias, TypedExprIsExpression128) {
+    static_assert(std::is_same_v<reftype::TypedExpr, refmacro::Expression<128>>);
+}
 
 // --- Base type constants ---
 
@@ -67,6 +76,15 @@ TEST(TypeConstructors, AnnStructure) {
         ann(Expression<>::var("x"), TInt);
     static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "ann"));
     static_assert(t.ast.nodes[t.id].child_count == 2);
+}
+
+TEST(TypeConstructors, AnnArithmeticExpr) {
+    static constexpr auto t =
+        ann(Expression<>::var("x") + Expression<>::lit(1), TInt);
+    static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "ann"));
+    static_assert(t.ast.nodes[t.id].child_count == 2);
+    constexpr auto expr_id = t.ast.nodes[t.id].children[0];
+    static_assert(refmacro::str_eq(t.ast.nodes[expr_id].tag, "add"));
 }
 
 // --- Nested types ---
@@ -143,6 +161,11 @@ TEST(TypePrettyPrint, DependentArrow) {
                   Expression<128>::var("#v") > Expression<128>::var("x")));
     static constexpr auto pp = reftype::pretty_print(t);
     static_assert(pp == "(x : {#v : Int | (#v > 0)}) -> {#v : Int | (#v > x)}");
+}
+
+TEST(TypePrettyPrint, PosIntHelper) {
+    static constexpr auto pp = reftype::pretty_print(pos_int());
+    static_assert(pp == "{#v : Int | (#v > 0)}");
 }
 
 TEST(TypePrettyPrint, ExpressionFallback) {
