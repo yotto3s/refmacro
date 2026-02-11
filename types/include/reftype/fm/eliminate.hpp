@@ -126,10 +126,12 @@ consteval InequalitySystem<MaxIneqs, MaxVars> eliminate_variable(
     if (sys.vars.is_integer[static_cast<std::size_t>(var_id)]) {
         for (std::size_t li = 0; li < lower_count; ++li)
             sys.ineqs[lower_idx[li]] =
-                round_integer_bound(sys.ineqs[lower_idx[li]], true);
+                round_integer_bound(sys.ineqs[lower_idx[li]], true,
+                                    lower_coeff[li]);
         for (std::size_t ui = 0; ui < upper_count; ++ui)
             sys.ineqs[upper_idx[ui]] =
-                round_integer_bound(sys.ineqs[upper_idx[ui]], false);
+                round_integer_bound(sys.ineqs[upper_idx[ui]], false,
+                                    upper_abs_coeff[ui]);
     }
 
     // Combine each (lower, upper) pair
@@ -150,7 +152,7 @@ consteval InequalitySystem<MaxIneqs, MaxVars> eliminate_variable(
 // After all variables are eliminated, only constant inequalities remain.
 // A contradiction is: constant < 0 (for >=) or constant <= 0 (for >).
 template <std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
-consteval bool has_contradiction(InequalitySystem<MaxIneqs, MaxVars> sys) {
+consteval bool has_contradiction(const InequalitySystem<MaxIneqs, MaxVars>& sys) {
     for (std::size_t i = 0; i < sys.count; ++i) {
         const auto& ineq = sys.ineqs[i];
         if (ineq.term_count != 0)

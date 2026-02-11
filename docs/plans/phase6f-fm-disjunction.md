@@ -1,8 +1,8 @@
 # Phase 6f: FM Solver — Disjunction Handling
 
-> **Status:** Work in progress — this plan should be refined before implementation.
+> **Status:** Implemented. All planned functions (`clause_implies`, `remove_unsat_clauses`, `remove_subsumed_clauses`, `simplify_dnf`) and the optimized clause-by-clause `is_valid_implication` are complete with tests.
 
-**Goal:** Handle disjunctions (||) in formulas by splitting into independent FM queries.
+**Goal:** Provide advanced disjunction-handling algorithms beyond the basic DNF UNSAT/SAT checks.
 
 **File:** `types/include/reftype/fm/disjunction.hpp`
 
@@ -10,76 +10,49 @@
 
 ---
 
-## Strategy
+## What moved to Phase 6e
 
-FM natively handles conjunctions. For disjunctions, we split:
+The following functions are now in `solver.hpp` (Phase 6e), not here:
+- `is_unsat(ParseResult)` — DNF: all clauses UNSAT
+- `is_sat(ParseResult)` — negation of is_unsat
+- `is_valid_implication(Expr, Expr)` — builds `P && !Q`, parses, checks UNSAT on ParseResult
+- `is_valid(Expr)` — builds `!formula`, parses, checks UNSAT on ParseResult
 
-### Case 1: Checking UNSAT of `A || B`
-- `A || B` is UNSAT iff both `A` is UNSAT and `B` is UNSAT
-- Split into two independent FM queries
+These naturally belong in the solver's public API since `is_valid_implication` and `is_valid` already need DNF handling (negation can produce disjunctions via De Morgan).
 
-### Case 2: Checking validity of `(A || B) => C`
-- Equivalent to `(A => C) && (B => C)`
-- Split: check `A => C` and `B => C` independently
+## Design Note
 
-### Case 3: Checking validity of `A => (B || C)`
-- Equivalent to `A && !B && !C` is UNSAT
-- Negate: `!(B || C)` = `!B && !C` (De Morgan)
-- Result is a conjunction — standard FM
+The parser (Phase 6b) already produces `ParseResult` in DNF form — an array of `InequalitySystem` clauses representing disjunction of conjunctions. Phase 6f provides **advanced algorithms over `ParseResult`**, not structural changes to the parser.
 
-### Case 4: Nested disjunctions
-- `(A || B) && (C || D)` — convert to DNF:
-  - `(A && C) || (A && D) || (B && C) || (B && D)`
-  - Check each disjunct independently
+DNF conversion (distribution of `&&` over `||`, De Morgan) is handled during parsing in Phase 6b via `conjoin()` (cross-product) and `disjoin()` (concatenation).
 
-## Implementation
+### VarInfo Consistency
 
-```cpp
-namespace reftype::fm {
+`parse_to_system()` propagates the final `VarInfo` to all clauses after parsing. This guarantees that every clause in a `ParseResult` shares the same variable registry — `var_id` N always refers to the same variable across all clauses. Algorithms in this phase can safely compare or merge clauses without variable unification.
 
-// Normalize formula: push negations inward, distribute to DNF
-// Returns a list of conjunctive clauses (the disjuncts of DNF)
-template <std::size_t Cap, int MaxClauses = 8>
-struct DNF {
-    Expression<Cap> clauses[MaxClauses]{};
-    int count{0};
-};
+## Remaining Scope
 
-template <std::size_t Cap>
-consteval DNF<Cap> to_dnf(Expression<Cap> formula) {
-    // If conjunction: cross-product of children's DNFs
-    // If disjunction: concatenate children's DNFs
-    // If atom: single clause
-    ...
-}
+Phase 6f focuses on disjunction-specific algorithms that go beyond basic UNSAT/SAT:
 
-// Check UNSAT of a formula that may contain disjunctions
-template <std::size_t Cap>
-consteval bool is_unsat_dnf(Expression<Cap> formula) {
-    auto dnf = to_dnf(formula);
-    // UNSAT iff every disjunct is UNSAT
-    for (int i = 0; i < dnf.count; ++i) {
-        auto sys = parse_to_system(dnf.clauses[i]);
-        if (!is_unsat(sys))
-            return false;  // at least one clause is SAT
-    }
-    return true;
-}
+### Clause simplification
+- Remove clauses that are subsumed by other clauses (if C1 => C2, drop C1 — in a disjunction the narrower clause is redundant since its solutions are already covered by the broader one)
+- Detect and remove trivially UNSAT clauses early
 
-} // namespace reftype::fm
-```
+### Implication with DNF premises (optimization)
+- `(A || B) => C` is valid iff `(A => C)` and `(B => C)` are both valid
+- This is an optimization over the brute-force `(A || B) && !C` approach
+- Useful when the conclusion is a conjunction (avoids DNF explosion from negation)
 
-## DNF Explosion Control
+### DNF Explosion Control (already implemented in Phase 6b)
 
-DNF conversion can explode exponentially. Mitigations:
-- `MaxClauses = 8` caps the number of disjuncts
+- `MaxClauses = 8` caps the number of disjuncts (default template parameter in ParseResult)
+- `add_clause()`, `conjoin()`, `disjoin()` all throw "DNF clause limit exceeded" when capacity is hit
 - Refinement predicates are typically small (2-4 atoms)
-- If DNF exceeds MaxClauses, throw error: "formula too complex for solver"
 
 ## Testing Strategy
 
-- `x > 0 || x < -1` — 2 disjuncts
-- `(x > 0 || x < 0) => x != 0` — split: both branches valid
-- `(x > 0 && y > 0) || (x < 0 && y < 0)` — 2 disjuncts with multiple vars
-- `!(x > 0 || y > 0)` → `x <= 0 && y <= 0` (De Morgan → conjunction)
-- DNF overflow: deeply nested `||` chains → error
+- Clause subsumption: `(x > 0 && x < 10) || (x > 0 && x < 5)` — second subsumed by first (dropped, 1 clause remains)
+- UNSAT clause removal: `(x > 0 && x < 0) || (x >= 0)` — first clause UNSAT, removed
+- Multi-clause implication: `(x > 0 || x < -1) => (x != 0)` — each clause implies conclusion
+- Correctness equivalence: brute-force and clause-level implication give the same results
+- simplify_dnf: combined removal of UNSAT + subsumed clauses

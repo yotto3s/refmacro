@@ -1,6 +1,6 @@
 # Phase 6e: FM Solver — Validity & Satisfiability Interface
 
-> **Status:** Work in progress — this plan should be refined before implementation.
+> **Status:** Implemented (solver.hpp). Brute-force approach; clause-by-clause optimization deferred to Phase 6f.
 
 **Goal:** Provide the public API for checking satisfiability and validity of linear arithmetic formulas.
 
@@ -15,43 +15,101 @@
 ```cpp
 namespace reftype::fm {
 
-// Check if a system of inequalities has no solution
-template <int MaxIneqs = 64, int MaxVars = 16>
-consteval bool is_unsat(InequalitySystem<MaxIneqs, MaxVars> sys) {
-    for (int v = 0; v < sys.vars.count; ++v) {
-        sys = eliminate_variable(sys, v);
-        if (sys.vars.is_integer[v])
-            sys = apply_integer_rounding(sys, v);
-    }
-    return has_contradiction(sys);
+// --- System-level (single conjunction) ---
+
+// Check if a system of inequalities has no solution.
+// Thin wrapper over fm_is_unsat — eliminate_variable already
+// integrates integer rounding internally (eliminate.hpp:126-133).
+template <std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
+consteval bool is_unsat(const InequalitySystem<MaxIneqs, MaxVars>& sys) {
+    return fm_is_unsat(sys);
 }
 
-// Check if formula is satisfiable
-template <int MaxIneqs = 64, int MaxVars = 16>
-consteval bool is_sat(InequalitySystem<MaxIneqs, MaxVars> sys) {
+template <std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
+consteval bool is_sat(const InequalitySystem<MaxIneqs, MaxVars>& sys) {
     return !is_unsat(sys);
 }
 
-// Check if P => Q is valid (P && !Q is UNSAT)
-// Takes Expression ASTs, parses them internally
-template <std::size_t Cap>
-consteval bool is_valid_implication(Expression<Cap> premise, Expression<Cap> conclusion) {
-    auto negated_conclusion = negate_formula(conclusion);
-    auto combined = conjunction(premise, negated_conclusion);
-    auto system = parse_to_system(combined);
-    return is_unsat(system);
+// --- DNF-level (disjunction of conjunctions) ---
+
+// A DNF formula is UNSAT iff ALL clauses are UNSAT.
+template <std::size_t MaxClauses = 8, std::size_t MaxIneqs = 64,
+          std::size_t MaxVars = 16>
+consteval bool is_unsat(const ParseResult<MaxClauses, MaxIneqs, MaxVars>& result) {
+    for (std::size_t i = 0; i < result.clause_count; ++i)
+        if (!fm_is_unsat(result.clauses[i]))
+            return false;
+    return true;
 }
 
-// Convenience: check if a formula is always true
+template <std::size_t MaxClauses = 8, std::size_t MaxIneqs = 64,
+          std::size_t MaxVars = 16>
+consteval bool is_sat(const ParseResult<MaxClauses, MaxIneqs, MaxVars>& result) {
+    return !is_unsat(result);
+}
+
+// --- Expression-level: implication and validity ---
+
+// Check if P => Q is valid (P && !Q is UNSAT).
+// Uses Expression operators (&&, !) to build the combined AST,
+// then parses internally. The parser handles De Morgan's laws
+// and DNF distribution.
+// Note: both expressions must fit together within Cap.
 template <std::size_t Cap>
-consteval bool is_valid(Expression<Cap> formula) {
-    auto negated = negate_formula(formula);
-    auto system = parse_to_system(negated);
-    return is_unsat(system);
+consteval bool is_valid_implication(
+        const refmacro::Expression<Cap>& premise,
+        const refmacro::Expression<Cap>& conclusion) {
+    auto combined = premise && !conclusion;
+    auto result = parse_to_system(combined);
+    return is_unsat(result);
+}
+
+// Overload with caller-supplied VarInfo for real-valued variables.
+template <std::size_t Cap, std::size_t MaxVars = 16>
+consteval bool is_valid_implication(
+        const refmacro::Expression<Cap>& premise,
+        const refmacro::Expression<Cap>& conclusion,
+        VarInfo<MaxVars> vars) {
+    auto combined = premise && !conclusion;
+    auto result = parse_to_system(combined, vars);
+    return is_unsat(result);
+}
+
+// Check if a formula is always true (!formula is UNSAT).
+template <std::size_t Cap>
+consteval bool is_valid(const refmacro::Expression<Cap>& formula) {
+    auto negated = !formula;
+    auto result = parse_to_system(negated);
+    return is_unsat(result);
+}
+
+// Overload with caller-supplied VarInfo for real-valued variables.
+template <std::size_t Cap, std::size_t MaxVars = 16>
+consteval bool is_valid(const refmacro::Expression<Cap>& formula,
+                        VarInfo<MaxVars> vars) {
+    auto negated = !formula;
+    auto result = parse_to_system(negated, vars);
+    return is_unsat(result);
 }
 
 } // namespace reftype::fm
 ```
+
+### Design Notes
+
+**Why `fm_is_unsat` instead of inline elimination:**
+The original draft showed `is_unsat` doing `eliminate_variable` + `apply_integer_rounding` in a loop. This is unnecessary because `eliminate_variable` already integrates integer rounding internally (pre-combination tightening, eliminate.hpp:126-133). `fm_is_unsat` in `eliminate.hpp` already does the full elimination loop correctly. `is_unsat` is a thin wrapper for API naming consistency.
+
+**Why DNF `is_unsat(ParseResult)` is needed:**
+`is_valid_implication(P, Q)` builds `P && !Q` as an Expression. When Q is a conjunction (e.g., `x > 0 && y > 0`), negation applies De Morgan's: `!(x > 0 && y > 0)` becomes `x <= 0 || y <= 0`, a disjunction. The parser converts this to multiple DNF clauses. Checking UNSAT on a DNF means ALL clauses must be UNSAT.
+
+**Why Expression operators instead of `negate_formula`/`conjunction`:**
+The original draft used hypothetical `negate_formula()` and `conjunction()` functions that don't exist. Expression already has `operator!` (builds `"lnot"` AST node) and `operator&&` (builds `"land"` AST node). The parser's `parse_negated` handles De Morgan's laws during parsing. Using operators is simpler and reuses existing code.
+
+**Tautology handling works without Phase 6f:**
+`is_valid({x >= 0 || x < 0})` works because negation applies De Morgan's: `!(x >= 0 || x < 0)` becomes `x < 0 && x >= 0`, a single conjunction. FM elimination finds this UNSAT. No disjunction-level reasoning needed.
+
+---
 
 ## Usage from Type Checker
 
@@ -70,12 +128,34 @@ for (auto& c : constraints) {
 }
 ```
 
+---
+
 ## Testing Strategy
 
-- `is_sat({x > 0 && x < 5})` → true
-- `is_unsat({x > 0 && x < 0})` → true
-- `is_valid_implication({x > 0 && x < 10}, {x >= 0})` → true
-- `is_valid_implication({x > 0}, {x > 5})` → false
-- `is_valid({x >= 0 || x < 0})` → true (tautology) — requires Phase 6f
-- `is_valid({x > 0})` → false (not always true)
-- Integration: parse Expression AST end-to-end
+### System-level
+- `is_sat({x > 0 && x < 5})` -> true
+- `is_unsat({x > 0 && x < 0})` -> true
+- `is_sat(empty system)` -> true
+- `is_unsat(constant contradiction)` -> true
+
+### DNF-level
+- `is_unsat(ParseResult with all UNSAT clauses)` -> true
+- `is_sat(ParseResult with one SAT clause)` -> true
+
+### Implication
+- `is_valid_implication({x > 0 && x < 10}, {x >= 0})` -> true
+- `is_valid_implication({x > 0}, {x > 5})` -> false
+- `is_valid_implication({x >= 0 && x <= 5}, {x >= 0})` -> true (weaker conclusion)
+- `is_valid_implication({x == 3}, {x >= 0})` -> true (equality implies bound)
+
+### Validity
+- `is_valid({x >= 0 || x < 0})` -> true (tautology via De Morgan)
+- `is_valid({x > 0})` -> false (not always true)
+
+### VarInfo overloads
+- `is_valid_implication` with real-valued VarInfo
+- `is_valid` with real-valued VarInfo
+- Verify real vs integer gives different results where rounding matters
+
+### End-to-end
+- Full Expression -> parse -> solve pipeline tests
