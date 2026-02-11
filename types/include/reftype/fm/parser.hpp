@@ -367,8 +367,14 @@ template <std::size_t Cap, std::size_t MaxClauses = 8,
 consteval ParseResult<MaxClauses, MaxIneqs, MaxVars>
 parse_to_system(const refmacro::Expression<Cap>& formula) {
     VarInfo<MaxVars> vars{};
-    return parse_formula<Cap, MaxClauses, MaxIneqs>(
+    auto result = parse_formula<Cap, MaxClauses, MaxIneqs>(
         refmacro::NodeView<Cap>{formula.ast, formula.id}, vars);
+    // Propagate the final VarInfo (with all variables discovered during
+    // parsing) back to every clause, so cross-clause algorithms in
+    // Phase 6f see a consistent variable registry.
+    for (std::size_t i = 0; i < result.clause_count; ++i)
+        result.clauses[i].vars = vars;
+    return result;
 }
 
 } // namespace reftype::fm

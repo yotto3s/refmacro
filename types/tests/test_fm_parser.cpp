@@ -358,12 +358,12 @@ TEST(ParseFormula, VarsRegistered) {
 }
 
 TEST(ParseFormula, SharedVarsAcrossDisjunction) {
-    // (x > 0 || y > 0) — vars accumulate left-to-right during parsing
-    // clause[0] was built when only x was known, clause[1] sees both x and y
+    // (x > 0 || y > 0) — after full parse, all clauses share the same VarInfo
     static constexpr auto e =
         (Expression<>::var("x") > 0.0) || (Expression<>::var("y") > 0.0);
     constexpr auto result = parse_to_system(e);
     static_assert(result.clause_count == 2);
-    static_assert(result.clauses[0].vars.count == 1);  // only x known at parse time
-    static_assert(result.clauses[1].vars.count == 2);  // x and y both known
+    // Both clauses see both variables after VarInfo propagation
+    static_assert(result.clauses[0].vars.count == 2);
+    static_assert(result.clauses[1].vars.count == 2);
 }
