@@ -369,6 +369,67 @@ TEST(ParseFormula, SharedVarsAcrossDisjunction) {
 }
 
 // ============================================================
+// parse_to_system with caller-supplied VarInfo (real-valued)
+// ============================================================
+
+TEST(ParseToSystemVarInfo, RealValuedVariables) {
+    // Pre-register x as real, then parse x > 0
+    static constexpr auto e = Expression<>::var("x") > 0.0;
+    constexpr auto result = [] {
+        VarInfo<> vars{};
+        vars.find_or_add("x", false);  // real-valued
+        return parse_to_system(e, vars);
+    }();
+    static_assert(result.is_conjunctive());
+    static_assert(result.system().count == 1);
+    static_assert(result.system().vars.is_integer[0] == false);
+    static_assert(result.system().ineqs[0].terms[0].coeff == 1.0);
+}
+
+TEST(ParseToSystemVarInfo, RealNewVarInheritsType) {
+    // Pre-register x as real; y discovered during parsing should also be real
+    static constexpr auto e =
+        (Expression<>::var("x") > 0.0) && (Expression<>::var("y") < 5.0);
+    constexpr auto result = [] {
+        VarInfo<> vars{};
+        vars.find_or_add("x", false);  // real-valued
+        return parse_to_system(e, vars);
+    }();
+    static_assert(result.is_conjunctive());
+    static_assert(result.system().vars.count == 2);
+    static_assert(result.system().vars.is_integer[0] == false);  // x
+    static_assert(result.system().vars.is_integer[1] == false);  // y
+}
+
+TEST(ParseToSystemVarInfo, RealDisjunction) {
+    // Real-valued variables with disjunction
+    static constexpr auto e =
+        (Expression<>::var("x") > 0.0) || (Expression<>::var("x") < -1.0);
+    constexpr auto result = [] {
+        VarInfo<> vars{};
+        vars.find_or_add("x", false);
+        return parse_to_system(e, vars);
+    }();
+    static_assert(result.clause_count == 2);
+    // Both clauses should have real-valued x after VarInfo propagation
+    static_assert(result.clauses[0].vars.is_integer[0] == false);
+    static_assert(result.clauses[1].vars.is_integer[0] == false);
+}
+
+TEST(ParseToSystemVarInfo, IntegerDefault) {
+    // Zero-arg overload defaults to integer — verify behavior matches
+    static constexpr auto e = Expression<>::var("x") > 0.0;
+    constexpr auto result_default = parse_to_system(e);
+    constexpr auto result_explicit = [] {
+        VarInfo<> vars{};
+        return parse_to_system(e, vars);
+    }();
+    static_assert(result_default.system().vars.is_integer[0] == true);
+    static_assert(result_explicit.system().vars.is_integer[0] == true);
+    static_assert(result_default.system().count == result_explicit.system().count);
+}
+
+// ============================================================
 // Error boundary tests
 // ============================================================
 // The following parse errors are consteval — they produce compile-time

@@ -189,7 +189,10 @@ parse_arith(refmacro::NodeView<Cap> node, VarInfo<MaxVars>& vars) {
 
     if (t == "var") {
         LinearExpr<MaxVars> r{};
-        int id = vars.find_or_add(node.name().data());
+        // Match the type convention already in VarInfo (integer by default,
+        // but real if the caller pre-populated with real-valued variables).
+        bool is_int = vars.count > 0 ? vars.is_integer[0] : true;
+        int id = vars.find_or_add(node.name().data(), is_int);
         r.coeffs[id] = 1.0;
         return r;
     }
