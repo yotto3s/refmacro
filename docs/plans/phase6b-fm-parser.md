@@ -98,7 +98,7 @@ struct ParseResult {
     consteval bool is_conjunctive() const { return clause_count == 1; }
 
     consteval const InequalitySystem<MaxIneqs, MaxVars>& system() const {
-        if (clause_count != 1) throw "not a conjunctive formula";
+        if (clause_count != 1) throw "ParseResult::system(): not a conjunctive formula";
         return clauses[0];
     }
 
