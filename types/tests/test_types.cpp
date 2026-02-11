@@ -1,0 +1,154 @@
+#include <gtest/gtest.h>
+
+#include <reftype/pretty.hpp>
+#include <reftype/types.hpp>
+
+using refmacro::Expression;
+using reftype::ann;
+using reftype::pos_int;
+using reftype::tarr;
+using reftype::TBool;
+using reftype::TInt;
+using reftype::TReal;
+using reftype::tref;
+
+// --- Base type constants ---
+
+TEST(TypeConstants, TIntTagAndChildren) {
+    static constexpr auto t = TInt;
+    static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "tint"));
+    static_assert(t.ast.nodes[t.id].child_count == 0);
+}
+
+TEST(TypeConstants, TBoolTagAndChildren) {
+    static constexpr auto t = TBool;
+    static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "tbool"));
+    static_assert(t.ast.nodes[t.id].child_count == 0);
+}
+
+TEST(TypeConstants, TRealTagAndChildren) {
+    static constexpr auto t = TReal;
+    static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "treal"));
+    static_assert(t.ast.nodes[t.id].child_count == 0);
+}
+
+// --- Refinement type ---
+
+TEST(TypeConstructors, TrefStructure) {
+    static constexpr auto t =
+        tref(TInt, Expression<>::var("#v") > Expression<>::lit(0));
+    static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "tref"));
+    static_assert(t.ast.nodes[t.id].child_count == 2);
+}
+
+TEST(TypeConstructors, PosIntHelper) {
+    static constexpr auto t = pos_int();
+    static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "tref"));
+    static_assert(t.ast.nodes[t.id].child_count == 2);
+    constexpr auto base_id = t.ast.nodes[t.id].children[0];
+    static_assert(refmacro::str_eq(t.ast.nodes[base_id].tag, "tint"));
+}
+
+// --- Arrow type ---
+
+TEST(TypeConstructors, TarrStructure) {
+    static constexpr auto t = tarr("x", TInt, TBool);
+    static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "tarr"));
+    static_assert(t.ast.nodes[t.id].child_count == 3);
+    constexpr auto param_id = t.ast.nodes[t.id].children[0];
+    static_assert(refmacro::str_eq(t.ast.nodes[param_id].tag, "var"));
+    static_assert(refmacro::str_eq(t.ast.nodes[param_id].name, "x"));
+}
+
+// --- Annotation ---
+
+TEST(TypeConstructors, AnnStructure) {
+    static constexpr auto t =
+        ann(Expression<>::var("x"), TInt);
+    static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "ann"));
+    static_assert(t.ast.nodes[t.id].child_count == 2);
+}
+
+// --- Nested types ---
+
+TEST(TypeConstructors, NestedAnnotation) {
+    static constexpr auto t = ann(
+        Expression<>::var("x"),
+        tref(TInt, Expression<>::var("#v") > Expression<>::lit(0)));
+    static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "ann"));
+    constexpr auto type_id = t.ast.nodes[t.id].children[1];
+    static_assert(refmacro::str_eq(t.ast.nodes[type_id].tag, "tref"));
+}
+
+TEST(TypeConstructors, DependentArrow) {
+    using reftype::tint;
+    // (x : {#v : Int | #v > 0}) -> {#v : Int | #v > x}
+    static constexpr auto t = tarr<128>(
+        "x",
+        tref<128>(tint<128>(),
+                  Expression<128>::var("#v") > Expression<128>::lit(0)),
+        tref<128>(tint<128>(),
+                  Expression<128>::var("#v") > Expression<128>::var("x")));
+    static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "tarr"));
+    static_assert(t.ast.nodes[t.id].child_count == 3);
+}
+
+// --- Pretty-print ---
+
+TEST(TypePrettyPrint, BaseTypes) {
+    static constexpr auto pp_int = reftype::pretty_print(TInt);
+    static_assert(pp_int == "Int");
+
+    static constexpr auto pp_bool = reftype::pretty_print(TBool);
+    static_assert(pp_bool == "Bool");
+
+    static constexpr auto pp_real = reftype::pretty_print(TReal);
+    static_assert(pp_real == "Real");
+}
+
+TEST(TypePrettyPrint, RefinementType) {
+    static constexpr auto t =
+        tref(TInt, Expression<>::var("#v") > Expression<>::lit(0));
+    static constexpr auto pp = reftype::pretty_print(t);
+    static_assert(pp == "{#v : Int | (#v > 0)}");
+}
+
+TEST(TypePrettyPrint, ArrowType) {
+    static constexpr auto t = tarr("x", TInt, TBool);
+    static constexpr auto pp = reftype::pretty_print(t);
+    static_assert(pp == "(x : Int) -> Bool");
+}
+
+TEST(TypePrettyPrint, Annotation) {
+    static constexpr auto t = ann(Expression<>::var("x"), TInt);
+    static constexpr auto pp = reftype::pretty_print(t);
+    static_assert(pp == "(x : Int)");
+}
+
+TEST(TypePrettyPrint, NestedRefinement) {
+    static constexpr auto t = ann(
+        Expression<>::var("x"),
+        tref(TInt, Expression<>::var("#v") > Expression<>::lit(0)));
+    static constexpr auto pp = reftype::pretty_print(t);
+    static_assert(pp == "(x : {#v : Int | (#v > 0)})");
+}
+
+TEST(TypePrettyPrint, DependentArrow) {
+    using reftype::tint;
+    static constexpr auto t = tarr<128>(
+        "x",
+        tref<128>(tint<128>(),
+                  Expression<128>::var("#v") > Expression<128>::lit(0)),
+        tref<128>(tint<128>(),
+                  Expression<128>::var("#v") > Expression<128>::var("x")));
+    static constexpr auto pp = reftype::pretty_print(t);
+    static_assert(pp == "(x : {#v : Int | (#v > 0)}) -> {#v : Int | (#v > x)}");
+}
+
+TEST(TypePrettyPrint, ExpressionFallback) {
+    // Core expression tags should still render correctly through reftype::pretty_print
+    static constexpr auto e =
+        Expression<>::var("x") > Expression<>::lit(1);
+    static constexpr auto pp = reftype::pretty_print(e);
+    static_assert(pp == "(x > 1)");
+}
