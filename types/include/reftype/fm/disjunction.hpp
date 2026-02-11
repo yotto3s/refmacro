@@ -24,6 +24,15 @@ consteval LinearInequality negate_inequality(LinearInequality ineq) {
 template <std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
 consteval bool clause_implies(const InequalitySystem<MaxIneqs, MaxVars>& a,
                               const InequalitySystem<MaxIneqs, MaxVars>& b) {
+    // Guard: var_ids must refer to the same variables in both systems.
+    const auto& smaller = (a.vars.count <= b.vars.count) ? a.vars : b.vars;
+    const auto& larger = (a.vars.count <= b.vars.count) ? b.vars : a.vars;
+    for (std::size_t i = 0; i < smaller.count; ++i) {
+        auto found = larger.find(smaller.names[i]);
+        if (!found.has_value() || found.value() != static_cast<int>(i))
+            throw "clause_implies: incompatible variable orderings";
+    }
+
     for (std::size_t i = 0; i < b.count; ++i) {
         auto test = a.add(negate_inequality(b.ineqs[i]));
         if (!fm_is_unsat(test))
