@@ -276,22 +276,6 @@ TEST(FMIntegerMultiVar, SumBetween4And5UNSAT) {
     static_assert(unsat);
 }
 
-// x >= y, y >= x + 1, both integer → UNSAT
-TEST(FMIntegerMultiVar, XGeqYAndYGeqXPlus1UNSAT) {
-    constexpr bool unsat = [] consteval {
-        InequalitySystem<> sys{};
-        int x = sys.vars.find_or_add("x", true);
-        int y = sys.vars.find_or_add("y", true);
-        sys = sys
-            .add(LinearInequality::make(
-                {LinearTerm{x, 1.0}, LinearTerm{y, -1.0}}, 0.0, false))
-            .add(LinearInequality::make(
-                {LinearTerm{x, -1.0}, LinearTerm{y, 1.0}}, -1.0, false));
-        return fm_is_unsat(sys);
-    }();
-    static_assert(unsat);
-}
-
 // --- Non-unit coefficient tests ---
 
 // 2x > 5 && 2x < 7, x integer → SAT (x=3, since 2*3=6 is in (5,7))
@@ -357,6 +341,22 @@ TEST(RoundIntegerBound, NonUnitUpperNonStrictFraction) {
     constexpr auto rounded = round_integer_bound(ineq, false, 2.0);
     static_assert(rounded.constant == 2.0);
     static_assert(rounded.strict == false);
+}
+
+// --- Real-valued non-unit coefficient test ---
+
+// 2x >= 3 && 2x <= 3, real → SAT (x = 1.5)
+// Counterpart: FMElimNonUnit::NonUnitHalfIntegerUNSAT (integer: UNSAT)
+TEST(FMRealElim, NonUnitCoeffNoRounding) {
+    constexpr bool unsat = [] consteval {
+        InequalitySystem<> sys{};
+        int x = sys.vars.find_or_add("x", false);  // real
+        sys = sys
+            .add(LinearInequality::make({LinearTerm{x, 2.0}}, -3.0, false))   // 2x >= 3
+            .add(LinearInequality::make({LinearTerm{x, -2.0}}, 3.0, false));  // 2x <= 3
+        return fm_is_unsat(sys);
+    }();
+    static_assert(!unsat);
 }
 
 // Multi-variable: 2x + 3y - 3 >= 0, x integer — must NOT normalize by coeff

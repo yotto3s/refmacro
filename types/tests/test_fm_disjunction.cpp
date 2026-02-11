@@ -314,6 +314,81 @@ TEST(SimplifyDnf, EmptyDnfUnchanged) {
 }
 
 // ============================================================
+// Real-valued variable tests
+// ============================================================
+
+TEST(ClauseImpliesReal, StrongerImpliesWeaker) {
+    // Real vars: (x > 0 && x < 1) implies (x >= 0 && x <= 1)
+    // Premise is SAT for reals (would be UNSAT for integers)
+    constexpr auto result = [] {
+        InequalitySystem<> a{};
+        int x = a.vars.find_or_add("x", false);  // real
+        a = a.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))   // x > 0
+              .add(LinearInequality::make({LinearTerm{x, -1.0}}, 1.0, true)); // x < 1
+
+        InequalitySystem<> b{};
+        int xb = b.vars.find_or_add("x", false);  // real
+        b = b.add(LinearInequality::make({LinearTerm{xb, 1.0}}, 0.0))   // x >= 0
+              .add(LinearInequality::make({LinearTerm{xb, -1.0}}, 1.0)); // x <= 1
+
+        return clause_implies(a, b);
+    }();
+    static_assert(result == true);
+}
+
+TEST(RemoveUnsatClausesReal, KeepsRealSatClause) {
+    // DNF: (x > 0 && x < 1) || (x >= 5), real vars
+    // First clause is SAT for reals (UNSAT for integers) — both kept
+    constexpr auto result = [] {
+        InequalitySystem<> s1{};
+        int x1 = s1.vars.find_or_add("x", false);  // real
+        s1 = s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0, true))   // x > 0
+               .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 1.0, true)); // x < 1
+
+        InequalitySystem<> s2{};
+        int x2 = s2.vars.find_or_add("x", false);  // real
+        s2 = s2.add(LinearInequality::make({LinearTerm{x2, 1.0}}, -5.0));  // x >= 5
+
+        ParseResult<> r{};
+        r.clauses[0] = s1;
+        r.clauses[1] = s2;
+        r.clause_count = 2;
+        return remove_unsat_clauses(r);
+    }();
+    static_assert(result.clause_count == 2);
+}
+
+TEST(SimplifyDnfReal, RemovesUnsatKeepsSat) {
+    // DNF: (x > 0 && x < 0) || (x > 0 && x < 1) || (x >= 0 && x <= 1), real vars
+    // First: UNSAT (always). Second ⊂ Third (subsumed). Result: 1 clause.
+    constexpr auto result = [] {
+        InequalitySystem<> s1{};
+        int x1 = s1.vars.find_or_add("x", false);  // real
+        s1 = s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0, true))   // x > 0
+               .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 0.0, true)); // x < 0
+
+        InequalitySystem<> s2{};
+        int x2 = s2.vars.find_or_add("x", false);  // real
+        s2 = s2.add(LinearInequality::make({LinearTerm{x2, 1.0}}, 0.0, true))   // x > 0
+               .add(LinearInequality::make({LinearTerm{x2, -1.0}}, 1.0, true)); // x < 1
+
+        InequalitySystem<> s3{};
+        int x3 = s3.vars.find_or_add("x", false);  // real
+        s3 = s3.add(LinearInequality::make({LinearTerm{x3, 1.0}}, 0.0))    // x >= 0
+               .add(LinearInequality::make({LinearTerm{x3, -1.0}}, 1.0));  // x <= 1
+
+        ParseResult<> r{};
+        r.clauses[0] = s1;
+        r.clauses[1] = s2;
+        r.clauses[2] = s3;
+        r.clause_count = 3;
+        return simplify_dnf(r);
+    }();
+    static_assert(result.clause_count == 1);
+    static_assert(is_sat(result));
+}
+
+// ============================================================
 // Correctness equivalence: clause-by-clause vs brute-force
 // ============================================================
 

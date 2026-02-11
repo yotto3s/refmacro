@@ -453,6 +453,26 @@ TEST(ParseArith, MulConstantTimesConstant) {
     static_assert(is_constant_expr(result));
 }
 
+TEST(ParseArithReal, InheritsRealType) {
+    // Pre-register x as real, parse 2*x + y - 3
+    // Verify coefficients AND that both x,y are real in resulting VarInfo
+    static constexpr auto e =
+        Expression<>::lit(2.0) * Expression<>::var("x") +
+        Expression<>::var("y") - Expression<>::lit(3.0);
+    constexpr auto result = [] {
+        VarInfo<> vars{};
+        vars.find_or_add("x", false);  // real
+        auto r = parse_arith<64>(NodeView{e.ast, e.id}, vars);
+        return std::pair{r, vars};
+    }();
+    static_assert(result.first.coeffs[0] == 2.0);   // x
+    static_assert(result.first.coeffs[1] == 1.0);    // y
+    static_assert(result.first.constant == -3.0);
+    static_assert(result.second.count == 2);
+    static_assert(result.second.is_integer[0] == false);  // x: real
+    static_assert(result.second.is_integer[1] == false);  // y: inherits real
+}
+
 TEST(ParseArith, DivByNonZeroConstant) {
     // x / 3 → valid (divisor is non-zero constant)
     static constexpr auto e =

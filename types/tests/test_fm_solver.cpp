@@ -280,6 +280,54 @@ TEST(IsValidReal, NotValidForReals) {
     static_assert(!is_valid(formula, vars));
 }
 
+TEST(IsValidReal, ValidForIntNotForReal) {
+    // !(x > 0 && x < 1) — valid for integers (inner UNSAT), NOT valid for reals (x=0.5)
+    static constexpr auto formula =
+        !((Expression::var("x") > 0.0) && (Expression::var("x") < 1.0));
+
+    // Integer: valid (inner is UNSAT, so negation is tautology)
+    static_assert(is_valid(formula));
+
+    // Real: NOT valid (x=0.5 satisfies inner, so negation fails at x=0.5)
+    constexpr auto vars = [] {
+        VarInfo<> v{};
+        v.find_or_add("x", false);
+        return v;
+    }();
+    static_assert(!is_valid(formula, vars));
+}
+
+TEST(IsValidImplicationReal, RealMultiVarImplication) {
+    // Real vars: (x >= 0 && y >= 0 && x + y <= 5) => (x <= 5 && y <= 5)
+    static constexpr auto x = Expression::var("x");
+    static constexpr auto y = Expression::var("y");
+    static constexpr auto P = (x >= 0.0) && (y >= 0.0) && (x + y <= 5.0);
+    static constexpr auto Q = (x <= 5.0) && (y <= 5.0);
+    constexpr auto vars = [] {
+        VarInfo<> v{};
+        v.find_or_add("x", false);
+        v.find_or_add("y", false);
+        return v;
+    }();
+    static_assert(is_valid_implication(P, Q, vars));
+}
+
+TEST(DisjunctiveConclusionFallbackReal, ValidImplication) {
+    // Real vars: same structure as DisjunctiveConclusionFallback::ValidImplication
+    // (x >= 1 && x <= 3) => ((x >= 0 && x <= 2) || (x >= 2 && x <= 4))
+    // [1,3] ⊆ [0,2] ∪ [2,4] → valid
+    static constexpr auto x = Expression::var("x");
+    static constexpr auto P = (x >= 1.0) && (x <= 3.0);
+    static constexpr auto Q =
+        ((x >= 0.0) && (x <= 2.0)) || ((x >= 2.0) && (x <= 4.0));
+    constexpr auto vars = [] {
+        VarInfo<> v{};
+        v.find_or_add("x", false);
+        return v;
+    }();
+    static_assert(is_valid_implication(P, Q, vars));
+}
+
 // ============================================================
 // Edge case: zero-clause ParseResult (vacuously UNSAT)
 // ============================================================

@@ -297,3 +297,50 @@ TEST(FmIsUnsat, StrictOpenInterval) {
     }();
     static_assert(!fm_is_unsat(sys));
 }
+
+// --- Real-valued divergence tests (integer counterparts are UNSAT) ---
+
+// x > 2 && x < 3, real → SAT (x=2.5)
+// Counterpart: FMIntegerElim::StrictIntegerBoundsUNSAT (integer: UNSAT)
+TEST(FmIsUnsatReal, OpenIntervalSAT) {
+    constexpr bool unsat = [] consteval {
+        InequalitySystem<> sys{};
+        int x = sys.vars.find_or_add("x", false);  // real
+        sys = sys
+            .add(LinearInequality::make({LinearTerm{x, 1.0}}, -2.0, true))   // x > 2
+            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 3.0, true));  // x < 3
+        return fm_is_unsat(sys);
+    }();
+    static_assert(!unsat);
+}
+
+// 3x >= 1 && 3x <= 2, real → SAT (x ∈ [1/3, 2/3])
+// Counterpart: FMElimNonUnit::DivisibilityDetected (integer: UNSAT)
+TEST(FmIsUnsatReal, NonUnitCoeffSAT) {
+    constexpr bool unsat = [] consteval {
+        InequalitySystem<> sys{};
+        int x = sys.vars.find_or_add("x", false);  // real
+        sys = sys
+            .add(LinearInequality::make({LinearTerm{x, 3.0}}, -1.0, false))   // 3x >= 1
+            .add(LinearInequality::make({LinearTerm{x, -3.0}}, 2.0, false));  // 3x <= 2
+        return fm_is_unsat(sys);
+    }();
+    static_assert(!unsat);
+}
+
+// x + y > 4 && x + y < 5, real → SAT (e.g. x=2, y=2.3)
+// Counterpart: FMIntegerMultiVar::SumBetween4And5UNSAT (integer: UNSAT)
+TEST(FmIsUnsatReal, TwoVarsSAT) {
+    constexpr bool unsat = [] consteval {
+        InequalitySystem<> sys{};
+        int x = sys.vars.find_or_add("x", false);  // real
+        int y = sys.vars.find_or_add("y", false);  // real
+        sys = sys
+            .add(LinearInequality::make(
+                {LinearTerm{x, 1.0}, LinearTerm{y, 1.0}}, -4.0, true))   // x+y > 4
+            .add(LinearInequality::make(
+                {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 5.0, true)); // x+y < 5
+        return fm_is_unsat(sys);
+    }();
+    static_assert(!unsat);
+}
