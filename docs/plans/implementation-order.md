@@ -167,7 +167,7 @@ Each step is a logical unit of work suitable for a single branch/PR:
 - [x] Step 2 — FM core: eliminate_variable, has_contradiction ([phase6c-fm-core.md](phase6c-fm-core.md))
 - [x] Step 3 — Integer rounding: ceil/floor tightening ([phase6d-fm-integer-rounding.md](phase6d-fm-integer-rounding.md))
 - [x] Step 4 — Expression → inequality parser ([phase6b-fm-parser.md](phase6b-fm-parser.md))
-- [ ] Step 5 — Validity/SAT public API ([phase6e-fm-validity.md](phase6e-fm-validity.md))
+- [x] Step 5 — Validity/SAT public API ([phase6e-fm-validity.md](phase6e-fm-validity.md))
 - [ ] Step 6 — Disjunction handling: DNF splitting ([phase6f-fm-disjunction.md](phase6f-fm-disjunction.md))
 - [ ] Step 7 — Type AST nodes + constants + pretty-print ([phase1-type-representation.md](phase1-type-representation.md))
 - [ ] Step 8 — TypeEnv (bind, lookup, shadowing) ([phase2-type-environment.md](phase2-type-environment.md))
