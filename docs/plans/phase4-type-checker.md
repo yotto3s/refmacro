@@ -5,8 +5,8 @@
 **Goal:** Implement a bidirectional type checker: single recursive walk that synthesizes types bottom-up while threading TypeEnv top-down, collecting subtyping constraints for the FM solver.
 
 **Files:**
-- `include/refmacro/types/type_rules.hpp` — TypeRule, def_typerule, built-in rules
-- `include/refmacro/types/check.hpp` — synth(), type_check pipeline function
+- `include/reftype/type_rules.hpp` — TypeRule, def_typerule, built-in rules
+- `include/reftype/check.hpp` — synth(), type_check pipeline function
 
 **Depends on:** Phases 1-3
 
@@ -49,7 +49,7 @@ synth(Γ, eq/lt/gt(a,b))= let (Ta, C1) = synth(Γ, a)
 ## TypeRule (parallel to Macro)
 
 ```cpp
-namespace refmacro::types {
+namespace reftype {
 
 template <typename RuleFn>
 struct TypeRule {
@@ -69,7 +69,7 @@ consteval auto def_typerule(const char* name, auto fn) {
 // Dispatch: apply_typerule<TagStr{tag}, TypeRules...>()
 // Same pattern as apply_macro in compile.hpp
 
-} // namespace refmacro::types
+} // namespace reftype
 ```
 
 ## TypeResult

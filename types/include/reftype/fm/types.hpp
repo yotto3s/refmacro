@@ -55,12 +55,17 @@ template <std::size_t MaxVars = 16> struct VarInfo {
 
     consteval int find_or_add(const char* name, bool integer = true) {
         for (std::size_t i = 0; i < count; ++i)
-            if (refmacro::str_eq(names[i], name))
+            if (refmacro::str_eq(names[i], name)) {
+                if (is_integer[i] != integer)
+                    throw "VarInfo: type mismatch on existing variable";
                 return static_cast<int>(i);
+            }
         if (count >= MaxVars)
             throw "VarInfo capacity exceeded";
         if (refmacro::str_len(name) >= sizeof(names[0]))
             throw "VarInfo name too long";
+        if (count > 0 && is_integer[0] != integer)
+            throw "VarInfo: cannot mix integer and real variables";
         refmacro::copy_str(names[count], name, sizeof(names[0]));
         is_integer[count] = integer;
         return static_cast<int>(count++);

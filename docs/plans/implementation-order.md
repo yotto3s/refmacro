@@ -14,7 +14,7 @@ refmacro/
 ├── CMakeLists.txt           # core build (add_subdirectory(types) gated by option)
 │
 └── types/                   # refinement type system (NEW)
-    ├── include/refmacro/types/
+    ├── include/reftype/
     │   ├── types.hpp            # Phase 1: type AST nodes
     │   ├── pretty.hpp           # Phase 1: type pretty-print
     │   ├── type_env.hpp         # Phase 2: TypeEnv
@@ -113,14 +113,14 @@ Phase 8 (errors) ── integrated
 ### `types/CMakeLists.txt`
 
 ```cmake
-add_library(refmacro_types INTERFACE)
-add_library(refmacro_types::refmacro_types ALIAS refmacro_types)
+add_library(reftype INTERFACE)
+add_library(reftype::reftype ALIAS reftype)
 
-target_include_directories(refmacro_types INTERFACE
+target_include_directories(reftype INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
-target_link_libraries(refmacro_types INTERFACE refmacro::refmacro)
+target_link_libraries(reftype INTERFACE refmacro::refmacro)
 
 if(REFMACRO_BUILD_TESTS)
     add_subdirectory(tests)
@@ -163,9 +163,9 @@ Each step is a logical unit of work suitable for a single branch/PR:
 
 ## TODO
 
-- [ ] Step 1 — FM data structures ([phase6a-fm-data-structures.md](phase6a-fm-data-structures.md))
-- [ ] Step 2 — FM core: eliminate_variable, has_contradiction ([phase6c-fm-core.md](phase6c-fm-core.md))
-- [ ] Step 3 — Integer rounding: ceil/floor tightening ([phase6d-fm-integer-rounding.md](phase6d-fm-integer-rounding.md))
+- [x] Step 1 — FM data structures ([phase6a-fm-data-structures.md](phase6a-fm-data-structures.md))
+- [x] Step 2 — FM core: eliminate_variable, has_contradiction ([phase6c-fm-core.md](phase6c-fm-core.md))
+- [x] Step 3 — Integer rounding: ceil/floor tightening ([phase6d-fm-integer-rounding.md](phase6d-fm-integer-rounding.md))
 - [ ] Step 4 — Expression → inequality parser ([phase6b-fm-parser.md](phase6b-fm-parser.md))
 - [ ] Step 5 — Validity/SAT public API ([phase6e-fm-validity.md](phase6e-fm-validity.md))
 - [ ] Step 6 — Disjunction handling: DNF splitting ([phase6f-fm-disjunction.md](phase6f-fm-disjunction.md))

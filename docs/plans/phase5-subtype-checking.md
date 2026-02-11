@@ -4,7 +4,7 @@
 
 **Goal:** Implement full subtype checking: same-base refinement implication, base widening, arrow contravariance, and type join.
 
-**File:** `include/refmacro/types/subtype.hpp`
+**File:** `types/include/reftype/subtype.hpp`
 
 **Depends on:** Phase 3 (constraints), Phase 6 (FM solver for refinement implication)
 
@@ -72,7 +72,7 @@ join(T, {#v:T|Q})                   = T                    (drop refinement)
 ## Implementation
 
 ```cpp
-namespace refmacro::types {
+namespace reftype {
 
 template <std::size_t Cap>
 consteval bool is_subtype(Expression<Cap> sub, Expression<Cap> super) {
@@ -137,7 +137,7 @@ consteval Expression<Cap> join(Expression<Cap> t1, Expression<Cap> t2) {
     throw "type error: incompatible types for join";
 }
 
-} // namespace refmacro::types
+} // namespace reftype
 ```
 
 ## FM Solver Implications

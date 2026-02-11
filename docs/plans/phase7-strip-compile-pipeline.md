@@ -4,7 +4,7 @@
 
 **Goal:** Strip type annotations after type checking, then compile normally. Wire up the full composable pipeline.
 
-**File:** `include/refmacro/types/strip.hpp`
+**File:** `types/include/reftype/strip.hpp`
 
 **Depends on:** Phases 4-6
 
@@ -20,7 +20,7 @@
 ## strip_types
 
 ```cpp
-namespace refmacro::types {
+namespace reftype {
 
 template <std::size_t Cap = 128>
 consteval Expression<Cap> strip_types(Expression<Cap> e) {
@@ -41,7 +41,7 @@ consteval Expression<Cap> strip_types(Expression<Cap> e) {
     });
 }
 
-} // namespace refmacro::types
+} // namespace reftype
 ```
 
 ## Full Pipeline
