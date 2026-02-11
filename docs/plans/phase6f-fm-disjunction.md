@@ -16,6 +16,10 @@ The parser (Phase 6b) already produces `ParseResult` in DNF form — an array of
 
 DNF conversion (distribution of `&&` over `||`, De Morgan) is handled during parsing in Phase 6b via `conjoin()` (cross-product) and `disjoin()` (concatenation).
 
+### VarInfo Consistency
+
+`parse_to_system()` propagates the final `VarInfo` to all clauses after parsing. This guarantees that every clause in a `ParseResult` shares the same variable registry — `var_id` N always refers to the same variable across all clauses. Algorithms in this phase can safely compare or merge clauses without variable unification.
+
 ## Strategy
 
 FM natively handles conjunctions. For disjunctions (multiple clauses in `ParseResult`):

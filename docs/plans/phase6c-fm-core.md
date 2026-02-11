@@ -1,6 +1,6 @@
 # Phase 6c: FM Solver — Fourier-Motzkin Core
 
-> **Status:** Work in progress — this plan should be refined before implementation.
+> **Status:** Implemented.
 
 **Goal:** Implement the core Fourier-Motzkin variable elimination algorithm.
 

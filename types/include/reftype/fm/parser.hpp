@@ -53,6 +53,8 @@ consteval LinearExpr<MaxVars> scale_expr(const LinearExpr<MaxVars>& a,
 
 template <std::size_t MaxVars>
 consteval bool is_constant_expr(const LinearExpr<MaxVars>& a) {
+    // Exact 0.0 comparison is intentional: coefficients are built from
+    // consteval integer/double literals, not from lossy floating-point chains.
     for (std::size_t i = 0; i < MaxVars; ++i)
         if (a.coeffs[i] != 0.0)
             return false;
@@ -96,9 +98,12 @@ single_clause(const InequalitySystem<MaxIneqs, MaxVars>& sys) {
     return r;
 }
 
-// Merge two InequalitySystems into one (conjunction within a clause)
-// Takes vars from whichever system has more (right is always a superset
-// since vars accumulate left-to-right during parsing).
+// Merge two InequalitySystems into one (conjunction within a clause).
+// Takes vars from whichever system has more variables registered.
+// Precondition: one system's vars must be a superset of the other's
+// (guaranteed by parse_formula, which passes vars by reference so
+// variables accumulate left-to-right). parse_to_system() then
+// propagates the final VarInfo to all clauses for cross-clause safety.
 template <std::size_t MaxIneqs, std::size_t MaxVars>
 consteval InequalitySystem<MaxIneqs, MaxVars>
 merge_systems(const InequalitySystem<MaxIneqs, MaxVars>& a,
@@ -157,6 +162,7 @@ consteval LinearInequality to_inequality(const LinearExpr<MaxVars>& lhs,
     LinearInequality ineq{};
     ineq.strict = strict;
     ineq.constant = diff.constant;
+    // Exact 0.0 check: see is_constant_expr rationale.
     for (std::size_t i = 0; i < MaxVars; ++i) {
         if (diff.coeffs[i] != 0.0) {
             if (ineq.term_count >= MaxTermsPerIneq)
@@ -361,6 +367,9 @@ parse_negated(refmacro::NodeView<Cap> node, VarInfo<MaxVars>& vars) {
 }
 
 // --- Top-level API ---
+// All variables discovered during parsing are registered as integer-valued
+// (VarInfo::find_or_add default). For real-valued variables, construct a
+// VarInfo manually and call parse_formula directly.
 
 template <std::size_t Cap, std::size_t MaxClauses = 8,
           std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>

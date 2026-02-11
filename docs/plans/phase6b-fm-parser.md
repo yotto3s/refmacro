@@ -1,6 +1,6 @@
 # Phase 6b: FM Solver — Expression Parser
 
-> **Status:** Ready for implementation.
+> **Status:** Implemented.
 
 **Goal:** Parse refmacro Expression ASTs (boolean formulas) into linear inequality systems, producing DNF (disjunction of conjunctions) for formulas containing `||` or `!(==)`.
 
