@@ -30,6 +30,19 @@ TEST(NegateInequality, Strict) {
     static_assert(neg.strict == false);
 }
 
+TEST(NegateInequality, MultiTerm) {
+    // 2x - 3y + 5 >= 0
+    // negated → -2x + 3y - 5 > 0
+    constexpr auto ineq = LinearInequality::make(
+        {LinearTerm{0, 2.0}, LinearTerm{1, -3.0}}, 5.0);
+    constexpr auto neg = negate_inequality(ineq);
+    static_assert(neg.term_count == 2);
+    static_assert(neg.terms[0].coeff == -2.0);
+    static_assert(neg.terms[1].coeff == 3.0);
+    static_assert(neg.constant == -5.0);
+    static_assert(neg.strict == true);
+}
+
 // ============================================================
 // clause_implies
 // ============================================================
@@ -386,4 +399,43 @@ TEST(ImplicationEquivalence, RealValuedVariables) {
         return v;
     }();
     static_assert(is_valid_implication(P, Q, vars));
+}
+
+// ============================================================
+// Disjunctive conclusion (brute-force fallback path)
+// ============================================================
+
+TEST(DisjunctiveConclusionFallback, ValidImplication) {
+    // Q is disjunctive (2 clauses), so solver uses brute-force fallback.
+    // (x >= 1 && x <= 3) => ((x >= 0 && x <= 2) || (x >= 2 && x <= 4))
+    // [1,3] ⊆ [0,2] ∪ [2,4] → valid
+    static constexpr auto x = Expression::var("x");
+    static constexpr auto P = (x >= 1.0) && (x <= 3.0);
+    static constexpr auto Q =
+        ((x >= 0.0) && (x <= 2.0)) || ((x >= 2.0) && (x <= 4.0));
+    static_assert(is_valid_implication(P, Q));
+}
+
+TEST(DisjunctiveConclusionFallback, InvalidImplication) {
+    // Q is disjunctive, brute-force fallback — should be false.
+    // (x >= 0 && x <= 5) => ((x >= 0 && x <= 2) || (x >= 4 && x <= 5))
+    // x=3 satisfies P but not Q → invalid
+    static constexpr auto x = Expression::var("x");
+    static constexpr auto P = (x >= 0.0) && (x <= 5.0);
+    static constexpr auto Q =
+        ((x >= 0.0) && (x <= 2.0)) || ((x >= 4.0) && (x <= 5.0));
+    static_assert(!is_valid_implication(P, Q));
+}
+
+TEST(DisjunctiveConclusionFallback, MultiClauseFromPlan) {
+    // From phase6f plan: (x > 0 || x < -1) => (x > 0 || x < 0)
+    // Each premise clause implies conclusion: x > 0 → x > 0, x < -1 → x < 0.
+    // Q is disjunctive, so brute-force fallback is used.
+    static constexpr auto x = Expression::var("x");
+    static constexpr auto P = (x > 0.0) || (x < Expression::lit(-1.0));
+    static constexpr auto Q = (x > 0.0) || (x < 0.0);
+    static_assert(is_valid_implication(P, Q));
+    // Verify brute-force agrees
+    constexpr auto combined = P && !Q;
+    static_assert(is_unsat(parse_to_system(combined)));
 }

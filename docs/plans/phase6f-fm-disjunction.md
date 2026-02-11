@@ -1,6 +1,6 @@
 # Phase 6f: FM Solver — Disjunction Handling
 
-> **Status:** Ready for implementation. DNF explosion control and basic DNF SAT/UNSAT already implemented in parser.hpp and solver.hpp (Phase 6b/6e). Remaining: clause simplification and clause-by-clause implication optimization.
+> **Status:** Implemented. All planned functions (`clause_implies`, `remove_unsat_clauses`, `remove_subsumed_clauses`, `simplify_dnf`) and the optimized clause-by-clause `is_valid_implication` are complete with tests.
 
 **Goal:** Provide advanced disjunction-handling algorithms beyond the basic DNF UNSAT/SAT checks.
 
