@@ -2,7 +2,7 @@
 
 > **Status:** Work in progress — this plan should be refined before implementation.
 
-**Goal:** Handle disjunctions (||) in formulas by splitting into independent FM queries.
+**Goal:** Provide algorithms for checking satisfiability and validity of disjunctive formulas (DNF).
 
 **File:** `types/include/reftype/fm/disjunction.hpp`
 
@@ -10,60 +10,48 @@
 
 ---
 
+## Design Note
+
+The parser (Phase 6b) already produces `ParseResult` in DNF form — an array of `InequalitySystem` clauses representing disjunction of conjunctions. Phase 6f provides **algorithms over `ParseResult`**, not structural changes to the parser.
+
+DNF conversion (distribution of `&&` over `||`, De Morgan) is handled during parsing in Phase 6b via `conjoin()` (cross-product) and `disjoin()` (concatenation).
+
 ## Strategy
 
-FM natively handles conjunctions. For disjunctions, we split:
+FM natively handles conjunctions. For disjunctions (multiple clauses in `ParseResult`):
 
-### Case 1: Checking UNSAT of `A || B`
+### Checking UNSAT of DNF
 - `A || B` is UNSAT iff both `A` is UNSAT and `B` is UNSAT
-- Split into two independent FM queries
+- Iterate clauses: if any clause is SAT, the whole formula is SAT
 
-### Case 2: Checking validity of `(A || B) => C`
-- Equivalent to `(A => C) && (B => C)`
-- Split: check `A => C` and `B => C` independently
+### Checking validity of implication with DNF
+- `(A || B) => C` is valid iff `(A => C)` and `(B => C)` are both valid
+- For each premise clause, check implication against conclusion independently
 
-### Case 3: Checking validity of `A => (B || C)`
-- Equivalent to `A && !B && !C` is UNSAT
-- Negate: `!(B || C)` = `!B && !C` (De Morgan)
-- Result is a conjunction — standard FM
-
-### Case 4: Nested disjunctions
-- `(A || B) && (C || D)` — convert to DNF:
-  - `(A && C) || (A && D) || (B && C) || (B && D)`
-  - Check each disjunct independently
+### Checking validity of `P => (Q || R)`
+- Equivalent to `P && !Q && !R` is UNSAT
+- `!(Q || R)` = `!Q && !R` (De Morgan) → conjunction, handled by parser
 
 ## Implementation
 
 ```cpp
 namespace reftype::fm {
 
-// Normalize formula: push negations inward, distribute to DNF
-// Returns a list of conjunctive clauses (the disjuncts of DNF)
-template <std::size_t Cap, int MaxClauses = 8>
-struct DNF {
-    Expression<Cap> clauses[MaxClauses]{};
-    int count{0};
-};
-
-template <std::size_t Cap>
-consteval DNF<Cap> to_dnf(Expression<Cap> formula) {
-    // If conjunction: cross-product of children's DNFs
-    // If disjunction: concatenate children's DNFs
-    // If atom: single clause
-    ...
-}
-
-// Check UNSAT of a formula that may contain disjunctions
-template <std::size_t Cap>
-consteval bool is_unsat_dnf(Expression<Cap> formula) {
-    auto dnf = to_dnf(formula);
-    // UNSAT iff every disjunct is UNSAT
-    for (int i = 0; i < dnf.count; ++i) {
-        auto sys = parse_to_system(dnf.clauses[i]);
-        if (!is_unsat(sys))
-            return false;  // at least one clause is SAT
+// Check if a ParseResult (DNF) is unsatisfiable
+// UNSAT iff every clause is UNSAT
+template <std::size_t MaxClauses, std::size_t MaxIneqs, std::size_t MaxVars>
+consteval bool is_unsat(const ParseResult<MaxClauses, MaxIneqs, MaxVars>& result) {
+    for (std::size_t i = 0; i < result.clause_count; ++i) {
+        if (!fm_is_unsat(result.clauses[i]))
+            return false;
     }
     return true;
+}
+
+// Check if a ParseResult is satisfiable
+template <std::size_t MaxClauses, std::size_t MaxIneqs, std::size_t MaxVars>
+consteval bool is_sat(const ParseResult<MaxClauses, MaxIneqs, MaxVars>& result) {
+    return !is_unsat(result);
 }
 
 } // namespace reftype::fm
@@ -71,15 +59,14 @@ consteval bool is_unsat_dnf(Expression<Cap> formula) {
 
 ## DNF Explosion Control
 
-DNF conversion can explode exponentially. Mitigations:
 - `MaxClauses = 8` caps the number of disjuncts
 - Refinement predicates are typically small (2-4 atoms)
-- If DNF exceeds MaxClauses, throw error: "formula too complex for solver"
+- If DNF exceeds MaxClauses during parsing, parser throws: "DNF clause limit exceeded"
 
 ## Testing Strategy
 
-- `x > 0 || x < -1` — 2 disjuncts
-- `(x > 0 || x < 0) => x != 0` — split: both branches valid
-- `(x > 0 && y > 0) || (x < 0 && y < 0)` — 2 disjuncts with multiple vars
-- `!(x > 0 || y > 0)` → `x <= 0 && y <= 0` (De Morgan → conjunction)
-- DNF overflow: deeply nested `||` chains → error
+- `x > 0 || x < -1` → 2 clauses, both SAT → SAT
+- `x > 0 && x < 0` → 1 clause, UNSAT → UNSAT
+- `(x > 0 && x < -1) || (x > 5 && x < 3)` → 2 clauses, both UNSAT → UNSAT
+- `!(x > 0 || y > 0)` → De Morgan → conjunction → 1 clause
+- DNF overflow: deeply nested `||` chains → parser throws error

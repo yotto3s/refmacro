@@ -10,7 +10,12 @@ add_executable(test_fm_rounding test_fm_rounding.cpp)
 target_link_libraries(test_fm_rounding PRIVATE reftype::reftype GTest::gtest_main)
 target_compile_options(test_fm_rounding PRIVATE -Wall -Wextra -Werror)
 
+add_executable(test_fm_parser test_fm_parser.cpp)
+target_link_libraries(test_fm_parser PRIVATE reftype::reftype GTest::gtest_main)
+target_compile_options(test_fm_parser PRIVATE -Wall -Wextra -Werror)
+
 include(GoogleTest)
 gtest_discover_tests(test_fm_types PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_fm_core PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_fm_rounding PROPERTIES TIMEOUT 60)
+gtest_discover_tests(test_fm_parser PROPERTIES TIMEOUT 60)
