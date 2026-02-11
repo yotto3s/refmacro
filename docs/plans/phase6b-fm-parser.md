@@ -75,7 +75,7 @@ All comparisons normalize to `sum(terms) + constant >= 0` or `> 0`:
 | `mul(var, var)` | "non-linear: variable * variable" |
 | `div(a, var)` | "non-linear: division by variable" |
 | `div(a, lit(0))` | "division by zero" |
-| Unknown tag | "unsupported node in refinement predicate: <tag>" |
+| Unknown tag | "unsupported node in refinement predicate" |
 
 ## Data Structures
 

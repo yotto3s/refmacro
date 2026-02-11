@@ -265,6 +265,8 @@ parse_comparison(refmacro::NodeView<Cap> node, VarInfo<MaxVars>& vars,
 
     if (t == "eq" && negate) {
         // !(a == b) → (a < b) OR (a > b)
+        if constexpr (MaxClauses < 2)
+            throw "DNF clause limit exceeded";
         auto ineq_lt = to_inequality(rhs, lhs, true);
         auto ineq_gt = to_inequality(lhs, rhs, true);
         InequalitySystem<MaxIneqs, MaxVars> sys_lt{};
@@ -367,15 +369,15 @@ parse_negated(refmacro::NodeView<Cap> node, VarInfo<MaxVars>& vars) {
 }
 
 // --- Top-level API ---
-// All variables discovered during parsing are registered as integer-valued
-// (VarInfo::find_or_add default). For real-valued variables, construct a
-// VarInfo manually and call parse_formula directly.
 
+// Parse a formula with a caller-supplied VarInfo. Variables discovered
+// during parsing are registered into `vars`, so callers can pre-populate
+// it with real-valued variables (find_or_add(name, false)) before calling.
 template <std::size_t Cap, std::size_t MaxClauses = 8,
           std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
 consteval ParseResult<MaxClauses, MaxIneqs, MaxVars>
-parse_to_system(const refmacro::Expression<Cap>& formula) {
-    VarInfo<MaxVars> vars{};
+parse_to_system(const refmacro::Expression<Cap>& formula,
+                VarInfo<MaxVars>& vars) {
     auto result = parse_formula<Cap, MaxClauses, MaxIneqs>(
         refmacro::NodeView<Cap>{formula.ast, formula.id}, vars);
     // Propagate the final VarInfo (with all variables discovered during
@@ -384,6 +386,15 @@ parse_to_system(const refmacro::Expression<Cap>& formula) {
     for (std::size_t i = 0; i < result.clause_count; ++i)
         result.clauses[i].vars = vars;
     return result;
+}
+
+// Convenience overload: all variables default to integer-valued.
+template <std::size_t Cap, std::size_t MaxClauses = 8,
+          std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
+consteval ParseResult<MaxClauses, MaxIneqs, MaxVars>
+parse_to_system(const refmacro::Expression<Cap>& formula) {
+    VarInfo<MaxVars> vars{};
+    return parse_to_system<Cap, MaxClauses, MaxIneqs>(formula, vars);
 }
 
 } // namespace reftype::fm
