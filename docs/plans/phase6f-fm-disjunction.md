@@ -1,6 +1,6 @@
 # Phase 6f: FM Solver — Disjunction Handling
 
-> **Status:** Work in progress — this plan should be refined before implementation.
+> **Status:** Ready for implementation. DNF explosion control and basic DNF SAT/UNSAT already implemented in parser.hpp and solver.hpp (Phase 6b/6e). Remaining: clause simplification and clause-by-clause implication optimization.
 
 **Goal:** Provide advanced disjunction-handling algorithms beyond the basic DNF UNSAT/SAT checks.
 
@@ -35,7 +35,7 @@ DNF conversion (distribution of `&&` over `||`, De Morgan) is handled during par
 Phase 6f focuses on disjunction-specific algorithms that go beyond basic UNSAT/SAT:
 
 ### Clause simplification
-- Remove clauses that are subsumed by other clauses (if C1 => C2, drop C2)
+- Remove clauses that are subsumed by other clauses (if C1 => C2, drop C1 — in a disjunction the narrower clause is redundant since its solutions are already covered by the broader one)
 - Detect and remove trivially UNSAT clauses early
 
 ### Implication with DNF premises (optimization)
@@ -43,15 +43,16 @@ Phase 6f focuses on disjunction-specific algorithms that go beyond basic UNSAT/S
 - This is an optimization over the brute-force `(A || B) && !C` approach
 - Useful when the conclusion is a conjunction (avoids DNF explosion from negation)
 
-### DNF Explosion Control
+### DNF Explosion Control (already implemented in Phase 6b)
 
-- `MaxClauses = 8` caps the number of disjuncts
+- `MaxClauses = 8` caps the number of disjuncts (default template parameter in ParseResult)
+- `add_clause()`, `conjoin()`, `disjoin()` all throw "DNF clause limit exceeded" when capacity is hit
 - Refinement predicates are typically small (2-4 atoms)
-- If DNF exceeds MaxClauses during parsing, parser throws: "DNF clause limit exceeded"
 
 ## Testing Strategy
 
-- Clause subsumption: `(x > 0 && x < 10) || (x > 0 && x < 5)` — second subsumed by first
+- Clause subsumption: `(x > 0 && x < 10) || (x > 0 && x < 5)` — second subsumed by first (dropped, 1 clause remains)
+- UNSAT clause removal: `(x > 0 && x < 0) || (x >= 0)` — first clause UNSAT, removed
 - Multi-clause implication: `(x > 0 || x < -1) => (x != 0)` — each clause implies conclusion
-- DNF overflow: deeply nested `||` chains → parser throws error
-- Performance: compare brute-force vs clause-level implication checking
+- Correctness equivalence: brute-force and clause-level implication give the same results
+- simplify_dnf: combined removal of UNSAT + subsumed clauses

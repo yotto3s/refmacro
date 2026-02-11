@@ -1,6 +1,6 @@
 # Phase 6e: FM Solver — Validity & Satisfiability Interface
 
-> **Status:** Ready for implementation.
+> **Status:** Implemented (solver.hpp). Brute-force approach; clause-by-clause optimization deferred to Phase 6f.
 
 **Goal:** Provide the public API for checking satisfiability and validity of linear arithmetic formulas.
 
