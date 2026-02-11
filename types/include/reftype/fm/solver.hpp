@@ -25,6 +25,7 @@ consteval bool is_sat(const InequalitySystem<MaxIneqs, MaxVars>& sys) {
 // --- DNF-level (disjunction of conjunctions) ---
 
 // A DNF formula is UNSAT iff ALL clauses are UNSAT.
+// Empty DNF (zero clauses) is vacuously UNSAT (false || ... = false).
 template <std::size_t MaxClauses = 8, std::size_t MaxIneqs = 64,
           std::size_t MaxVars = 16>
 consteval bool
@@ -58,6 +59,8 @@ is_valid_implication(const refmacro::Expression<Cap>& premise,
 }
 
 // Overload with caller-supplied VarInfo for real-valued variables.
+// Takes VarInfo by value intentionally: parse_to_system mutates it to
+// register discovered variables, and we must not alter the caller's copy.
 template <std::size_t Cap, std::size_t MaxVars = 16>
 consteval bool
 is_valid_implication(const refmacro::Expression<Cap>& premise,

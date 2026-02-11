@@ -42,7 +42,7 @@ TEST(IsIntegerVal, NegativeFraction) { static_assert(!is_integer_val(-4.1)); }
 TEST(RoundIntegerBound, LowerNonStrictFraction) {
     constexpr auto ineq =
         LinearInequality::make({LinearTerm{0, 1.0}}, -2.5, false);
-    constexpr auto rounded = round_integer_bound(ineq, true);
+    constexpr auto rounded = round_integer_bound(ineq, true, 1.0);
     static_assert(rounded.constant == -3.0);
     static_assert(rounded.strict == false);
 }
@@ -51,7 +51,7 @@ TEST(RoundIntegerBound, LowerNonStrictFraction) {
 TEST(RoundIntegerBound, LowerStrictInteger) {
     constexpr auto ineq =
         LinearInequality::make({LinearTerm{0, 1.0}}, -2.0, true);
-    constexpr auto rounded = round_integer_bound(ineq, true);
+    constexpr auto rounded = round_integer_bound(ineq, true, 1.0);
     static_assert(rounded.constant == -3.0);
     static_assert(rounded.strict == false);
 }
@@ -60,7 +60,7 @@ TEST(RoundIntegerBound, LowerStrictInteger) {
 TEST(RoundIntegerBound, LowerNonStrictInteger) {
     constexpr auto ineq =
         LinearInequality::make({LinearTerm{0, 1.0}}, -2.0, false);
-    constexpr auto rounded = round_integer_bound(ineq, true);
+    constexpr auto rounded = round_integer_bound(ineq, true, 1.0);
     static_assert(rounded.constant == -2.0);
     static_assert(rounded.strict == false);
 }
@@ -70,7 +70,7 @@ TEST(RoundIntegerBound, LowerNonStrictInteger) {
 TEST(RoundIntegerBound, UpperNonStrictFraction) {
     constexpr auto ineq =
         LinearInequality::make({LinearTerm{0, -1.0}}, 3.5, false);
-    constexpr auto rounded = round_integer_bound(ineq, false);
+    constexpr auto rounded = round_integer_bound(ineq, false, 1.0);
     static_assert(rounded.constant == 3.0);
     static_assert(rounded.strict == false);
 }
@@ -79,7 +79,7 @@ TEST(RoundIntegerBound, UpperNonStrictFraction) {
 TEST(RoundIntegerBound, UpperStrictInteger) {
     constexpr auto ineq =
         LinearInequality::make({LinearTerm{0, -1.0}}, 3.0, true);
-    constexpr auto rounded = round_integer_bound(ineq, false);
+    constexpr auto rounded = round_integer_bound(ineq, false, 1.0);
     static_assert(rounded.constant == 2.0);
     static_assert(rounded.strict == false);
 }
@@ -88,7 +88,7 @@ TEST(RoundIntegerBound, UpperStrictInteger) {
 TEST(RoundIntegerBound, UpperNonStrictInteger) {
     constexpr auto ineq =
         LinearInequality::make({LinearTerm{0, -1.0}}, 3.0, false);
-    constexpr auto rounded = round_integer_bound(ineq, false);
+    constexpr auto rounded = round_integer_bound(ineq, false, 1.0);
     static_assert(rounded.constant == 3.0);
     static_assert(rounded.strict == false);
 }
@@ -307,10 +307,10 @@ TEST(FMElimNonUnit, NonUnitCoeffSAT) {
     static_assert(!unsat);
 }
 
-// 3x >= 1 && 3x <= 2, x integer → SAT reports SAT (known limitation:
-// rounding doesn't normalize by coefficient, so divisibility constraints
-// like "3x must be divisible by 3" are not captured)
-TEST(FMElimNonUnit, DivisibilityLimitation) {
+// 3x >= 1 && 3x <= 2, x integer → UNSAT (no integer x where 1 <= 3x <= 2)
+// Rounding normalizes by coefficient: 3x >= 1 → x >= 1/3 → x >= 1 → 3x >= 3,
+// and 3x <= 2 → x <= 2/3 → x <= 0 → 3x <= 0. Combined: 3 + 0 <= 0 → UNSAT.
+TEST(FMElimNonUnit, DivisibilityDetected) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
@@ -319,7 +319,63 @@ TEST(FMElimNonUnit, DivisibilityLimitation) {
             .add(LinearInequality::make({LinearTerm{x, -3.0}}, 2.0, false));
         return fm_is_unsat(sys);
     }();
-    // Ideally UNSAT (no integer x where 1 <= 3x <= 2), but FM rounding
-    // doesn't capture coefficient divisibility — this is a known limitation.
+    static_assert(unsat);
+}
+
+// --- Non-unit coefficient normalization tests ---
+
+// 2x - 3 >= 0 && -2x + 3 >= 0, x integer → UNSAT (x = 1.5, no integer)
+// Without normalization this would report SAT; with normalization:
+// lower: x >= 1.5 → x >= 2 → 2x - 4 >= 0
+// upper: x <= 1.5 → x <= 1 → -2x + 2 >= 0
+// combined: -4 + 2 = -2, -2 >= 0 → UNSAT
+TEST(FMElimNonUnit, NonUnitHalfIntegerUNSAT) {
+    constexpr bool unsat = [] consteval {
+        InequalitySystem<> sys{};
+        int x = sys.vars.find_or_add("x", true);
+        sys = sys
+            .add(LinearInequality::make({LinearTerm{x, 2.0}}, -3.0, false))
+            .add(LinearInequality::make({LinearTerm{x, -2.0}}, 3.0, false));
+        return fm_is_unsat(sys);
+    }();
+    static_assert(unsat);
+}
+
+// 2x - 3 > 0, x integer → tightens to x >= 2 (2x - 4 >= 0)
+TEST(RoundIntegerBound, NonUnitLowerStrictFraction) {
+    constexpr auto ineq =
+        LinearInequality::make({LinearTerm{0, 2.0}}, -3.0, true);
+    constexpr auto rounded = round_integer_bound(ineq, true, 2.0);
+    static_assert(rounded.constant == -4.0);
+    static_assert(rounded.strict == false);
+}
+
+// -2x + 3 >= 0, x integer → tightens to x <= 1 (-2x + 2 >= 0)
+TEST(RoundIntegerBound, NonUnitUpperNonStrictFraction) {
+    constexpr auto ineq =
+        LinearInequality::make({LinearTerm{0, -2.0}}, 3.0, false);
+    constexpr auto rounded = round_integer_bound(ineq, false, 2.0);
+    static_assert(rounded.constant == 2.0);
+    static_assert(rounded.strict == false);
+}
+
+// Multi-variable: 2x + 3y - 3 >= 0, x integer — must NOT normalize by coeff
+// (normalizing would be unsound: x=0,y=1 satisfies original but not tightened)
+TEST(FMElimNonUnit, MultiVarNoNormalization) {
+    constexpr bool unsat = [] consteval {
+        InequalitySystem<> sys{};
+        int x = sys.vars.find_or_add("x", true);
+        int y = sys.vars.find_or_add("y", true);
+        // 2x + 3y - 3 >= 0 && -x + 0 >= 0 && x - 0 >= 0 && -y + 1 >= 0 && y - 1 >= 0
+        // Forces x=0, y=1, and 2(0)+3(1)-3 = 0 >= 0 → SAT
+        sys = sys
+            .add(LinearInequality::make(
+                {LinearTerm{x, 2.0}, LinearTerm{y, 3.0}}, -3.0, false))
+            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0, false))
+            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, false))
+            .add(LinearInequality::make({LinearTerm{y, -1.0}}, 1.0, false))
+            .add(LinearInequality::make({LinearTerm{y, 1.0}}, -1.0, false));
+        return fm_is_unsat(sys);
+    }();
     static_assert(!unsat);
 }

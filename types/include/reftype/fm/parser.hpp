@@ -108,6 +108,16 @@ template <std::size_t MaxIneqs, std::size_t MaxVars>
 consteval InequalitySystem<MaxIneqs, MaxVars>
 merge_systems(const InequalitySystem<MaxIneqs, MaxVars>& a,
               const InequalitySystem<MaxIneqs, MaxVars>& b) {
+    // Verify the superset precondition: variables in the smaller VarInfo
+    // must appear at the same indices in the larger one.
+    const auto& smaller = (a.vars.count <= b.vars.count) ? a.vars : b.vars;
+    const auto& larger = (a.vars.count <= b.vars.count) ? b.vars : a.vars;
+    for (std::size_t i = 0; i < smaller.count; ++i) {
+        auto found = larger.find(smaller.names[i]);
+        if (!found.has_value() || found.value() != static_cast<int>(i))
+            throw "merge_systems: incompatible variable orderings";
+    }
+
     auto r = a;
     if (b.vars.count > r.vars.count)
         r.vars = b.vars;
@@ -268,7 +278,7 @@ parse_comparison(refmacro::NodeView<Cap> node, VarInfo<MaxVars>& vars,
 
     if (t == "eq" && negate) {
         // !(a == b) → (a < b) OR (a > b)
-        if constexpr (MaxClauses < 2)
+        if (MaxClauses < 2)
             throw "DNF clause limit exceeded";
         auto ineq_lt = to_inequality(rhs, lhs, true);
         auto ineq_gt = to_inequality(lhs, rhs, true);

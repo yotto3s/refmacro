@@ -33,28 +33,38 @@ consteval bool is_integer_val(double x) {
 
 // Round a bound inequality's constant for integer variable elimination.
 // is_lower: true for lower bound (coeff > 0), false for upper bound (coeff < 0).
+// target_coeff: absolute value of the target variable's coefficient.
 // Only modifies constant and strict flag; coefficients unchanged.
 //
-// Assumes LHS is integer-valued (guaranteed by the no-mixing constraint).
-// Does not normalize by the target variable's coefficient — e.g., 2x >= 5
-// is not tightened to 2x >= 6 (which would require divisibility reasoning).
-// This is sound but incomplete: FM + rounding may report SAT for systems
-// that are UNSAT due to coefficient divisibility (e.g., 2x = 5).
+// For single-variable inequalities (term_count == 1), normalizes by the
+// target variable's coefficient before rounding: e.g., 2x >= 3 becomes
+// x >= 1.5, rounded to x >= 2, giving 2x >= 4.
+//
+// For multi-variable inequalities, normalization by the target coefficient
+// would be unsound (the bound depends on other variables whose combined
+// value may not be a multiple of the coefficient). In this case, the
+// constant is rounded as if the effective coefficient is 1.
 consteval LinearInequality round_integer_bound(
-    LinearInequality ineq, bool is_lower) {
+    LinearInequality ineq, bool is_lower, double target_coeff) {
+    // Only normalize by the target coefficient for single-variable
+    // inequalities. For multi-variable, the other terms make the
+    // effective bound variable-dependent, so normalizing is unsound.
+    double coeff = (ineq.term_count == 1) ? target_coeff : 1.0;
+
     if (is_lower) {
-        // LHS + constant >= 0 means LHS >= -constant
-        double bound = -ineq.constant;
+        // a*x + constant >= 0 means x >= -constant/a
+        double bound = -ineq.constant / coeff;
         if (ineq.strict && is_integer_val(bound))
-            ineq.constant = -(bound + 1.0);  // x > 2 → x >= 3
+            ineq.constant = -(bound + 1.0) * coeff;  // x > 2 → x >= 3
         else
-            ineq.constant = -ceil_val(bound); // x >= 2.5 → x >= 3
+            ineq.constant = -ceil_val(bound) * coeff; // x >= 2.5 → x >= 3
     } else {
-        // -LHS + constant >= 0 means LHS <= constant
-        if (ineq.strict && is_integer_val(ineq.constant))
-            ineq.constant -= 1.0;             // x < 3 → x <= 2
+        // -a*x + constant >= 0 means x <= constant/a
+        double bound = ineq.constant / coeff;
+        if (ineq.strict && is_integer_val(bound))
+            ineq.constant = (bound - 1.0) * coeff;             // x < 3 → x <= 2
         else
-            ineq.constant = floor_val(ineq.constant); // x <= 3.5 → x <= 3
+            ineq.constant = floor_val(bound) * coeff; // x <= 3.5 → x <= 3
     }
     ineq.strict = false;
     return ineq;

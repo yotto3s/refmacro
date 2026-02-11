@@ -281,6 +281,18 @@ TEST(IsValidReal, NotValidForReals) {
 }
 
 // ============================================================
+// Edge case: zero-clause ParseResult (vacuously UNSAT)
+// ============================================================
+
+TEST(IsUnsatDNF, ZeroClausesVacuouslyUNSAT) {
+    // Empty DNF (zero clauses) is vacuously UNSAT: false || ... = false
+    constexpr ParseResult<> result{};
+    static_assert(result.clause_count == 0);
+    static_assert(is_unsat(result));
+    static_assert(!is_sat(result));
+}
+
+// ============================================================
 // End-to-end: parsed disjunction through solver
 // ============================================================
 
@@ -313,5 +325,47 @@ TEST(SolverEndToEnd, DisjunctionNotAllUnsatViaImplication) {
     static constexpr auto x = Expression::var("x");
     static constexpr auto P = (x >= 0.0) && (x <= 10.0);
     static constexpr auto Q = (x >= 1.0) && (x <= 5.0);
+    static_assert(!is_valid_implication(P, Q));
+}
+
+// ============================================================
+// Multi-variable disjunction through is_valid_implication
+// ============================================================
+
+TEST(SolverEndToEnd, MultiVarDisjunctionValid) {
+    // P = (x > 0 && y > 0) || (x < -1 && y < -1)
+    // Q = x * y > 0
+    // This is NOT valid in general because FM can't prove nonlinear facts.
+    // Instead, test a linear multi-var disjunction:
+    // P = (x >= 0 && y >= 0 && x + y <= 5)
+    // Q = (x <= 5 && y <= 5)
+    // P => Q: from x >= 0 && x + y <= 5, we get x <= 5. Similarly y <= 5.
+    static constexpr auto x = Expression::var("x");
+    static constexpr auto y = Expression::var("y");
+    static constexpr auto P = (x >= 0.0) && (y >= 0.0) && (x + y <= 5.0);
+    static constexpr auto Q = (x <= 5.0) && (y <= 5.0);
+    static_assert(is_valid_implication(P, Q));
+}
+
+TEST(SolverEndToEnd, MultiVarDisjunctionInConclusion) {
+    // P = (x >= 1 && x <= 3 && y >= 1 && y <= 3)
+    // Q = (x >= 0 && y >= 0) — weaker bounds
+    // P && !Q = P && (x < 0 || y < 0) — two DNF clauses, both UNSAT
+    static constexpr auto x = Expression::var("x");
+    static constexpr auto y = Expression::var("y");
+    static constexpr auto P =
+        (x >= 1.0) && (x <= 3.0) && (y >= 1.0) && (y <= 3.0);
+    static constexpr auto Q = (x >= 0.0) && (y >= 0.0);
+    static_assert(is_valid_implication(P, Q));
+}
+
+TEST(SolverEndToEnd, MultiVarDisjunctionNotValid) {
+    // P = (x >= 0 && y >= 0)
+    // Q = (x <= 3 && y <= 3)
+    // P && !Q = P && (x > 3 || y > 3) — two clauses, both SAT
+    static constexpr auto x = Expression::var("x");
+    static constexpr auto y = Expression::var("y");
+    static constexpr auto P = (x >= 0.0) && (y >= 0.0);
+    static constexpr auto Q = (x <= 3.0) && (y <= 3.0);
     static_assert(!is_valid_implication(P, Q));
 }
