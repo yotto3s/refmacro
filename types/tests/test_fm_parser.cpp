@@ -367,3 +367,38 @@ TEST(ParseFormula, SharedVarsAcrossDisjunction) {
     static_assert(result.clauses[0].vars.count == 2);
     static_assert(result.clauses[1].vars.count == 2);
 }
+
+// ============================================================
+// Error boundary tests
+// ============================================================
+// The following parse errors are consteval — they produce compile-time
+// failures and cannot be tested at runtime:
+//   - mul(var, var) → "non-linear: variable * variable"
+//   - div(a, var)   → "non-linear: division by variable"
+//   - div(a, 0)     → "division by zero"
+//   - unknown tag   → "unsupported node in refinement predicate"
+// The tests below verify the boundary: expressions just inside the
+// valid region compile and parse correctly.
+
+TEST(ParseArith, MulConstantTimesConstant) {
+    // 2 * 3 → constant 6 (both sides constant, no non-linear error)
+    static constexpr auto e =
+        Expression<>::lit(2.0) * Expression<>::lit(3.0);
+    constexpr auto result = [] {
+        VarInfo<> vars{};
+        return parse_arith<64>(NodeView{e.ast, e.id}, vars);
+    }();
+    static_assert(result.constant == 6.0);
+    static_assert(is_constant_expr(result));
+}
+
+TEST(ParseArith, DivByNonZeroConstant) {
+    // x / 3 → valid (divisor is non-zero constant)
+    static constexpr auto e =
+        Expression<>::var("x") / Expression<>::lit(3.0);
+    constexpr auto result = [] {
+        VarInfo<> vars{};
+        return parse_arith<64>(NodeView{e.ast, e.id}, vars);
+    }();
+    static_assert(result.coeffs[0] == 1.0 / 3.0);
+}
