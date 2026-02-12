@@ -91,6 +91,10 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
     }
 
     // --- Binary arithmetic: add, sub, mul, div ---
+    // Note: Bool is excluded from numeric operations despite Bool <: Int in the
+    // subtype lattice. Bool is its own domain for logical operations (land, lor,
+    // lnot). Implicit promotion from Bool to Int is not supported in arithmetic
+    // or comparisons — use an explicit annotation if needed.
     if (str_eq(node.tag, "add") || str_eq(node.tag, "sub")
         || str_eq(node.tag, "mul") || str_eq(node.tag, "div")) {
         auto left = synth(Expression<Cap>{expr.ast, node.children[0]}, env);

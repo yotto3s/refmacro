@@ -27,7 +27,7 @@ using reftype::types_equal;
 
 using E = Expression<128>;
 
-// ===== Literal typing =====
+// --- Literal typing ---
 
 TEST(TypeChecker, LitInteger) {
     constexpr auto r = type_check(E::lit(5));
@@ -50,7 +50,7 @@ TEST(TypeChecker, LitZero) {
     static_assert(get_base_kind(r.type) == BaseKind::Int);
 }
 
-// ===== Variable lookup =====
+// --- Variable lookup ---
 
 TEST(TypeChecker, VarLookup) {
     constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", TInt);
@@ -67,7 +67,7 @@ TEST(TypeChecker, VarWithRefinedType) {
     static_assert(types_equal(r.type, nat));
 }
 
-// ===== Annotation =====
+// --- Annotation ---
 
 TEST(TypeChecker, AnnLiteralValidRefinement) {
     // ann(lit(5), {#v : Int | #v > 0}) — 5 > 0, valid
@@ -100,7 +100,7 @@ TEST(TypeChecker, AnnBaseTypeMismatch) {
     static_assert(!r.valid);
 }
 
-// ===== Arithmetic =====
+// --- Arithmetic ---
 
 TEST(TypeChecker, AddIntInt) {
     constexpr TypeEnv<128> env = TypeEnv<128>{}
@@ -156,7 +156,7 @@ TEST(TypeChecker, ArithLiterals) {
     static_assert(types_equal(r.type, TInt));
 }
 
-// ===== Negation =====
+// --- Negation ---
 
 TEST(TypeChecker, NegInt) {
     constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", TInt);
@@ -166,7 +166,7 @@ TEST(TypeChecker, NegInt) {
     static_assert(types_equal(r.type, TInt));
 }
 
-// ===== Comparisons =====
+// --- Comparisons ---
 
 TEST(TypeChecker, GtIntInt) {
     constexpr TypeEnv<128> env = TypeEnv<128>{}
@@ -192,7 +192,7 @@ TEST(TypeChecker, ComparisonLiterals) {
     static_assert(types_equal(r.type, TBool));
 }
 
-// ===== Logical =====
+// --- Logical ---
 
 TEST(TypeChecker, LandBoolBool) {
     constexpr TypeEnv<128> env = TypeEnv<128>{}
@@ -219,7 +219,7 @@ TEST(TypeChecker, ComparisonInLogical) {
     static_assert(types_equal(r.type, TBool));
 }
 
-// ===== Conditional =====
+// --- Conditional ---
 
 TEST(TypeChecker, CondSameType) {
     // cond(true_expr, lit(1), lit(2)) — both Int
@@ -247,7 +247,7 @@ TEST(TypeChecker, CondJoinTypes) {
     static_assert(types_equal(r.type, TInt));
 }
 
-// ===== Let-binding (apply/lambda) =====
+// --- Let-binding (apply/lambda) ---
 
 TEST(TypeChecker, LetBinding) {
     // let x = 5 in x → type = {#v:Int|#v==5} (singleton from literal)
@@ -276,7 +276,7 @@ TEST(TypeChecker, LetBindingShadowing) {
     static_assert(get_base_kind(r.type) == BaseKind::Real);
 }
 
-// ===== Annotated lambda =====
+// --- Annotated lambda ---
 
 TEST(TypeChecker, AnnotatedLambda) {
     // ann(lambda("x", x + 1), (x:Int) -> Int)
@@ -299,7 +299,7 @@ TEST(TypeChecker, AnnotatedLambdaOutputMismatch) {
     static_assert(!r.valid);
 }
 
-// ===== General function application =====
+// --- General function application ---
 
 TEST(TypeChecker, FunctionApplication) {
     // Given f : (x:Int) -> Int, apply(f, lit(5)) → Int
@@ -320,7 +320,7 @@ TEST(TypeChecker, FunctionApplicationSubtype) {
     static_assert(r.valid);
 }
 
-// ===== BaseKind helper =====
+// --- BaseKind helper ---
 
 TEST(TypeChecker, BaseKindClassification) {
     static_assert(get_base_kind(TInt) == BaseKind::Int);
@@ -330,7 +330,7 @@ TEST(TypeChecker, BaseKindClassification) {
     static_assert(get_base_kind(tarr("x", TInt, TInt)) == BaseKind::None);
 }
 
-// ===== Logical or =====
+// --- Logical or ---
 
 TEST(TypeChecker, LorBoolBool) {
     constexpr TypeEnv<128> env = TypeEnv<128>{}
@@ -341,7 +341,7 @@ TEST(TypeChecker, LorBoolBool) {
     static_assert(types_equal(r.type, TBool));
 }
 
-// ===== Division =====
+// --- Division ---
 
 TEST(TypeChecker, DivIntInt) {
     constexpr TypeEnv<128> env = TypeEnv<128>{}
@@ -361,7 +361,7 @@ TEST(TypeChecker, DivRealReal) {
     static_assert(types_equal(r.type, TReal));
 }
 
-// ===== le/ge comparisons =====
+// --- le/ge comparisons ---
 
 TEST(TypeChecker, LeIntInt) {
     constexpr TypeEnv<128> env = TypeEnv<128>{}
@@ -381,7 +381,7 @@ TEST(TypeChecker, GeIntInt) {
     static_assert(types_equal(r.type, TBool));
 }
 
-// ===== Real-valued arithmetic =====
+// --- Real-valued arithmetic ---
 
 TEST(TypeChecker, LitRealArithmetic) {
     // add(lit(3.14), lit(1.5)) — both Real singleton types
@@ -390,7 +390,7 @@ TEST(TypeChecker, LitRealArithmetic) {
     static_assert(types_equal(r.type, TReal));
 }
 
-// ===== Sequence (progn) =====
+// --- Sequence (progn) ---
 
 TEST(TypeChecker, Progn) {
     // progn(lit(1), lit(2)) — result type is second expression's type
@@ -408,7 +408,7 @@ TEST(TypeChecker, PrognPropagatesValidity) {
     static_assert(!r.valid);
 }
 
-// ===== Validity propagation =====
+// --- Validity propagation ---
 
 TEST(TypeChecker, ValidityPropagatesThrough) {
     // ann(lit(0), pos_int()) is invalid; using result in add still propagates
@@ -417,7 +417,7 @@ TEST(TypeChecker, ValidityPropagatesThrough) {
     static_assert(!r.valid);
 }
 
-// ===== Annotation with refinement VC =====
+// --- Annotation with refinement VC ---
 
 TEST(TypeChecker, RefinementAnnotationVC) {
     // ann(x + 1, {#v:Int|#v>0}) where x:Nat

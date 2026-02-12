@@ -67,6 +67,10 @@ namespace detail {
 template <std::size_t CapA, std::size_t CapB>
 consteval bool nodes_equal(const refmacro::AST<CapA>& ast_a, int id_a,
                            const refmacro::AST<CapB>& ast_b, int id_b) {
+    if (id_a < 0 || static_cast<std::size_t>(id_a) >= ast_a.count)
+        throw "nodes_equal: id_a out of bounds";
+    if (id_b < 0 || static_cast<std::size_t>(id_b) >= ast_b.count)
+        throw "nodes_equal: id_b out of bounds";
     const auto& a = ast_a.nodes[id_a];
     const auto& b = ast_b.nodes[id_b];
 
@@ -102,7 +106,22 @@ consteval bool base_compatible(const char* sub, const char* super) {
     return str_eq(sub, super) || base_widens(sub, super);
 }
 
+// Expression-level overloads for convenience
+template <std::size_t Cap>
+consteval bool base_widens(const Expression<Cap>& sub,
+                           const Expression<Cap>& super) {
+    return base_widens(type_tag(sub), type_tag(super));
+}
+
+template <std::size_t Cap>
+consteval bool base_compatible(const Expression<Cap>& sub,
+                               const Expression<Cap>& super) {
+    return base_compatible(type_tag(sub), type_tag(super));
+}
+
 // Returns the wider of two compatible base types.
+// Precondition: both t1 and t2 must be base types (tint, tbool, or treal).
+// Throws if called with non-base types (e.g. tref, tarr).
 template <std::size_t Cap>
 consteval Expression<Cap> wider_base(const Expression<Cap>& t1,
                                      const Expression<Cap>& t2) {

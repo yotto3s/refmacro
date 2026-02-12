@@ -23,7 +23,7 @@ using reftype::types_equal;
 
 using E = Expression<128>;
 
-// ===== AST classifiers =====
+// --- AST classifiers ---
 
 TEST(SubtypeHelpers, IsBase) {
     static_assert(is_base(TInt));
@@ -45,7 +45,7 @@ TEST(SubtypeHelpers, IsArrow) {
     static_assert(!is_arrow(tref(TInt, E::var("#v") > E::lit(0))));
 }
 
-// ===== AST accessors =====
+// --- AST accessors ---
 
 TEST(SubtypeHelpers, GetRefinedBase) {
     constexpr auto t = tref(TInt, E::var("#v") > E::lit(0));
@@ -66,7 +66,7 @@ TEST(SubtypeHelpers, GetArrowInputOutput) {
     static_assert(types_equal(get_arrow_output(t), TBool));
 }
 
-// ===== Structural equality =====
+// --- Structural equality ---
 
 TEST(TypesEqual, SameBaseType) {
     static_assert(types_equal(TInt, TInt));
@@ -104,7 +104,7 @@ TEST(TypesEqual, DifferentArrow) {
     static_assert(!types_equal(a, b));
 }
 
-// ===== Base widening =====
+// --- Base widening ---
 
 TEST(Subtype, BaseWidening) {
     static_assert(is_subtype(TBool, TInt));
@@ -118,7 +118,7 @@ TEST(Subtype, BaseWideningFails) {
     static_assert(!is_subtype(TReal, TBool));
 }
 
-// ===== Reflexivity =====
+// --- Reflexivity ---
 
 TEST(Subtype, Reflexivity) {
     static_assert(is_subtype(TInt, TInt));
@@ -136,7 +136,7 @@ TEST(Subtype, ReflexivityArrow) {
     static_assert(is_subtype(t, t));
 }
 
-// ===== Refined <: Refined (same base) =====
+// --- Refined <: Refined (same base) ---
 
 TEST(Subtype, RefinedImplicationPass) {
     // {#v > 0 && #v < 10} <: {#v >= 0}
@@ -169,7 +169,7 @@ TEST(Subtype, RefinedRange) {
     static_assert(is_subtype(sub, super));
 }
 
-// ===== Refined <: Unrefined =====
+// --- Refined <: Unrefined ---
 
 TEST(Subtype, RefinedToUnrefined) {
     // {#v : Int | #v > 0} <: Int
@@ -189,7 +189,7 @@ TEST(Subtype, RefinedToIncompatibleUnrefined) {
     static_assert(!is_subtype(sub, TInt));
 }
 
-// ===== Unrefined <: Refined =====
+// --- Unrefined <: Refined ---
 
 TEST(Subtype, UnrefinedToRefinedFails) {
     // Int </: {#v : Int | #v > 0} (not all ints are positive)
@@ -197,7 +197,7 @@ TEST(Subtype, UnrefinedToRefinedFails) {
     static_assert(!is_subtype(TInt, super));
 }
 
-// ===== Refinement with base widening =====
+// --- Refinement with base widening ---
 
 TEST(Subtype, RefinedBaseWidening) {
     // {#v : Int | #v > 0} <: {#v : Real | #v > 0}
@@ -213,7 +213,7 @@ TEST(Subtype, RefinedBaseWideningFails) {
     static_assert(!is_subtype(sub, super));
 }
 
-// ===== Arrow subtyping =====
+// --- Arrow subtyping ---
 
 TEST(Subtype, ArrowCovariant) {
     // (x : Int) -> Nat <: (x : Int) -> Int (covariant output)
@@ -251,7 +251,7 @@ TEST(Subtype, ArrowContravariantFails) {
     static_assert(!is_subtype(sub, super));
 }
 
-// ===== Incompatible types =====
+// --- Incompatible types ---
 
 TEST(Subtype, ArrowVsBase) {
     static_assert(!is_subtype(tarr("x", TInt, TInt), TInt));
@@ -264,7 +264,7 @@ TEST(Subtype, ArrowVsRefined) {
     static_assert(!is_subtype(ref, tarr("x", TInt, TInt)));
 }
 
-// ===== Join =====
+// --- Join ---
 
 TEST(Join, SameType) {
     static_assert(types_equal(join(TInt, TInt), TInt));
@@ -316,7 +316,7 @@ TEST(Join, RefinedAndWiderBase) {
     static_assert(types_equal(join(ref, TBool), TInt));
 }
 
-// ===== Join: Bool refinements =====
+// --- Join: Bool refinements ---
 
 TEST(Join, BoolRefinedDisjunction) {
     // join({#v:Bool|#v==0}, {#v:Bool|#v==1}) = {#v:Bool|...}
@@ -327,7 +327,7 @@ TEST(Join, BoolRefinedDisjunction) {
     static_assert(types_equal(get_refined_base(result), TBool));
 }
 
-// ===== Join used by subtype (soundness check) =====
+// --- Join used by subtype (soundness check) ---
 
 TEST(Join, ResultIsSupertypeOfBoth) {
     constexpr auto t1 = tref(TInt, E::var("#v") > E::lit(0));
@@ -338,7 +338,7 @@ TEST(Join, ResultIsSupertypeOfBoth) {
     static_assert(is_subtype(t2, lub));
 }
 
-// ===== Cross-base refinement subtyping (bug fix: VarInfo from super's base) =====
+// --- Cross-base refinement subtyping (bug fix: VarInfo from super's base) ---
 
 TEST(Subtype, IntToRealRefinedHalfOpen) {
     // Int <: {#v : Real | #v > 0.5} should be false

@@ -42,6 +42,33 @@ add_executable(test_type_checker test_type_checker.cpp)
 target_link_libraries(test_type_checker PRIVATE reftype::reftype GTest::gtest_main)
 target_compile_options(test_type_checker PRIVATE -Wall -Wextra -Werror)
 
+# --- Compile-fail tests ---
+# These targets should FAIL to compile (consteval throw = compile error).
+# EXCLUDE_FROM_ALL prevents building with the default target.
+# ctest builds them on demand and WILL_FAIL means success = compile failure.
+
+function(add_compile_fail_test name source)
+    add_executable(${name} EXCLUDE_FROM_ALL ${source})
+    target_link_libraries(${name} PRIVATE reftype::reftype)
+    target_compile_options(${name} PRIVATE -Wall -Wextra -Werror)
+    add_test(
+        NAME ${name}
+        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}
+                --target ${name}
+                --config $<CONFIG>
+    )
+    set_tests_properties(${name} PROPERTIES
+        WILL_FAIL TRUE
+        TIMEOUT 120
+    )
+endfunction()
+
+add_compile_fail_test(compile_fail_mixed_arith compile_fail_mixed_arith.cpp)
+add_compile_fail_test(compile_fail_bool_arith compile_fail_bool_arith.cpp)
+add_compile_fail_test(compile_fail_standalone_lambda compile_fail_standalone_lambda.cpp)
+add_compile_fail_test(compile_fail_apply_non_function compile_fail_apply_non_function.cpp)
+add_compile_fail_test(compile_fail_unbound_var compile_fail_unbound_var.cpp)
+
 include(GoogleTest)
 gtest_discover_tests(test_fm_types PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_fm_core PROPERTIES TIMEOUT 60)
