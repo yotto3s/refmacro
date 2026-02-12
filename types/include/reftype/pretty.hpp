@@ -63,8 +63,8 @@ consteval FixedString<256> pp_node(const refmacro::AST<Cap>& ast, int id) {
         return s;
     }
 
-    // Delegate non-type tags to core pretty-print
-    return refmacro::detail::pp_node(ast, id);
+    // Delegate non-type tags to core pretty-print (public API)
+    return refmacro::pretty_print(refmacro::Expression<Cap>{ast, id});
 }
 
 } // namespace detail
