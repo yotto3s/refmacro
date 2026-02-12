@@ -3,6 +3,7 @@
 
 #include <refmacro/ast.hpp>
 #include <refmacro/expr.hpp>
+#include <limits>
 
 namespace refmacro {
 
@@ -51,18 +52,10 @@ template <std::size_t N = 256> struct FixedString {
     }
 
     consteval void append_double(double v) {
-        if (v != v) {
-            append("NaN");
-            return;
-        } // NaN
-        if (v > 1e308) {
-            append("inf");
-            return;
-        } // +infinity
-        if (v < -1e308) {
-            append("-inf");
-            return;
-        } // -infinity
+        constexpr auto inf = std::numeric_limits<double>::infinity();
+        if (v != v) { append("NaN"); return; }
+        if (v == inf) { append("inf"); return; }
+        if (v == -inf) { append("-inf"); return; }
         if (v < 0.0) {
             append_char('-');
             v = -v;
