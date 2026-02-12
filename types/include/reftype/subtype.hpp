@@ -207,6 +207,14 @@ consteval Expression<Cap> join(const Expression<Cap>& t1,
     if (is_base(t1) && is_refined(t2))
         return wider_base(t1, get_refined_base(t2));
 
+    // Arrow + arrow — alpha-equivalent (same input/output, ignore binder name)
+    if (is_arrow(t1) && is_arrow(t2)) {
+        if (types_equal(get_arrow_input(t1), get_arrow_input(t2))
+            && types_equal(get_arrow_output(t1), get_arrow_output(t2)))
+            return t1;
+        throw "type error: incompatible arrow types for join";
+    }
+
     throw "type error: incompatible types for join";
 }
 

@@ -338,6 +338,36 @@ TEST(Join, ResultIsSupertypeOfBoth) {
     static_assert(is_subtype(t2, lub));
 }
 
+// --- Join: arrow types ---
+
+TEST(Join, ArrowSameBinder) {
+    // join((x:Int)->Bool, (x:Int)->Bool) = (x:Int)->Bool
+    constexpr auto a = tarr("x", TInt, TBool);
+    constexpr auto b = tarr("x", TInt, TBool);
+    static_assert(types_equal(join(a, b), a));
+}
+
+TEST(Join, ArrowAlphaEquivalent) {
+    // join((x:Int)->Bool, (y:Int)->Bool) should succeed despite different binder names
+    constexpr auto a = tarr("x", TInt, TBool);
+    constexpr auto b = tarr("y", TInt, TBool);
+    constexpr auto result = join(a, b);
+    static_assert(is_arrow(result));
+    static_assert(types_equal(get_arrow_input(result), TInt));
+    static_assert(types_equal(get_arrow_output(result), TBool));
+}
+
+TEST(Join, ArrowWithRefinedTypes) {
+    // join((x:Nat)->Int, (y:Nat)->Int) — alpha-equivalent with refined input
+    constexpr auto nat = tref(TInt, E::var("#v") >= E::lit(0));
+    constexpr auto a = tarr("x", nat, TInt);
+    constexpr auto b = tarr("y", nat, TInt);
+    constexpr auto result = join(a, b);
+    static_assert(is_arrow(result));
+    static_assert(types_equal(get_arrow_input(result), nat));
+    static_assert(types_equal(get_arrow_output(result), TInt));
+}
+
 // --- Cross-base refinement subtyping (bug fix: VarInfo from super's base) ---
 
 TEST(Subtype, IntToRealRefinedHalfOpen) {

@@ -247,6 +247,24 @@ TEST(TypeChecker, CondJoinTypes) {
     static_assert(types_equal(r.type, TInt));
 }
 
+TEST(TypeChecker, CondOverArrowTypes) {
+    // cond(p, f, g) where f:(x:Int)->Int and g:(y:Int)->Int
+    // Should succeed: join of alpha-equivalent arrows
+    constexpr auto arrow_f = tarr("x", TInt, TInt);
+    constexpr auto arrow_g = tarr("y", TInt, TInt);
+    constexpr TypeEnv<128> env = TypeEnv<128>{}
+        .bind("p", TBool)
+        .bind("f", arrow_f)
+        .bind("g", arrow_g);
+    constexpr auto e = refmacro::make_node<128>(
+        "cond", E::var("p"), E::var("f"), E::var("g"));
+    constexpr auto r = type_check(e, env);
+    static_assert(r.valid);
+    static_assert(reftype::is_arrow(r.type));
+    static_assert(types_equal(reftype::get_arrow_input(r.type), TInt));
+    static_assert(types_equal(reftype::get_arrow_output(r.type), TInt));
+}
+
 // --- Let-binding (apply/lambda) ---
 
 TEST(TypeChecker, LetBinding) {
