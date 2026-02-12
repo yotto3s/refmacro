@@ -1,6 +1,6 @@
 # Phase 3: Constraint Representation
 
-> **Status:** Work in progress — this plan should be refined before implementation.
+> **Status:** Complete — implemented in `types/include/reftype/constraints.hpp`.
 
 **Goal:** Define the constraint data structures that the type checker emits and the solver consumes.
 
@@ -35,17 +35,22 @@ struct ConstraintSet {
     int count{0};
 
     consteval ConstraintSet add(Expression<Cap> formula, const char* origin) const {
+        if (count >= MaxConstraints)
+            throw "ConstraintSet capacity exceeded";
         ConstraintSet result = *this;
         result.constraints[result.count].formula = formula;
-        copy_str(origin, result.constraints[result.count].origin);
+        copy_str(result.constraints[result.count].origin, origin, 64);
         result.count++;
         return result;
     }
 
     consteval ConstraintSet merge(const ConstraintSet& other) const {
         ConstraintSet result = *this;
-        for (int i = 0; i < other.count; ++i)
+        for (int i = 0; i < other.count; ++i) {
+            if (result.count >= MaxConstraints)
+                throw "ConstraintSet capacity exceeded on merge";
             result.constraints[result.count++] = other.constraints[i];
+        }
         return result;
     }
 };

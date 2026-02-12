@@ -7,6 +7,7 @@
 namespace reftype::fm {
 
 consteval void check_ll_range(double x, const char* fn) {
+    if (x != x) throw fn;  // NaN: all comparisons false, would bypass range check
     constexpr auto lo = static_cast<double>(std::numeric_limits<long long>::min());
     constexpr auto hi = static_cast<double>(std::numeric_limits<long long>::max());
     if (x < lo || x > hi) throw fn;
