@@ -51,6 +51,9 @@ template <std::size_t N = 256> struct FixedString {
     }
 
     consteval void append_double(double v) {
+        if (v != v) { append("NaN"); return; }       // NaN
+        if (v > 1e308) { append("inf"); return; }    // +infinity
+        if (v < -1e308) { append("-inf"); return; }   // -infinity
         if (v < 0.0) {
             append_char('-');
             v = -v;

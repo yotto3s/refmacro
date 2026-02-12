@@ -1,6 +1,6 @@
 # Phase 2: Type Environment
 
-> **Status:** Work in progress — this plan should be refined before implementation.
+> **Status:** Complete — implemented in `types/include/reftype/type_env.hpp`.
 
 **Goal:** Build a compile-time map from variable names to their types (as Expression ASTs).
 
@@ -32,8 +32,12 @@ struct TypeEnv {
 
     // Append binding (supports shadowing — later bindings win)
     consteval TypeEnv bind(const char* name, Expression<Cap> type) const {
+        if (count >= MaxBindings)
+            throw "TypeEnv capacity exceeded";
+        if (str_len(name) >= sizeof(names[0]))
+            throw "TypeEnv name too long";
         TypeEnv result = *this;
-        copy_str(result.names[result.count], name);
+        copy_str(result.names[result.count], name, sizeof(result.names[0]));
         result.types[result.count] = type;
         result.count++;
         return result;
