@@ -34,11 +34,9 @@ consteval BaseKind tag_to_kind(const char* tag) {
 template <std::size_t Cap>
 consteval BaseKind get_base_kind(const Expression<Cap>& type) {
     if (is_base(type))
-        return tag_to_kind(type.ast.nodes[type.id].tag);
-    if (is_refined(type)) {
-        auto base = get_refined_base(type);
-        return tag_to_kind(base.ast.nodes[base.id].tag);
-    }
+        return tag_to_kind(type_tag(type));
+    if (is_refined(type))
+        return tag_to_kind(type_tag(get_refined_base(type)));
     return BaseKind::None;
 }
 

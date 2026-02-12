@@ -11,22 +11,29 @@ namespace reftype {
 using refmacro::Expression;
 using refmacro::str_eq;
 
+// --- AST tag accessor ---
+
+template <std::size_t Cap>
+consteval const char* type_tag(const Expression<Cap>& e) {
+    return e.ast.nodes[e.id].tag;
+}
+
 // --- AST node classification ---
 
 template <std::size_t Cap>
 consteval bool is_base(const Expression<Cap>& e) {
-    const auto& tag = e.ast.nodes[e.id].tag;
+    const auto* tag = type_tag(e);
     return str_eq(tag, "tint") || str_eq(tag, "tbool") || str_eq(tag, "treal");
 }
 
 template <std::size_t Cap>
 consteval bool is_refined(const Expression<Cap>& e) {
-    return str_eq(e.ast.nodes[e.id].tag, "tref");
+    return str_eq(type_tag(e), "tref");
 }
 
 template <std::size_t Cap>
 consteval bool is_arrow(const Expression<Cap>& e) {
-    return str_eq(e.ast.nodes[e.id].tag, "tarr");
+    return str_eq(type_tag(e), "tarr");
 }
 
 // --- AST accessors ---
@@ -99,8 +106,8 @@ consteval bool base_compatible(const char* sub, const char* super) {
 template <std::size_t Cap>
 consteval Expression<Cap> wider_base(const Expression<Cap>& t1,
                                      const Expression<Cap>& t2) {
-    const auto& tag1 = t1.ast.nodes[t1.id].tag;
-    const auto& tag2 = t2.ast.nodes[t2.id].tag;
+    auto tag1 = type_tag(t1);
+    auto tag2 = type_tag(t2);
 
     if (str_eq(tag1, tag2)) return t1;
     if (str_eq(tag1, "treal") || str_eq(tag2, "treal")) return treal<Cap>();
@@ -118,38 +125,33 @@ consteval bool is_subtype(const Expression<Cap>& sub,
 
     // Base <: base — widening
     if (is_base(sub) && is_base(super))
-        return base_widens(sub.ast.nodes[sub.id].tag,
-                           super.ast.nodes[super.id].tag);
+        return base_widens(type_tag(sub), type_tag(super));
 
     // Unrefined <: refined — Q must be valid (always true)
     if (is_base(sub) && is_refined(super)) {
         auto super_base = get_refined_base(super);
-        if (!base_compatible(sub.ast.nodes[sub.id].tag,
-                             super_base.ast.nodes[super_base.id].tag))
+        if (!base_compatible(type_tag(sub), type_tag(super_base)))
             return false;
+        // #v ranges over super's refinement domain
         fm::VarInfo<> vars{};
-        vars.find_or_add("#v",
-                         !str_eq(sub.ast.nodes[sub.id].tag, "treal"));
+        vars.find_or_add("#v", !str_eq(type_tag(super_base), "treal"));
         return fm::is_valid(get_refined_pred(super), vars);
     }
 
     // Refined <: unrefined — true if base compatible
-    if (is_refined(sub) && is_base(super)) {
-        auto sub_base = get_refined_base(sub);
-        return base_compatible(sub_base.ast.nodes[sub_base.id].tag,
-                               super.ast.nodes[super.id].tag);
-    }
+    if (is_refined(sub) && is_base(super))
+        return base_compatible(type_tag(get_refined_base(sub)),
+                               type_tag(super));
 
     // Refined <: refined — P => Q via FM solver
     if (is_refined(sub) && is_refined(super)) {
         auto sub_base = get_refined_base(sub);
         auto super_base = get_refined_base(super);
-        if (!base_compatible(sub_base.ast.nodes[sub_base.id].tag,
-                             super_base.ast.nodes[super_base.id].tag))
+        if (!base_compatible(type_tag(sub_base), type_tag(super_base)))
             return false;
+        // #v ranges over sub's domain (the narrower type)
         fm::VarInfo<> vars{};
-        vars.find_or_add(
-            "#v", !str_eq(sub_base.ast.nodes[sub_base.id].tag, "treal"));
+        vars.find_or_add("#v", !str_eq(type_tag(sub_base), "treal"));
         return fm::is_valid_implication<Cap>(get_refined_pred(sub),
                                              get_refined_pred(super), vars);
     }

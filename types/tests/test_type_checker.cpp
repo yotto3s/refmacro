@@ -330,6 +330,84 @@ TEST(TypeChecker, BaseKindClassification) {
     static_assert(get_base_kind(tarr("x", TInt, TInt)) == BaseKind::None);
 }
 
+// ===== Logical or =====
+
+TEST(TypeChecker, LorBoolBool) {
+    constexpr TypeEnv<128> env = TypeEnv<128>{}
+        .bind("p", TBool)
+        .bind("q", TBool);
+    constexpr auto r = type_check(E::var("p") || E::var("q"), env);
+    static_assert(r.valid);
+    static_assert(types_equal(r.type, TBool));
+}
+
+// ===== Division =====
+
+TEST(TypeChecker, DivIntInt) {
+    constexpr TypeEnv<128> env = TypeEnv<128>{}
+        .bind("x", TInt)
+        .bind("y", TInt);
+    constexpr auto r = type_check(E::var("x") / E::var("y"), env);
+    static_assert(r.valid);
+    static_assert(types_equal(r.type, TInt));
+}
+
+TEST(TypeChecker, DivRealReal) {
+    constexpr TypeEnv<128> env = TypeEnv<128>{}
+        .bind("x", TReal)
+        .bind("y", TReal);
+    constexpr auto r = type_check(E::var("x") / E::var("y"), env);
+    static_assert(r.valid);
+    static_assert(types_equal(r.type, TReal));
+}
+
+// ===== le/ge comparisons =====
+
+TEST(TypeChecker, LeIntInt) {
+    constexpr TypeEnv<128> env = TypeEnv<128>{}
+        .bind("x", TInt)
+        .bind("y", TInt);
+    constexpr auto r = type_check(E::var("x") <= E::var("y"), env);
+    static_assert(r.valid);
+    static_assert(types_equal(r.type, TBool));
+}
+
+TEST(TypeChecker, GeIntInt) {
+    constexpr TypeEnv<128> env = TypeEnv<128>{}
+        .bind("x", TInt)
+        .bind("y", TInt);
+    constexpr auto r = type_check(E::var("x") >= E::var("y"), env);
+    static_assert(r.valid);
+    static_assert(types_equal(r.type, TBool));
+}
+
+// ===== Real-valued arithmetic =====
+
+TEST(TypeChecker, LitRealArithmetic) {
+    // add(lit(3.14), lit(1.5)) — both Real singleton types
+    constexpr auto r = type_check(E::lit(3.14) + E::lit(1.5));
+    static_assert(r.valid);
+    static_assert(types_equal(r.type, TReal));
+}
+
+// ===== Sequence (progn) =====
+
+TEST(TypeChecker, Progn) {
+    // progn(lit(1), lit(2)) — result type is second expression's type
+    constexpr auto e = refmacro::make_node<128>("progn", E::lit(1), E::lit(2));
+    constexpr auto r = type_check(e);
+    static_assert(r.valid);
+    static_assert(get_base_kind(r.type) == BaseKind::Int);
+}
+
+TEST(TypeChecker, PrognPropagatesValidity) {
+    // progn(ann(lit(0), pos_int()), lit(1)) — first invalid, result invalid
+    constexpr auto first = ann(E::lit(0), pos_int());
+    constexpr auto e = refmacro::make_node<128>("progn", first, E::lit(1));
+    constexpr auto r = type_check(e);
+    static_assert(!r.valid);
+}
+
 // ===== Validity propagation =====
 
 TEST(TypeChecker, ValidityPropagatesThrough) {

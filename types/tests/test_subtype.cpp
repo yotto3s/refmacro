@@ -316,6 +316,17 @@ TEST(Join, RefinedAndWiderBase) {
     static_assert(types_equal(join(ref, TBool), TInt));
 }
 
+// ===== Join: Bool refinements =====
+
+TEST(Join, BoolRefinedDisjunction) {
+    // join({#v:Bool|#v==0}, {#v:Bool|#v==1}) = {#v:Bool|...}
+    constexpr auto t1 = tref(TBool, E::var("#v") == E::lit(0));
+    constexpr auto t2 = tref(TBool, E::var("#v") == E::lit(1));
+    constexpr auto result = join(t1, t2);
+    static_assert(is_refined(result));
+    static_assert(types_equal(get_refined_base(result), TBool));
+}
+
 // ===== Join used by subtype (soundness check) =====
 
 TEST(Join, ResultIsSupertypeOfBoth) {
@@ -325,4 +336,21 @@ TEST(Join, ResultIsSupertypeOfBoth) {
     // Both should be subtypes of the join
     static_assert(is_subtype(t1, lub));
     static_assert(is_subtype(t2, lub));
+}
+
+// ===== Cross-base refinement subtyping (bug fix: VarInfo from super's base) =====
+
+TEST(Subtype, IntToRealRefinedHalfOpen) {
+    // Int <: {#v : Real | #v > 0.5} should be false
+    // (not all ints satisfy #v > 0.5; e.g. 0)
+    // With correct VarInfo (#v as real), FM treats #v > 0.5 correctly
+    constexpr auto super = tref(TReal, E::var("#v") > E::lit(0.5));
+    static_assert(!is_subtype(TInt, super));
+}
+
+TEST(Subtype, BoolToIntRefined) {
+    // Bool <: {#v : Int | #v >= 0} should be false
+    // (all ints >= 0? No, so Q is not valid for all integers)
+    constexpr auto super = tref(TInt, E::var("#v") >= E::lit(0));
+    static_assert(!is_subtype(TBool, super));
 }
