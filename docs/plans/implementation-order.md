@@ -169,7 +169,7 @@ Each step is a logical unit of work suitable for a single branch/PR:
 - [x] Step 4 — Expression → inequality parser ([phase6b-fm-parser.md](phase6b-fm-parser.md))
 - [x] Step 5 — Validity/SAT public API ([phase6e-fm-validity.md](phase6e-fm-validity.md))
 - [x] Step 6 — Disjunction handling: DNF splitting ([phase6f-fm-disjunction.md](phase6f-fm-disjunction.md))
-- [ ] Step 7 — Type AST nodes + constants + pretty-print ([phase1-type-representation.md](phase1-type-representation.md))
+- [x] Step 7 — Type AST nodes + constants + pretty-print ([phase1-type-representation.md](phase1-type-representation.md))
 - [ ] Step 8 — TypeEnv (bind, lookup, shadowing) ([phase2-type-environment.md](phase2-type-environment.md))
 - [ ] Step 9 — Constraint / ConstraintSet ([phase3-constraints.md](phase3-constraints.md))
 - [ ] Step 10 — Subtype checking ([phase5-subtype-checking.md](phase5-subtype-checking.md))
