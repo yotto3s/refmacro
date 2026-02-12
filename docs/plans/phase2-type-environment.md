@@ -33,7 +33,7 @@ struct TypeEnv {
     // Append binding (supports shadowing — later bindings win)
     consteval TypeEnv bind(const char* name, Expression<Cap> type) const {
         TypeEnv result = *this;
-        copy_str(name, result.names[result.count]);
+        copy_str(result.names[result.count], name);
         result.types[result.count] = type;
         result.count++;
         return result;
