@@ -5,9 +5,21 @@
 
 namespace refmacro {
 
-template <std::size_t Cap = 64> struct Expression {
+template <std::size_t Cap = 64, auto... Macros> struct Expression {
     AST<Cap> ast{};
     int id{-1};
+
+    // Converting constructor: allows conversion between Expression types with
+    // different Macros
+    template <auto... OtherMs>
+    consteval Expression(const Expression<Cap, OtherMs...>& other)
+        : ast(other.ast), id(other.id) {}
+
+    // Constructor from AST and id (needed for aggregate-init replacement)
+    consteval Expression(const AST<Cap>& a, int i) : ast(a), id(i) {}
+
+    // Default constructor (needed since we added the converting constructor)
+    consteval Expression() = default;
 
     static consteval Expression lit(double v) {
         Expression e;
@@ -41,11 +53,12 @@ consteval Expression<Cap> make_node(const char* tag) {
 }
 
 // N-ary (1-8 children)
-template <std::size_t Cap = 64, std::same_as<Expression<Cap>>... Rest>
+template <std::size_t Cap = 64, auto... Ms,
+          std::same_as<Expression<Cap, Ms...>>... Rest>
     requires(sizeof...(Rest) <= 7)
-consteval Expression<Cap> make_node(const char* tag, Expression<Cap> c0,
-                                    Rest... rest) {
-    Expression<Cap> result;
+consteval Expression<Cap, Ms...>
+make_node(const char* tag, Expression<Cap, Ms...> c0, Rest... rest) {
+    Expression<Cap, Ms...> result;
     result.ast = c0.ast;
     int ids[1 + sizeof...(Rest)]{c0.id};
     [[maybe_unused]] std::size_t i = 1;
@@ -56,89 +69,106 @@ consteval Expression<Cap> make_node(const char* tag, Expression<Cap> c0,
 
 // --- Comparison operator sugar (creates AST nodes) ---
 
-template <std::size_t Cap>
-consteval Expression<Cap> operator==(Expression<Cap> lhs, Expression<Cap> rhs) {
+template <std::size_t Cap, auto... Ms>
+consteval Expression<Cap, Ms...> operator==(Expression<Cap, Ms...> lhs,
+                                            Expression<Cap, Ms...> rhs) {
     return make_node("eq", lhs, rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator<(Expression<Cap> lhs, Expression<Cap> rhs) {
+template <std::size_t Cap, auto... Ms>
+consteval Expression<Cap, Ms...> operator<(Expression<Cap, Ms...> lhs,
+                                           Expression<Cap, Ms...> rhs) {
     return make_node("lt", lhs, rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator>(Expression<Cap> lhs, Expression<Cap> rhs) {
+template <std::size_t Cap, auto... Ms>
+consteval Expression<Cap, Ms...> operator>(Expression<Cap, Ms...> lhs,
+                                           Expression<Cap, Ms...> rhs) {
     return make_node("gt", lhs, rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator<=(Expression<Cap> lhs, Expression<Cap> rhs) {
+template <std::size_t Cap, auto... Ms>
+consteval Expression<Cap, Ms...> operator<=(Expression<Cap, Ms...> lhs,
+                                            Expression<Cap, Ms...> rhs) {
     return make_node("le", lhs, rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator>=(Expression<Cap> lhs, Expression<Cap> rhs) {
+template <std::size_t Cap, auto... Ms>
+consteval Expression<Cap, Ms...> operator>=(Expression<Cap, Ms...> lhs,
+                                            Expression<Cap, Ms...> rhs) {
     return make_node("ge", lhs, rhs);
 }
 
 // double on LHS (comparison)
-template <std::size_t Cap>
-consteval Expression<Cap> operator==(double lhs, Expression<Cap> rhs) {
-    return Expression<Cap>::lit(lhs) == rhs;
+template <std::size_t Cap, auto... Ms>
+consteval auto operator==(double lhs, Expression<Cap, Ms...> rhs) {
+    Expression<Cap, Ms...> l = Expression<Cap>::lit(lhs);
+    return l == rhs;
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator<(double lhs, Expression<Cap> rhs) {
-    return Expression<Cap>::lit(lhs) < rhs;
+template <std::size_t Cap, auto... Ms>
+consteval auto operator<(double lhs, Expression<Cap, Ms...> rhs) {
+    Expression<Cap, Ms...> l = Expression<Cap>::lit(lhs);
+    return l < rhs;
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator>(double lhs, Expression<Cap> rhs) {
-    return Expression<Cap>::lit(lhs) > rhs;
+template <std::size_t Cap, auto... Ms>
+consteval auto operator>(double lhs, Expression<Cap, Ms...> rhs) {
+    Expression<Cap, Ms...> l = Expression<Cap>::lit(lhs);
+    return l > rhs;
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator<=(double lhs, Expression<Cap> rhs) {
-    return Expression<Cap>::lit(lhs) <= rhs;
+template <std::size_t Cap, auto... Ms>
+consteval auto operator<=(double lhs, Expression<Cap, Ms...> rhs) {
+    Expression<Cap, Ms...> l = Expression<Cap>::lit(lhs);
+    return l <= rhs;
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator>=(double lhs, Expression<Cap> rhs) {
-    return Expression<Cap>::lit(lhs) >= rhs;
+template <std::size_t Cap, auto... Ms>
+consteval auto operator>=(double lhs, Expression<Cap, Ms...> rhs) {
+    Expression<Cap, Ms...> l = Expression<Cap>::lit(lhs);
+    return l >= rhs;
 }
 
 // double on RHS (comparison)
-template <std::size_t Cap>
-consteval Expression<Cap> operator==(Expression<Cap> lhs, double rhs) {
-    return lhs == Expression<Cap>::lit(rhs);
+template <std::size_t Cap, auto... Ms>
+consteval auto operator==(Expression<Cap, Ms...> lhs, double rhs) {
+    Expression<Cap, Ms...> r = Expression<Cap>::lit(rhs);
+    return lhs == r;
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator<(Expression<Cap> lhs, double rhs) {
-    return lhs < Expression<Cap>::lit(rhs);
+template <std::size_t Cap, auto... Ms>
+consteval auto operator<(Expression<Cap, Ms...> lhs, double rhs) {
+    Expression<Cap, Ms...> r = Expression<Cap>::lit(rhs);
+    return lhs < r;
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator>(Expression<Cap> lhs, double rhs) {
-    return lhs > Expression<Cap>::lit(rhs);
+template <std::size_t Cap, auto... Ms>
+consteval auto operator>(Expression<Cap, Ms...> lhs, double rhs) {
+    Expression<Cap, Ms...> r = Expression<Cap>::lit(rhs);
+    return lhs > r;
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator<=(Expression<Cap> lhs, double rhs) {
-    return lhs <= Expression<Cap>::lit(rhs);
+template <std::size_t Cap, auto... Ms>
+consteval auto operator<=(Expression<Cap, Ms...> lhs, double rhs) {
+    Expression<Cap, Ms...> r = Expression<Cap>::lit(rhs);
+    return lhs <= r;
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator>=(Expression<Cap> lhs, double rhs) {
-    return lhs >= Expression<Cap>::lit(rhs);
+template <std::size_t Cap, auto... Ms>
+consteval auto operator>=(Expression<Cap, Ms...> lhs, double rhs) {
+    Expression<Cap, Ms...> r = Expression<Cap>::lit(rhs);
+    return lhs >= r;
 }
 
 // --- Logical operator sugar ---
 
-template <std::size_t Cap>
-consteval Expression<Cap> operator&&(Expression<Cap> lhs, Expression<Cap> rhs) {
+template <std::size_t Cap, auto... Ms>
+consteval Expression<Cap, Ms...> operator&&(Expression<Cap, Ms...> lhs,
+                                            Expression<Cap, Ms...> rhs) {
     return make_node("land", lhs, rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator||(Expression<Cap> lhs, Expression<Cap> rhs) {
+template <std::size_t Cap, auto... Ms>
+consteval Expression<Cap, Ms...> operator||(Expression<Cap, Ms...> lhs,
+                                            Expression<Cap, Ms...> rhs) {
     return make_node("lor", lhs, rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator!(Expression<Cap> x) {
+template <std::size_t Cap, auto... Ms>
+consteval Expression<Cap, Ms...> operator!(Expression<Cap, Ms...> x) {
     return make_node("lnot", x);
 }
 
 // Pipe operator for transform composition
-template <std::size_t Cap, typename F>
-consteval auto operator|(Expression<Cap> e, F transform_fn) {
+template <std::size_t Cap, auto... Ms, typename F>
+consteval auto operator|(Expression<Cap, Ms...> e, F transform_fn) {
     return transform_fn(e);
 }
 
