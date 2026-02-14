@@ -47,6 +47,17 @@ consteval bool is_integer_val(double x) {
 // constant is rounded as if the effective coefficient is 1.
 consteval LinearInequality round_integer_bound(
     LinearInequality ineq, bool is_lower, double target_coeff) {
+    // For multi-variable inequalities, rounding with coeff=1 is only
+    // sound when every coefficient is integer (so the weighted sum of
+    // integer variables is itself integer).  If any coefficient is
+    // non-integer (e.g. 0.5 from a division), the sum can be
+    // fractional and rounding would over-tighten, causing false UNSAT.
+    if (ineq.term_count > 1) {
+        for (std::size_t i = 0; i < ineq.term_count; ++i)
+            if (!is_integer_val(ineq.terms[i].coeff))
+                return ineq;  // skip rounding — not safe
+    }
+
     // Only normalize by the target coefficient for single-variable
     // inequalities. For multi-variable, the other terms make the
     // effective bound variable-dependent, so normalizing is unsound.

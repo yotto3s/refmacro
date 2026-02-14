@@ -22,6 +22,10 @@ add_executable(test_fm_disjunction test_fm_disjunction.cpp)
 target_link_libraries(test_fm_disjunction PRIVATE reftype::reftype GTest::gtest_main)
 target_compile_options(test_fm_disjunction PRIVATE -Wall -Wextra -Werror)
 
+add_executable(test_fm_tester_bugs test_fm_tester_bugs.cpp)
+target_link_libraries(test_fm_tester_bugs PRIVATE reftype::reftype GTest::gtest_main)
+target_compile_options(test_fm_tester_bugs PRIVATE -Wall -Wextra -Werror)
+
 add_executable(test_types test_types.cpp)
 target_link_libraries(test_types PRIVATE reftype::reftype GTest::gtest_main)
 target_compile_options(test_types PRIVATE -Wall -Wextra -Werror)
@@ -78,6 +82,13 @@ add_compile_fail_test(compile_fail_apply_non_function compile_fail_apply_non_fun
 add_compile_fail_test(compile_fail_unbound_var compile_fail_unbound_var.cpp)
 add_compile_fail_test(compile_fail_bare_type_node compile_fail_bare_type_node.cpp)
 add_compile_fail_test(compile_fail_typed_compile_invalid compile_fail_typed_compile_invalid.cpp)
+# compile_fail_fm_rounding_f1: was a compile-fail test (F1 bug: false UNSAT
+# with non-integer coefficients). Now that the rounding bug is fixed, the
+# static_assert succeeds and the test should compile and run cleanly.
+add_executable(compile_fail_fm_rounding_f1 compile_fail_fm_rounding_f1.cpp)
+target_link_libraries(compile_fail_fm_rounding_f1 PRIVATE reftype::reftype)
+target_compile_options(compile_fail_fm_rounding_f1 PRIVATE -Wall -Wextra -Werror)
+add_test(NAME compile_fail_fm_rounding_f1 COMMAND compile_fail_fm_rounding_f1)
 
 include(GoogleTest)
 gtest_discover_tests(test_fm_types PROPERTIES TIMEOUT 60)
@@ -86,6 +97,7 @@ gtest_discover_tests(test_fm_rounding PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_fm_parser PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_fm_solver PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_fm_disjunction PROPERTIES TIMEOUT 60)
+gtest_discover_tests(test_fm_tester_bugs PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_types PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_type_env PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_constraints PROPERTIES TIMEOUT 60)
