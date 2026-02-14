@@ -172,8 +172,8 @@ Each step is a logical unit of work suitable for a single branch/PR:
 - [x] Step 7 — Type AST nodes + constants + pretty-print ([phase1-type-representation.md](phase1-type-representation.md))
 - [x] Step 8 — TypeEnv (bind, lookup, shadowing) ([phase2-type-environment.md](phase2-type-environment.md))
 - [x] Step 9 — Constraint / ConstraintSet ([phase3-constraints.md](phase3-constraints.md))
-- [ ] Step 10 — Subtype checking ([phase5-subtype-checking.md](phase5-subtype-checking.md))
-- [ ] Step 11 — Bidirectional type checker + def_typerule ([phase4-type-checker.md](phase4-type-checker.md))
+- [x] Step 10 — Subtype checking ([phase5-subtype-checking.md](phase5-subtype-checking.md))
+- [x] Step 11 — Bidirectional type checker + def_typerule ([phase4-type-checker.md](phase4-type-checker.md))
 - [ ] Step 12 — strip_types + pipeline wiring ([phase7-strip-compile-pipeline.md](phase7-strip-compile-pipeline.md))
 - [ ] Step 13 — Error reporting ([phase8-error-reporting.md](phase8-error-reporting.md))
 - [ ] Step 14 — End-to-end integration test + example
