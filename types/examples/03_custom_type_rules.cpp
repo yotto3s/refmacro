@@ -29,6 +29,8 @@ using reftype::TypeEnv;
 using reftype::TypeResult;
 
 using E = Expression<128>;
+using refmacro::NodeView;
+using refmacro::to_expr;
 
 // --- Section 1: Defining the custom macro ---
 //
@@ -57,8 +59,8 @@ inline constexpr auto MClamp = defmacro("clamp", [](auto x, auto lo, auto hi) {
 //
 // When the type checker encounters clamp(x, lo, hi), it synthesizes the
 // refinement type {#v : Int | #v >= lo && #v <= hi}, where lo and hi are
-// extracted from the literal children's payloads.
-// Validates that x is numeric and lo/hi are literals.
+// extracted from the children as sub-expressions.
+// Validates that all three arguments are numeric.
 
 inline constexpr auto TRClamp = def_typerule(
     "clamp", [](const auto& expr, const auto& env, auto synth_rec) {
@@ -71,25 +73,31 @@ inline constexpr auto TRClamp = def_typerule(
         auto lo_res = synth_rec(Expr{expr.ast, node.children[1]}, env);
         auto hi_res = synth_rec(Expr{expr.ast, node.children[2]}, env);
 
-        // Validate: x must be numeric (Int or Real)
+        // Validate: all arguments must be numeric (Int or Real)
         auto xk = get_base_kind(x_res.type);
         if (xk != BaseKind::Int && xk != BaseKind::Real)
             report_error("clamp: first argument must be numeric", "Int or Real",
                          reftype::kind_name(xk), "clamp");
+        auto lok = get_base_kind(lo_res.type);
+        if (lok != BaseKind::Int && lok != BaseKind::Real)
+            report_error("clamp: lo bound must be numeric", "Int or Real",
+                         reftype::kind_name(lok), "clamp");
+        auto hik = get_base_kind(hi_res.type);
+        if (hik != BaseKind::Int && hik != BaseKind::Real)
+            report_error("clamp: hi bound must be numeric", "Int or Real",
+                         reftype::kind_name(hik), "clamp");
 
-        // Validate: lo and hi must be literal nodes
-        if (!str_eq(expr.ast.nodes[node.children[1]].tag, "lit"))
-            report_error("clamp: lo bound must be a literal", "clamp");
-        if (!str_eq(expr.ast.nodes[node.children[2]].tag, "lit"))
-            report_error("clamp: hi bound must be a literal", "clamp");
-
-        // Extract literal bounds from lo/hi children
-        double lo_val = expr.ast.nodes[node.children[1]].payload;
-        double hi_val = expr.ast.nodes[node.children[2]].payload;
+        // Extract lo/hi sub-expressions for the refinement predicate.
+        // to_expr copies the sub-tree into a standalone Expression, so
+        // literals, variables, and arithmetic all work uniformly.
+        using NV = refmacro::NodeView<Cap>;
+        NV root{expr.ast, expr.id};
+        auto lo_expr = refmacro::to_expr(root, NV{expr.ast, node.children[1]});
+        auto hi_expr = refmacro::to_expr(root, NV{expr.ast, node.children[2]});
 
         // Synthesize {#v : Int | #v >= lo && #v <= hi}
         auto v = Expr::var("#v");
-        auto pred = (v >= Expr::lit(lo_val)) && (v <= Expr::lit(hi_val));
+        auto pred = (v >= lo_expr) && (v <= hi_expr);
 
         return TypeResult<Cap>{reftype::tref(reftype::tint<Cap>(), pred),
                                x_res.valid && lo_res.valid && hi_res.valid};
