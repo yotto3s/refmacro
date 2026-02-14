@@ -2,7 +2,9 @@
 #define REFTYPE_CHECK_HPP
 
 #include <refmacro/expr.hpp>
+#include <refmacro/pretty_print.hpp>
 #include <refmacro/str_utils.hpp>
+#include <reftype/pretty.hpp>
 #include <reftype/subtype.hpp>
 #include <reftype/type_env.hpp>
 #include <reftype/types.hpp>
@@ -11,6 +13,33 @@ namespace reftype {
 
 using refmacro::Expression;
 using refmacro::str_eq;
+
+// --- Structured error reporting ---
+
+template <std::size_t N = 512>
+consteval void report_error(const char* category, const char* expected,
+                            const char* actual, const char* context) {
+    refmacro::FixedString<N> msg{};
+    msg.append("type error: ");
+    msg.append(category);
+    msg.append("\n  expected: ");
+    msg.append(expected);
+    msg.append("\n  actual:   ");
+    msg.append(actual);
+    msg.append("\n  at:       ");
+    msg.append(context);
+    throw msg.data;
+}
+
+template <std::size_t N = 512>
+consteval void report_error(const char* category, const char* context) {
+    refmacro::FixedString<N> msg{};
+    msg.append("type error: ");
+    msg.append(category);
+    msg.append("\n  at: ");
+    msg.append(context);
+    throw msg.data;
+}
 
 // --- TypeResult ---
 
@@ -40,6 +69,20 @@ consteval BaseKind get_base_kind(const Expression<Cap>& type) {
     if (is_refined(type))
         return tag_to_kind(type_tag(get_refined_base(type)));
     return BaseKind::None;
+}
+
+consteval const char* kind_name(BaseKind k) {
+    switch (k) {
+    case BaseKind::Bool:
+        return "Bool";
+    case BaseKind::Int:
+        return "Int";
+    case BaseKind::Real:
+        return "Real";
+    case BaseKind::None:
+        return "<unknown>";
+    }
+    return "<unknown>";
 }
 
 // --- Type synthesis ---
@@ -109,11 +152,14 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
         auto rk = get_base_kind(right.type);
 
         if (lk != BaseKind::Int && lk != BaseKind::Real)
-            throw "type error: non-numeric operand in arithmetic";
+            report_error("non-numeric operand in arithmetic", "Int or Real",
+                         kind_name(lk), node.tag);
         if (rk != BaseKind::Int && rk != BaseKind::Real)
-            throw "type error: non-numeric operand in arithmetic";
+            report_error("non-numeric operand in arithmetic", "Int or Real",
+                         kind_name(rk), node.tag);
         if (lk != rk)
-            throw "type error: arithmetic operands must have same type";
+            report_error("arithmetic type mismatch", kind_name(lk),
+                         kind_name(rk), node.tag);
 
         auto result_type = (lk == BaseKind::Int) ? tint<Cap>() : treal<Cap>();
         return {result_type, left.valid && right.valid};
@@ -124,7 +170,8 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
         auto child = synth(Expression<Cap>{expr.ast, node.children[0]}, env);
         auto ck = get_base_kind(child.type);
         if (ck != BaseKind::Int && ck != BaseKind::Real)
-            throw "type error: non-numeric operand in negation";
+            report_error("non-numeric operand in negation", "Int or Real",
+                         kind_name(ck), "neg");
         auto result_type = (ck == BaseKind::Int) ? tint<Cap>() : treal<Cap>();
         return {result_type, child.valid};
     }
@@ -140,11 +187,14 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
         auto rk = get_base_kind(right.type);
 
         if (lk != BaseKind::Int && lk != BaseKind::Real)
-            throw "type error: non-numeric operand in comparison";
+            report_error("non-numeric operand in comparison", "Int or Real",
+                         kind_name(lk), node.tag);
         if (rk != BaseKind::Int && rk != BaseKind::Real)
-            throw "type error: non-numeric operand in comparison";
+            report_error("non-numeric operand in comparison", "Int or Real",
+                         kind_name(rk), node.tag);
         if (lk != rk)
-            throw "type error: comparison operands must have same type";
+            report_error("comparison type mismatch", kind_name(lk),
+                         kind_name(rk), node.tag);
 
         return {tbool<Cap>(), left.valid && right.valid};
     }
@@ -155,9 +205,11 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
         auto right = synth(Expression<Cap>{expr.ast, node.children[1]}, env);
 
         if (get_base_kind(left.type) != BaseKind::Bool)
-            throw "type error: non-boolean operand in logical operation";
+            report_error("non-boolean operand in logical operation", "Bool",
+                         kind_name(get_base_kind(left.type)), node.tag);
         if (get_base_kind(right.type) != BaseKind::Bool)
-            throw "type error: non-boolean operand in logical operation";
+            report_error("non-boolean operand in logical operation", "Bool",
+                         kind_name(get_base_kind(right.type)), node.tag);
 
         return {tbool<Cap>(), left.valid && right.valid};
     }
@@ -166,7 +218,8 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
     if (str_eq(node.tag, "lnot")) {
         auto child = synth(Expression<Cap>{expr.ast, node.children[0]}, env);
         if (get_base_kind(child.type) != BaseKind::Bool)
-            throw "type error: non-boolean operand in logical not";
+            report_error("non-boolean operand in logical not", "Bool",
+                         kind_name(get_base_kind(child.type)), "lnot");
         return {tbool<Cap>(), child.valid};
     }
 
@@ -177,7 +230,8 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
         auto else_ = synth(Expression<Cap>{expr.ast, node.children[2]}, env);
 
         if (get_base_kind(test.type) != BaseKind::Bool)
-            throw "type error: condition must be boolean";
+            report_error("condition must be boolean", "Bool",
+                         kind_name(get_base_kind(test.type)), "cond");
 
         auto result = join(then_.type, else_.type);
         return {result, test.valid && then_.valid && else_.valid};
@@ -203,8 +257,11 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
 
         // General application: fn(arg)
         auto fn_result = synth(fn, env);
-        if (!is_arrow(fn_result.type))
-            throw "type error: applying non-function";
+        if (!is_arrow(fn_result.type)) {
+            auto pp = reftype::pretty_print(fn_result.type);
+            report_error("applying non-function", "arrow type", pp.data,
+                         "apply");
+        }
 
         auto arg_result = synth(arg, env);
         auto input_type = get_arrow_input(fn_result.type);
@@ -216,7 +273,7 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
 
     // --- Standalone lambda (error without annotation) ---
     if (str_eq(node.tag, "lambda"))
-        throw "type error: cannot infer lambda type without annotation";
+        report_error("cannot infer lambda type without annotation", "lambda");
 
     // --- Sequence ---
     if (str_eq(node.tag, "progn")) {
@@ -225,7 +282,7 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
         return {second.type, first.valid && second.valid};
     }
 
-    throw "type error: unsupported node tag";
+    report_error("unsupported node tag", node.tag);
 }
 
 // --- Top-level type checking ---
