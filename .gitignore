@@ -20,8 +20,5 @@ Makefile
 # Worktrees
 .worktrees/
 
-# Plan docs
-docs/plans/
-
 # OS files
 .DS_Store
