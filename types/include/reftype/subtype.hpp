@@ -2,8 +2,10 @@
 #define REFTYPE_SUBTYPE_HPP
 
 #include <refmacro/expr.hpp>
+#include <refmacro/pretty_print.hpp>
 #include <refmacro/str_utils.hpp>
 #include <reftype/fm/solver.hpp>
+#include <reftype/pretty.hpp>
 #include <reftype/types.hpp>
 
 namespace reftype {
@@ -221,10 +223,25 @@ consteval Expression<Cap> join(const Expression<Cap>& t1,
         if (types_equal(get_arrow_input(t1), get_arrow_input(t2)) &&
             types_equal(get_arrow_output(t1), get_arrow_output(t2)))
             return t1;
-        throw "type error: incompatible arrow types for join";
+        {
+            refmacro::FixedString<512> msg{};
+            msg.append(
+                "type error: incompatible arrow types for join\n  type 1: ");
+            msg.append(reftype::pretty_print(t1).data);
+            msg.append("\n  type 2: ");
+            msg.append(reftype::pretty_print(t2).data);
+            throw msg.data;
+        }
     }
 
-    throw "type error: incompatible types for join";
+    {
+        refmacro::FixedString<512> msg{};
+        msg.append("type error: incompatible types for join\n  type 1: ");
+        msg.append(reftype::pretty_print(t1).data);
+        msg.append("\n  type 2: ");
+        msg.append(reftype::pretty_print(t2).data);
+        throw msg.data;
+    }
 }
 
 } // namespace reftype
