@@ -1,13 +1,10 @@
-// F1: Multi-variable integer rounding with non-integer coefficients
-// is unsound — over-tightens bounds, causing false UNSAT.
+// Regression test for F1: multi-variable integer rounding with
+// non-integer coefficients was unsound (over-tightened bounds,
+// causing false UNSAT).
 //
-// rounding.hpp:53 — when term_count > 1, round_integer_bound falls
-// back to coeff=1.0, but this is wrong when the target variable's
-// coefficient is non-integer (e.g., 0.5).
-//
-// This test SHOULD compile when the bug is fixed.
-// While the bug exists, it fails to compile because fm_is_unsat
-// incorrectly returns true, failing the static_assert.
+// This test compiles and runs successfully now that the rounding bug
+// is fixed. If the bug reappears, the static_assert below fails at
+// compile time.
 
 #include <reftype/fm/eliminate.hpp>
 #include <reftype/fm/types.hpp>

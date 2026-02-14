@@ -69,29 +69,7 @@ TEST(TesterFindings_F2, BoolSubtypeIntBoundedRangeFalseNegative) {
                   "(checking Q over all integers)");
 }
 
-// ============================================================
-// F1: synth arithmetic/comparison right-operand check
-//     is implicit (via lk != rk), not explicit
-// ============================================================
-
-// When left operand is Int and right operand is Bool, the error message
-// says "arithmetic operands must have same type" rather than "non-numeric
-// operand in arithmetic".
-// This verifies that the combination is still correctly rejected.
-TEST(TesterFindings_F1, ArithmeticIntPlusBoolRejected) {
-    // Int + Bool → should be rejected
-    constexpr TypeEnv<128> env =
-        TypeEnv<128>{}.bind("x", TInt).bind("p", TBool);
-    // Cannot test throw message in consteval, but we can verify that
-    // this combination is detected. We use has() to check env is valid,
-    // and verify the type checker rejects the invalid combination via
-    // compile_fail style.
-    static_assert(env.has("x") && env.has("p"),
-                  "env is set up correctly");
-    // The actual rejection happens at compile time (consteval throw),
-    // so it can't be tested as a runtime assertion.
-    // Documenting: the error path through lk != rk catches this.
-}
+// F1: Int + Bool rejection is covered by compile_fail_bool_arith.cpp.
 
 // ============================================================
 // Gap: join(TBool, {#v:Int|#v>0}) behavior

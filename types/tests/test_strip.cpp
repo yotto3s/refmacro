@@ -180,16 +180,24 @@ TEST(TypedCompile, NestedAnnotationCompile) {
     static_assert(f() == 6);
 }
 
-TEST(TypedCompile, VariableExpression) {
+TEST(TypedCompile, VariableExpressionWithEnv) {
     // ann(var("x") + lit(1), TInt) with env {x: Int} → f(3) == 4
     static constexpr auto e = ann(E::var("x") + E::lit(1), TInt);
-    // typed_compile with math macros, providing env for type checking
-    constexpr auto result = reftype::type_check(e, reftype::TypeEnv<128>{}.bind("x", TInt));
-    static_assert(result.valid);
-    static constexpr auto stripped = strip_types(e);
-    constexpr auto f = refmacro::compile<stripped, refmacro::MAdd>();
+    static constexpr auto env = reftype::TypeEnv<128>{}.bind("x", TInt);
+    constexpr auto f = typed_compile<e, env, refmacro::MAdd>();
     static_assert(f(3) == 4);
     static_assert(f(10) == 11);
+}
+
+TEST(TypedCompile, FullCompileWithEnv) {
+    // typed_full_compile with env: var("x") * var("y") + lit(1)
+    static constexpr auto e =
+        ann(E::var("x") * E::var("y") + E::lit(1), TInt);
+    static constexpr auto env =
+        reftype::TypeEnv<128>{}.bind("x", TInt).bind("y", TInt);
+    constexpr auto f = reftype::typed_full_compile<e, env>();
+    static_assert(f(3, 4) == 13);
+    static_assert(f(5, 6) == 31);
 }
 
 TEST(TypedCompile, LetBindingCompile) {

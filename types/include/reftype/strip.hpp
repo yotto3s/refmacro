@@ -48,18 +48,17 @@ consteval Expression<Cap> strip_types(Expression<Cap> e) {
             // reconstruction is lossless here.
             const auto* tag = n.ast.nodes[n.id].tag;
 
-            if (n.child_count() == 1)
-                return make_node<Cap>(tag, rec(n.child(0)));
-            if (n.child_count() == 2)
-                return make_node<Cap>(tag, rec(n.child(0)), rec(n.child(1)));
-            if (n.child_count() == 3)
-                return make_node<Cap>(tag, rec(n.child(0)), rec(n.child(1)),
-                                     rec(n.child(2)));
-            if (n.child_count() == 4)
-                return make_node<Cap>(tag, rec(n.child(0)), rec(n.child(1)),
-                                     rec(n.child(2)), rec(n.child(3)));
-
-            throw "strip_types: unsupported arity (>4 children)";
+            auto first = rec(n.child(0));
+            Expression<Cap> result;
+            result.ast = first.ast;
+            int ids[8]{first.id};
+            for (int i = 1; i < n.child_count(); ++i) {
+                auto child = rec(n.child(i));
+                ids[i] = child.id + result.ast.merge(child.ast);
+            }
+            result.id =
+                result.ast.add_tagged_node(tag, ids, n.child_count());
+            return result;
         });
 }
 
@@ -68,9 +67,13 @@ consteval Expression<Cap> strip_types(Expression<Cap> e) {
 // Usage:
 //   constexpr auto f = typed_compile<expr, MAdd, MSub, ...>();
 //
-// static_assert fails at compile time if type checking fails.
+// Fails at compile time if type checking fails: either via static_assert
+// (when type_check returns invalid) or via consteval throw (e.g. unbound
+// variable, unsupported tag).
 
-template <auto expr, auto... Macros> consteval auto typed_compile() {
+template <auto expr, auto... Macros>
+    requires(sizeof...(Macros) == 0 || (... && requires { Macros.tag; Macros.fn; }))
+consteval auto typed_compile() {
     constexpr auto result = type_check(expr);
     static_assert(result.valid, "typed_compile: type check failed");
     constexpr auto stripped = strip_types(expr);
