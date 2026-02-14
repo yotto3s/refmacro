@@ -12,44 +12,44 @@ TEST(HasContradiction, EmptySystem) {
 
 TEST(HasContradiction, PositiveConstant) {
     // 5 >= 0 → no contradiction
-    constexpr auto sys = InequalitySystem<>{}.add(
-        LinearInequality::make({}, 5.0));
+    constexpr auto sys =
+        InequalitySystem<>{}.add(LinearInequality::make({}, 5.0));
     static_assert(!has_contradiction(sys));
 }
 
 TEST(HasContradiction, ZeroConstantNonStrict) {
     // 0 >= 0 → no contradiction
-    constexpr auto sys = InequalitySystem<>{}.add(
-        LinearInequality::make({}, 0.0));
+    constexpr auto sys =
+        InequalitySystem<>{}.add(LinearInequality::make({}, 0.0));
     static_assert(!has_contradiction(sys));
 }
 
 TEST(HasContradiction, ZeroConstantStrict) {
     // 0 > 0 → contradiction
-    constexpr auto sys = InequalitySystem<>{}.add(
-        LinearInequality::make({}, 0.0, true));
+    constexpr auto sys =
+        InequalitySystem<>{}.add(LinearInequality::make({}, 0.0, true));
     static_assert(has_contradiction(sys));
 }
 
 TEST(HasContradiction, NegativeConstantNonStrict) {
     // -1 >= 0 → contradiction
-    constexpr auto sys = InequalitySystem<>{}.add(
-        LinearInequality::make({}, -1.0));
+    constexpr auto sys =
+        InequalitySystem<>{}.add(LinearInequality::make({}, -1.0));
     static_assert(has_contradiction(sys));
 }
 
 TEST(HasContradiction, NegativeConstantStrict) {
     // -1 > 0 → contradiction
-    constexpr auto sys = InequalitySystem<>{}.add(
-        LinearInequality::make({}, -1.0, true));
+    constexpr auto sys =
+        InequalitySystem<>{}.add(LinearInequality::make({}, -1.0, true));
     static_assert(has_contradiction(sys));
 }
 
 TEST(HasContradiction, MixedSomeContradiction) {
     // 5 >= 0 (ok) and -1 >= 0 (contradiction) → contradiction
     constexpr auto sys = InequalitySystem<>{}
-        .add(LinearInequality::make({}, 5.0))
-        .add(LinearInequality::make({}, -1.0));
+                             .add(LinearInequality::make({}, 5.0))
+                             .add(LinearInequality::make({}, -1.0));
     static_assert(has_contradiction(sys));
 }
 
@@ -62,8 +62,9 @@ TEST(EliminateVariable, SingleVarSAT) {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
         return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))    // x >= 0
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 5.0));  // -x + 5 >= 0
+            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0)) // x >= 0
+            .add(LinearInequality::make({LinearTerm{x, -1.0}},
+                                        5.0)); // -x + 5 >= 0
     }();
     constexpr auto result = eliminate_variable(sys, 0);
     static_assert(result.count == 1);
@@ -77,8 +78,10 @@ TEST(EliminateVariable, SingleVarUNSAT) {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
         return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, -5.0))   // x - 5 >= 0
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 3.0));  // -x + 3 >= 0
+            .add(LinearInequality::make({LinearTerm{x, 1.0}},
+                                        -5.0)) // x - 5 >= 0
+            .add(LinearInequality::make({LinearTerm{x, -1.0}},
+                                        3.0)); // -x + 3 >= 0
     }();
     constexpr auto result = eliminate_variable(sys, 0);
     static_assert(result.count == 1);
@@ -92,8 +95,10 @@ TEST(EliminateVariable, StrictBoundsUNSAT) {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
         return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))   // x > 0
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0, true)); // -x > 0
+            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0,
+                                        true)) // x > 0
+            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0,
+                                        true)); // -x > 0
     }();
     constexpr auto result = eliminate_variable(sys, 0);
     static_assert(has_contradiction(result));
@@ -106,8 +111,10 @@ TEST(EliminateVariable, MixedStrictness) {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
         return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))    // x > 0
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0, false)); // -x >= 0
+            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0,
+                                        true)) // x > 0
+            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0,
+                                        false)); // -x >= 0
     }();
     constexpr auto result = eliminate_variable(sys, 0);
     static_assert(has_contradiction(result));
@@ -120,8 +127,8 @@ TEST(EliminateVariable, NonStrictTouching) {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
         return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))    // x >= 0
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0));  // -x >= 0
+            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))   // x >= 0
+            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0)); // -x >= 0
     }();
     constexpr auto result = eliminate_variable(sys, 0);
     static_assert(!has_contradiction(result));
@@ -134,11 +141,13 @@ TEST(EliminateVariable, UnrelatedPassThrough) {
         int x = s.vars.find_or_add("x");
         int y = s.vars.find_or_add("y");
         return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))    // x >= 0
-            .add(LinearInequality::make({LinearTerm{y, 1.0}}, -3.0));  // y - 3 >= 0
+            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0)) // x >= 0
+            .add(LinearInequality::make({LinearTerm{y, 1.0}},
+                                        -3.0)); // y - 3 >= 0
     }();
     constexpr auto result = eliminate_variable(sys, 0);
-    // Only the y >= 3 inequality passes through (x >= 0 is a lower bound with no upper)
+    // Only the y >= 3 inequality passes through (x >= 0 is a lower bound with
+    // no upper)
     static_assert(result.count == 1);
     static_assert(result.ineqs[0].terms[0].var_id == 1);
     static_assert(result.ineqs[0].constant == -3.0);
@@ -153,8 +162,10 @@ TEST(EliminateVariable, NonUnitCoefficients) {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
         return s
-            .add(LinearInequality::make({LinearTerm{x, 2.0}}, -6.0))    // 2x - 6 >= 0
-            .add(LinearInequality::make({LinearTerm{x, -3.0}}, 15.0));  // -3x + 15 >= 0
+            .add(LinearInequality::make({LinearTerm{x, 2.0}},
+                                        -6.0)) // 2x - 6 >= 0
+            .add(LinearInequality::make({LinearTerm{x, -3.0}},
+                                        15.0)); // -3x + 15 >= 0
     }();
     constexpr auto result = eliminate_variable(sys, 0);
     static_assert(result.count == 1);
@@ -171,10 +182,10 @@ TEST(EliminateVariable, TwoVarsSAT) {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
         int y = s.vars.find_or_add("y");
-        return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))
+        return s.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))
             .add(LinearInequality::make({LinearTerm{y, 1.0}}, 0.0))
-            .add(LinearInequality::make({LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 10.0));
+            .add(LinearInequality::make(
+                {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 10.0));
     }();
     // Eliminate x first, then y via fm_is_unsat — system is satisfiable
     static_assert(!fm_is_unsat(sys));
@@ -189,8 +200,10 @@ TEST(EliminateVariable, TwoVarsUNSAT) {
         int x = s.vars.find_or_add("x");
         int y = s.vars.find_or_add("y");
         return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}, LinearTerm{y, -1.0}}, 0.0))
-            .add(LinearInequality::make({LinearTerm{x, -1.0}, LinearTerm{y, 1.0}}, -1.0));
+            .add(LinearInequality::make(
+                {LinearTerm{x, 1.0}, LinearTerm{y, -1.0}}, 0.0))
+            .add(LinearInequality::make(
+                {LinearTerm{x, -1.0}, LinearTerm{y, 1.0}}, -1.0));
     }();
     static_assert(fm_is_unsat(sys));
 }
@@ -229,29 +242,30 @@ TEST(FmIsUnsat, ThreeVarsSAT) {
         int x = s.vars.find_or_add("x");
         int y = s.vars.find_or_add("y");
         int z = s.vars.find_or_add("z");
-        return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))
+        return s.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))
             .add(LinearInequality::make({LinearTerm{y, 1.0}}, 0.0))
             .add(LinearInequality::make({LinearTerm{z, 1.0}}, 0.0))
             .add(LinearInequality::make(
-                {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}, LinearTerm{z, -1.0}}, 100.0));
+                {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}, LinearTerm{z, -1.0}},
+                100.0));
     }();
     static_assert(!fm_is_unsat(sys));
 }
 
 TEST(FmIsUnsat, ThreeVarsUNSAT) {
-    // x >= 10, y >= 10, z >= 10, x + y + z <= 20 → UNSAT (need >= 30 but cap at 20)
+    // x >= 10, y >= 10, z >= 10, x + y + z <= 20 → UNSAT (need >= 30 but cap at
+    // 20)
     constexpr auto sys = [] {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
         int y = s.vars.find_or_add("y");
         int z = s.vars.find_or_add("z");
-        return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, -10.0))
+        return s.add(LinearInequality::make({LinearTerm{x, 1.0}}, -10.0))
             .add(LinearInequality::make({LinearTerm{y, 1.0}}, -10.0))
             .add(LinearInequality::make({LinearTerm{z, 1.0}}, -10.0))
             .add(LinearInequality::make(
-                {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}, LinearTerm{z, -1.0}}, 20.0));
+                {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}, LinearTerm{z, -1.0}},
+                20.0));
     }();
     static_assert(fm_is_unsat(sys));
 }
@@ -261,8 +275,7 @@ TEST(FmIsUnsat, MultipleBoundsOnSameVar) {
     constexpr auto sys = [] {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
-        return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))
+        return s.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))
             .add(LinearInequality::make({LinearTerm{x, 1.0}}, -1.0))
             .add(LinearInequality::make({LinearTerm{x, -1.0}}, 5.0))
             .add(LinearInequality::make({LinearTerm{x, -1.0}}, 3.0));
@@ -277,8 +290,10 @@ TEST(EliminateVariable, UpperBoundsOnlyPassThrough) {
         s.vars.find_or_add("x");
         int y = s.vars.find_or_add("y");
         return s
-            .add(LinearInequality::make({LinearTerm{y, -1.0}}, 5.0))   // -y + 5 >= 0
-            .add(LinearInequality::make({LinearTerm{y, -1.0}}, 3.0));  // -y + 3 >= 0
+            .add(LinearInequality::make({LinearTerm{y, -1.0}},
+                                        5.0)) // -y + 5 >= 0
+            .add(LinearInequality::make({LinearTerm{y, -1.0}},
+                                        3.0)); // -y + 3 >= 0
     }();
     constexpr auto result = eliminate_variable(sys, 0);
     // x has no bounds, so both inequalities are unrelated and pass through
@@ -292,8 +307,10 @@ TEST(FmIsUnsat, StrictOpenInterval) {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x", false);
         return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))    // x > 0
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 1.0, true));  // -x + 1 > 0
+            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0,
+                                        true)) // x > 0
+            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 1.0,
+                                        true)); // -x + 1 > 0
     }();
     static_assert(!fm_is_unsat(sys));
 }
@@ -305,10 +322,11 @@ TEST(FmIsUnsat, StrictOpenInterval) {
 TEST(FmIsUnsatReal, OpenIntervalSAT) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
-        int x = sys.vars.find_or_add("x", false);  // real
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, -2.0, true))   // x > 2
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 3.0, true));  // x < 3
+        int x = sys.vars.find_or_add("x", false); // real
+        sys = sys.add(LinearInequality::make({LinearTerm{x, 1.0}}, -2.0,
+                                             true)) // x > 2
+                  .add(LinearInequality::make({LinearTerm{x, -1.0}}, 3.0,
+                                              true)); // x < 3
         return fm_is_unsat(sys);
     }();
     static_assert(!unsat);
@@ -319,10 +337,11 @@ TEST(FmIsUnsatReal, OpenIntervalSAT) {
 TEST(FmIsUnsatReal, NonUnitCoeffSAT) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
-        int x = sys.vars.find_or_add("x", false);  // real
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 3.0}}, -1.0, false))   // 3x >= 1
-            .add(LinearInequality::make({LinearTerm{x, -3.0}}, 2.0, false));  // 3x <= 2
+        int x = sys.vars.find_or_add("x", false); // real
+        sys = sys.add(LinearInequality::make({LinearTerm{x, 3.0}}, -1.0,
+                                             false)) // 3x >= 1
+                  .add(LinearInequality::make({LinearTerm{x, -3.0}}, 2.0,
+                                              false)); // 3x <= 2
         return fm_is_unsat(sys);
     }();
     static_assert(!unsat);
@@ -333,13 +352,14 @@ TEST(FmIsUnsatReal, NonUnitCoeffSAT) {
 TEST(FmIsUnsatReal, TwoVarsSAT) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
-        int x = sys.vars.find_or_add("x", false);  // real
-        int y = sys.vars.find_or_add("y", false);  // real
-        sys = sys
-            .add(LinearInequality::make(
-                {LinearTerm{x, 1.0}, LinearTerm{y, 1.0}}, -4.0, true))   // x+y > 4
-            .add(LinearInequality::make(
-                {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 5.0, true)); // x+y < 5
+        int x = sys.vars.find_or_add("x", false); // real
+        int y = sys.vars.find_or_add("y", false); // real
+        sys = sys.add(LinearInequality::make(
+                          {LinearTerm{x, 1.0}, LinearTerm{y, 1.0}}, -4.0,
+                          true)) // x+y > 4
+                  .add(LinearInequality::make(
+                      {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 5.0,
+                      true)); // x+y < 5
         return fm_is_unsat(sys);
     }();
     static_assert(!unsat);

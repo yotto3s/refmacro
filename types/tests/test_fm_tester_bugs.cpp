@@ -35,7 +35,8 @@ TEST(TesterBugs_F2, MultiVarIntCoeffRoundingCorrect) {
         return fm_is_unsat(sys);
     }();
     // x=1, y=2 → 2+6=8, 8 in [7.5, 8.5] → SAT
-    static_assert(!unsat, "F2: multi-var integer coeff rounding should be correct (SAT)");
+    static_assert(
+        !unsat, "F2: multi-var integer coeff rounding should be correct (SAT)");
 }
 
 // ============================================================
@@ -60,7 +61,8 @@ TEST(TesterBugs_F3, MultiVarIntCoeffTightenDetectsUNSAT) {
         return fm_is_unsat(sys);
     }();
     // No integer satisfies 8 < 2x+3y < 9 → UNSAT
-    static_assert(unsat, "F3: multi-var integer coeff tightening detects UNSAT");
+    static_assert(unsat,
+                  "F3: multi-var integer coeff tightening detects UNSAT");
 }
 
 // ============================================================
@@ -104,7 +106,8 @@ TEST(TesterBugs_F4, ConjoinCrossProduct2x2) {
         return conjoin(left, right);
     }();
     // 2×2 cross product should yield 4 clauses
-    static_assert(result.clause_count == 4, "F4: conjoin 2x2 should produce 4 clauses");
+    static_assert(result.clause_count == 4,
+                  "F4: conjoin 2x2 should produce 4 clauses");
     // Each clause has 2 inequalities (one from left, one from right)
     static_assert(result.clauses[0].count == 2);
     static_assert(result.clauses[1].count == 2);
@@ -125,7 +128,7 @@ TEST(TesterBugs_F6, SingleVarNonUnitLowerFraction) {
         LinearInequality::make({LinearTerm{0, 3.0}}, -7.0, false);
     constexpr auto rounded = round_integer_bound(ineq, true, 3.0);
     static_assert(rounded.constant == -9.0,
-        "F6: 3x >= 7 → x >= 3 → 3x >= 9 → constant = -9");
+                  "F6: 3x >= 7 → x >= 3 → 3x >= 9 → constant = -9");
     static_assert(rounded.strict == false);
 }
 
@@ -142,7 +145,7 @@ TEST(TesterBugs_F7, SingleVarNonUnitUpperFraction) {
         LinearInequality::make({LinearTerm{0, -3.0}}, 7.0, false);
     constexpr auto rounded = round_integer_bound(ineq, false, 3.0);
     static_assert(rounded.constant == 6.0,
-        "F7: -3x + 7 >= 0 → x <= 2 → -3x + 6 >= 0");
+                  "F7: -3x + 7 >= 0 → x <= 2 → -3x + 6 >= 0");
     static_assert(rounded.strict == false);
 }
 
@@ -160,9 +163,11 @@ TEST(TesterBugs_F8, NonUnitCoeffDivisibilityGap) {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
         // 3x - 7 >= 0 (x >= 7/3)
-        sys = sys.add(LinearInequality::make({LinearTerm{x, 3.0}}, -7.0, false));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, 3.0}}, -7.0, false));
         // -3x + 8 >= 0 (x <= 8/3)
-        sys = sys.add(LinearInequality::make({LinearTerm{x, -3.0}}, 8.0, false));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, -3.0}}, 8.0, false));
         return fm_is_unsat(sys);
     }();
     // No integer in [7/3, 8/3] ≈ [2.333, 2.666] → UNSAT

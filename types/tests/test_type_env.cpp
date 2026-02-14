@@ -26,10 +26,8 @@ TEST(TypeEnv, BindAndLookup) {
 }
 
 TEST(TypeEnv, MultipleBindings) {
-    constexpr auto env = TypeEnv<>{}
-        .bind("x", TInt)
-        .bind("y", TBool)
-        .bind("z", TReal);
+    constexpr auto env =
+        TypeEnv<>{}.bind("x", TInt).bind("y", TBool).bind("z", TReal);
     static_assert(env.count == 3);
     static_assert(env.has("x"));
     static_assert(env.has("y"));
@@ -49,9 +47,7 @@ TEST(TypeEnv, MultipleBindings) {
 // --- Shadowing ---
 
 TEST(TypeEnv, ShadowingReturnsLatest) {
-    constexpr auto env = TypeEnv<>{}
-        .bind("x", TInt)
-        .bind("x", TBool);
+    constexpr auto env = TypeEnv<>{}.bind("x", TInt).bind("x", TBool);
     static_assert(env.count == 2);
     static_assert(env.has("x"));
 
@@ -61,10 +57,8 @@ TEST(TypeEnv, ShadowingReturnsLatest) {
 }
 
 TEST(TypeEnv, ShadowingDoesNotAffectOthers) {
-    constexpr auto env = TypeEnv<>{}
-        .bind("x", TInt)
-        .bind("y", TReal)
-        .bind("x", TBool);
+    constexpr auto env =
+        TypeEnv<>{}.bind("x", TInt).bind("y", TReal).bind("x", TBool);
     static_assert(env.count == 3);
 
     constexpr auto tx = env.lookup("x");
@@ -96,7 +90,8 @@ TEST(TypeEnv, BindReturnsNewEnv) {
 // --- Complex type expressions ---
 
 TEST(TypeEnv, RefinementType) {
-    constexpr auto posint = tref(tint(), Expression<128>::var("#v") > Expression<128>::lit(0));
+    constexpr auto posint =
+        tref(tint(), Expression<128>::var("#v") > Expression<128>::lit(0));
     constexpr auto env = TypeEnv<>{}.bind("n", posint);
     static_assert(env.count == 1);
 
@@ -114,7 +109,8 @@ TEST(TypeEnv, ArrowType) {
 
 TEST(TypeEnv, NestedTypes) {
     // (n : {#v : Int | #v > 0}) -> Bool
-    constexpr auto posint = tref(tint(), Expression<128>::var("#v") > Expression<128>::lit(0));
+    constexpr auto posint =
+        tref(tint(), Expression<128>::var("#v") > Expression<128>::lit(0));
     constexpr auto fn_type = tarr("n", posint, TBool);
     constexpr auto env = TypeEnv<>{}.bind("is_positive", fn_type);
 
@@ -138,9 +134,7 @@ TEST(TypeEnv, UnboundVariableNotFound) {
 
 TEST(TypeEnv, CapacityOverflowPrevented) {
     // Use small MaxBindings to verify overflow guard
-    constexpr auto env = TypeEnv<128, 2>{}
-        .bind("x", TInt)
-        .bind("y", TBool);
+    constexpr auto env = TypeEnv<128, 2>{}.bind("x", TInt).bind("y", TBool);
     static_assert(env.count == 2);
     // Third bind would throw "TypeEnv capacity exceeded" in consteval.
     // Verify we're at capacity:
@@ -177,7 +171,5 @@ TEST(TypeEnv, StructuralType) {
     constexpr auto env = TypeEnv<>{}.bind("x", TInt);
     static_assert(env.count == 1);
     // If this compiles, TypeEnv is structural
-    []<auto E>() {
-        static_assert(E.count == 1);
-    }.template operator()<env>();
+    []<auto E>() { static_assert(E.count == 1); }.template operator()<env>();
 }

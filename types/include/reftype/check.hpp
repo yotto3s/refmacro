@@ -53,7 +53,7 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
     if (str_eq(node.tag, "lit")) {
         double val = node.payload;
         constexpr double ll_max = static_cast<double>(
-            (1LL << 52));   // 2^52: largest exact integer in double
+            (1LL << 52)); // 2^52: largest exact integer in double
         bool in_range = (val >= -ll_max && val <= ll_max);
         auto int_val = in_range ? static_cast<long long>(val) : 0LL;
         bool is_int = in_range && (val == static_cast<double>(int_val));

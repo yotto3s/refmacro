@@ -57,8 +57,8 @@ TEST(LinearInequality, StrictInequality) {
 
 TEST(LinearInequality, MakeBuilder) {
     // make() enforces term_count invariant
-    constexpr auto ineq =
-        LinearInequality::make({LinearTerm{0, 2.0}, LinearTerm{1, -1.0}}, 3.0, true);
+    constexpr auto ineq = LinearInequality::make(
+        {LinearTerm{0, 2.0}, LinearTerm{1, -1.0}}, 3.0, true);
     static_assert(ineq.term_count == 2);
     static_assert(ineq.terms[0].coeff == 2.0);
     static_assert(ineq.terms[1].coeff == -1.0);
@@ -172,9 +172,11 @@ TEST(InequalitySystem, WithPopulatedVars) {
         int x = s.vars.find_or_add("x");
         int y = s.vars.find_or_add("y");
         return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))            // x >= 0
-            .add(LinearInequality::make({LinearTerm{y, 1.0}}, 0.0))            // y >= 0
-            .add(LinearInequality::make({LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 10.0)); // -x-y+10>=0
+            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0)) // x >= 0
+            .add(LinearInequality::make({LinearTerm{y, 1.0}}, 0.0)) // y >= 0
+            .add(LinearInequality::make(
+                {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}},
+                10.0)); // -x-y+10>=0
     }();
     static_assert(sys.count == 3);
     static_assert(sys.vars.count == 2);
@@ -186,23 +188,15 @@ TEST(InequalitySystem, WithPopulatedVars) {
 
 // --- NTTP compatibility ---
 
-template <LinearTerm T>
-consteval double get_coeff() {
-    return T.coeff;
-}
+template <LinearTerm T> consteval double get_coeff() { return T.coeff; }
 
-template <LinearInequality I>
-consteval int get_term_count() {
+template <LinearInequality I> consteval int get_term_count() {
     return static_cast<int>(I.term_count);
 }
 
-template <VarInfo<> V>
-consteval std::size_t get_var_count() {
-    return V.count;
-}
+template <VarInfo<> V> consteval std::size_t get_var_count() { return V.count; }
 
-template <InequalitySystem<> S>
-consteval std::size_t get_ineq_count() {
+template <InequalitySystem<> S> consteval std::size_t get_ineq_count() {
     return S.count;
 }
 
@@ -251,8 +245,9 @@ TEST(LinearInequality, MakeEmpty) {
 TEST(LinearInequality, MakeMaxTerms) {
     // Exactly MaxTermsPerIneq (8) terms — should succeed
     constexpr auto ineq = LinearInequality::make(
-        {LinearTerm{0, 1.0}, LinearTerm{1, 2.0}, LinearTerm{2, 3.0}, LinearTerm{3, 4.0},
-         LinearTerm{4, 5.0}, LinearTerm{5, 6.0}, LinearTerm{6, 7.0}, LinearTerm{7, 8.0}},
+        {LinearTerm{0, 1.0}, LinearTerm{1, 2.0}, LinearTerm{2, 3.0},
+         LinearTerm{3, 4.0}, LinearTerm{4, 5.0}, LinearTerm{5, 6.0},
+         LinearTerm{6, 7.0}, LinearTerm{7, 8.0}},
         0.0);
     static_assert(ineq.term_count == MaxTermsPerIneq);
     static_assert(ineq.terms[7].coeff == 8.0);
@@ -274,8 +269,7 @@ TEST(VarInfo, SmallCapacity) {
 TEST(InequalitySystem, SmallCapacity) {
     constexpr auto sys = [] consteval {
         InequalitySystem<4, 4> s{};
-        return s
-            .add(LinearInequality::make({LinearTerm{0, 1.0}}, 0.0))
+        return s.add(LinearInequality::make({LinearTerm{0, 1.0}}, 0.0))
             .add(LinearInequality::make({LinearTerm{0, -1.0}}, 10.0))
             .add(LinearInequality::make({LinearTerm{1, 1.0}}, 0.0))
             .add(LinearInequality::make({LinearTerm{1, -1.0}}, 5.0));

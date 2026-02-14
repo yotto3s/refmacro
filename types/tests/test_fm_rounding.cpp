@@ -139,9 +139,9 @@ TEST(FMIntegerElim, FractionBoundsSAT) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, -2.5, true))
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 3.5, true));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, 1.0}}, -2.5, true))
+                .add(LinearInequality::make({LinearTerm{x, -1.0}}, 3.5, true));
         return fm_is_unsat(sys);
     }();
     static_assert(!unsat);
@@ -152,9 +152,9 @@ TEST(FMIntegerElim, StrictIntegerBoundsUNSAT) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, -2.0, true))
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 3.0, true));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, 1.0}}, -2.0, true))
+                .add(LinearInequality::make({LinearTerm{x, -1.0}}, 3.0, true));
         return fm_is_unsat(sys);
     }();
     static_assert(unsat);
@@ -165,9 +165,9 @@ TEST(FMIntegerElim, ZeroBoundSAT) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, false))
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0, false));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, false))
+                .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0, false));
         return fm_is_unsat(sys);
     }();
     static_assert(!unsat);
@@ -178,9 +178,9 @@ TEST(FMIntegerElim, NoIntegerBetween01) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 1.0, true));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))
+                .add(LinearInequality::make({LinearTerm{x, -1.0}}, 1.0, true));
         return fm_is_unsat(sys);
     }();
     static_assert(unsat);
@@ -191,9 +191,9 @@ TEST(FMIntegerElim, FractionAroundZeroSAT) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.5, true))
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.5, true));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.5, true))
+                .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.5, true));
         return fm_is_unsat(sys);
     }();
     static_assert(!unsat);
@@ -204,9 +204,9 @@ TEST(FMIntegerElim, RealVariableSAT) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", false);
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 1.0, true));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))
+                .add(LinearInequality::make({LinearTerm{x, -1.0}}, 1.0, true));
         return fm_is_unsat(sys);
     }();
     static_assert(!unsat);
@@ -220,9 +220,9 @@ TEST(FMIntegerElim, NegativeBoundsSAT) {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
         // x > -3 → x + 3 > 0
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 3.0, true))
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, -1.0, true));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, 1.0}}, 3.0, true))
+                .add(LinearInequality::make({LinearTerm{x, -1.0}}, -1.0, true));
         return fm_is_unsat(sys);
     }();
     static_assert(!unsat);
@@ -234,9 +234,9 @@ TEST(FMIntegerElim, NegativeBoundsUNSAT) {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
         // x > -2 → x + 2 > 0
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 2.0, true))
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, -1.0, true));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, 1.0}}, 2.0, true))
+                .add(LinearInequality::make({LinearTerm{x, -1.0}}, -1.0, true));
         return fm_is_unsat(sys);
     }();
     static_assert(unsat);
@@ -250,11 +250,10 @@ TEST(FMIntegerMultiVar, SumBetween4And6SAT) {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
         int y = sys.vars.find_or_add("y", true);
-        sys = sys
-            .add(LinearInequality::make(
-                {LinearTerm{x, 1.0}, LinearTerm{y, 1.0}}, -4.0, true))
-            .add(LinearInequality::make(
-                {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 6.0, true));
+        sys = sys.add(LinearInequality::make(
+                          {LinearTerm{x, 1.0}, LinearTerm{y, 1.0}}, -4.0, true))
+                  .add(LinearInequality::make(
+                      {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 6.0, true));
         return fm_is_unsat(sys);
     }();
     static_assert(!unsat);
@@ -266,11 +265,10 @@ TEST(FMIntegerMultiVar, SumBetween4And5UNSAT) {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
         int y = sys.vars.find_or_add("y", true);
-        sys = sys
-            .add(LinearInequality::make(
-                {LinearTerm{x, 1.0}, LinearTerm{y, 1.0}}, -4.0, true))
-            .add(LinearInequality::make(
-                {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 5.0, true));
+        sys = sys.add(LinearInequality::make(
+                          {LinearTerm{x, 1.0}, LinearTerm{y, 1.0}}, -4.0, true))
+                  .add(LinearInequality::make(
+                      {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 5.0, true));
         return fm_is_unsat(sys);
     }();
     static_assert(unsat);
@@ -283,9 +281,9 @@ TEST(FMElimNonUnit, NonUnitCoeffSAT) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 2.0}}, -5.0, true))
-            .add(LinearInequality::make({LinearTerm{x, -2.0}}, 7.0, true));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, 2.0}}, -5.0, true))
+                .add(LinearInequality::make({LinearTerm{x, -2.0}}, 7.0, true));
         return fm_is_unsat(sys);
     }();
     static_assert(!unsat);
@@ -298,9 +296,9 @@ TEST(FMElimNonUnit, DivisibilityDetected) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 3.0}}, -1.0, false))
-            .add(LinearInequality::make({LinearTerm{x, -3.0}}, 2.0, false));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, 3.0}}, -1.0, false))
+                .add(LinearInequality::make({LinearTerm{x, -3.0}}, 2.0, false));
         return fm_is_unsat(sys);
     }();
     static_assert(unsat);
@@ -317,9 +315,9 @@ TEST(FMElimNonUnit, NonUnitHalfIntegerUNSAT) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 2.0}}, -3.0, false))
-            .add(LinearInequality::make({LinearTerm{x, -2.0}}, 3.0, false));
+        sys =
+            sys.add(LinearInequality::make({LinearTerm{x, 2.0}}, -3.0, false))
+                .add(LinearInequality::make({LinearTerm{x, -2.0}}, 3.0, false));
         return fm_is_unsat(sys);
     }();
     static_assert(unsat);
@@ -350,10 +348,11 @@ TEST(RoundIntegerBound, NonUnitUpperNonStrictFraction) {
 TEST(FMRealElim, NonUnitCoeffNoRounding) {
     constexpr bool unsat = [] consteval {
         InequalitySystem<> sys{};
-        int x = sys.vars.find_or_add("x", false);  // real
-        sys = sys
-            .add(LinearInequality::make({LinearTerm{x, 2.0}}, -3.0, false))   // 2x >= 3
-            .add(LinearInequality::make({LinearTerm{x, -2.0}}, 3.0, false));  // 2x <= 3
+        int x = sys.vars.find_or_add("x", false); // real
+        sys = sys.add(LinearInequality::make({LinearTerm{x, 2.0}}, -3.0,
+                                             false)) // 2x >= 3
+                  .add(LinearInequality::make({LinearTerm{x, -2.0}}, 3.0,
+                                              false)); // 2x <= 3
         return fm_is_unsat(sys);
     }();
     static_assert(!unsat);
@@ -366,15 +365,15 @@ TEST(FMElimNonUnit, MultiVarNoNormalization) {
         InequalitySystem<> sys{};
         int x = sys.vars.find_or_add("x", true);
         int y = sys.vars.find_or_add("y", true);
-        // 2x + 3y - 3 >= 0 && -x + 0 >= 0 && x - 0 >= 0 && -y + 1 >= 0 && y - 1 >= 0
-        // Forces x=0, y=1, and 2(0)+3(1)-3 = 0 >= 0 → SAT
-        sys = sys
-            .add(LinearInequality::make(
-                {LinearTerm{x, 2.0}, LinearTerm{y, 3.0}}, -3.0, false))
-            .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0, false))
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, false))
-            .add(LinearInequality::make({LinearTerm{y, -1.0}}, 1.0, false))
-            .add(LinearInequality::make({LinearTerm{y, 1.0}}, -1.0, false));
+        // 2x + 3y - 3 >= 0 && -x + 0 >= 0 && x - 0 >= 0 && -y + 1 >= 0 && y - 1
+        // >= 0 Forces x=0, y=1, and 2(0)+3(1)-3 = 0 >= 0 → SAT
+        sys =
+            sys.add(LinearInequality::make(
+                        {LinearTerm{x, 2.0}, LinearTerm{y, 3.0}}, -3.0, false))
+                .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0, false))
+                .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, false))
+                .add(LinearInequality::make({LinearTerm{y, -1.0}}, 1.0, false))
+                .add(LinearInequality::make({LinearTerm{y, 1.0}}, -1.0, false));
         return fm_is_unsat(sys);
     }();
     static_assert(!unsat);

@@ -33,8 +33,8 @@ TEST(NegateInequality, Strict) {
 TEST(NegateInequality, MultiTerm) {
     // 2x - 3y + 5 >= 0
     // negated → -2x + 3y - 5 > 0
-    constexpr auto ineq = LinearInequality::make(
-        {LinearTerm{0, 2.0}, LinearTerm{1, -3.0}}, 5.0);
+    constexpr auto ineq =
+        LinearInequality::make({LinearTerm{0, 2.0}, LinearTerm{1, -3.0}}, 5.0);
     constexpr auto neg = negate_inequality(ineq);
     static_assert(neg.term_count == 2);
     static_assert(neg.terms[0].coeff == -2.0);
@@ -52,13 +52,15 @@ TEST(ClauseImplies, StrongerImpliesWeaker) {
     constexpr auto result = [] {
         InequalitySystem<> a{};
         int x = a.vars.find_or_add("x");
-        a = a.add(LinearInequality::make({LinearTerm{x, 1.0}}, -1.0))  // x >= 1
-              .add(LinearInequality::make({LinearTerm{x, -1.0}}, 3.0)); // x <= 3
+        a = a.add(LinearInequality::make({LinearTerm{x, 1.0}}, -1.0)) // x >= 1
+                .add(LinearInequality::make({LinearTerm{x, -1.0}},
+                                            3.0)); // x <= 3
 
         InequalitySystem<> b{};
         int xb = b.vars.find_or_add("x");
-        b = b.add(LinearInequality::make({LinearTerm{xb, 1.0}}, 0.0))  // x >= 0
-              .add(LinearInequality::make({LinearTerm{xb, -1.0}}, 5.0)); // x <= 5
+        b = b.add(LinearInequality::make({LinearTerm{xb, 1.0}}, 0.0)) // x >= 0
+                .add(LinearInequality::make({LinearTerm{xb, -1.0}},
+                                            5.0)); // x <= 5
 
         return clause_implies(a, b);
     }();
@@ -70,13 +72,15 @@ TEST(ClauseImplies, WeakerDoesNotImplyStronger) {
     constexpr auto result = [] {
         InequalitySystem<> a{};
         int x = a.vars.find_or_add("x");
-        a = a.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))   // x >= 0
-              .add(LinearInequality::make({LinearTerm{x, -1.0}}, 5.0)); // x <= 5
+        a = a.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0)) // x >= 0
+                .add(LinearInequality::make({LinearTerm{x, -1.0}},
+                                            5.0)); // x <= 5
 
         InequalitySystem<> b{};
         int xb = b.vars.find_or_add("x");
-        b = b.add(LinearInequality::make({LinearTerm{xb, 1.0}}, -1.0))  // x >= 1
-              .add(LinearInequality::make({LinearTerm{xb, -1.0}}, 3.0)); // x <= 3
+        b = b.add(LinearInequality::make({LinearTerm{xb, 1.0}}, -1.0)) // x >= 1
+                .add(LinearInequality::make({LinearTerm{xb, -1.0}},
+                                            3.0)); // x <= 3
 
         return clause_implies(a, b);
     }();
@@ -101,13 +105,15 @@ TEST(ClauseImplies, TwoVariables) {
         int x = a.vars.find_or_add("x");
         int y = a.vars.find_or_add("y");
         a = a.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))
-              .add(LinearInequality::make({LinearTerm{y, 1.0}}, 0.0))
-              .add(LinearInequality::make({LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 5.0));
+                .add(LinearInequality::make({LinearTerm{y, 1.0}}, 0.0))
+                .add(LinearInequality::make(
+                    {LinearTerm{x, -1.0}, LinearTerm{y, -1.0}}, 5.0));
 
         InequalitySystem<> b{};
         int xb = b.vars.find_or_add("x");
         b.vars.find_or_add("y"); // consistent VarInfo
-        b = b.add(LinearInequality::make({LinearTerm{xb, -1.0}}, 5.0)); // x <= 5
+        b = b.add(
+            LinearInequality::make({LinearTerm{xb, -1.0}}, 5.0)); // x <= 5
 
         return clause_implies(a, b);
     }();
@@ -143,8 +149,9 @@ TEST(RemoveUnsatClauses, RemovesUnsatKeepsSat) {
     constexpr auto result = [] {
         InequalitySystem<> s1{};
         int x1 = s1.vars.find_or_add("x");
-        s1 = s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0, true))
-               .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 0.0, true));
+        s1 =
+            s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0, true))
+                .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 0.0, true));
 
         InequalitySystem<> s2{};
         int x2 = s2.vars.find_or_add("x");
@@ -166,13 +173,15 @@ TEST(RemoveUnsatClauses, AllUnsatYieldsEmpty) {
     constexpr auto result = [] {
         InequalitySystem<> s1{};
         int x1 = s1.vars.find_or_add("x");
-        s1 = s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0, true))
-               .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 0.0, true));
+        s1 =
+            s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0, true))
+                .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 0.0, true));
 
         InequalitySystem<> s2{};
         int x2 = s2.vars.find_or_add("x");
-        s2 = s2.add(LinearInequality::make({LinearTerm{x2, 1.0}}, -5.0, true))
-               .add(LinearInequality::make({LinearTerm{x2, -1.0}}, 3.0, true));
+        s2 =
+            s2.add(LinearInequality::make({LinearTerm{x2, 1.0}}, -5.0, true))
+                .add(LinearInequality::make({LinearTerm{x2, -1.0}}, 3.0, true));
 
         ParseResult<> r{};
         r.clauses[0] = s1;
@@ -193,13 +202,15 @@ TEST(RemoveSubsumedClauses, NarrowSubsumedByBroad) {
     constexpr auto result = [] {
         InequalitySystem<> broad{};
         int x = broad.vars.find_or_add("x");
-        broad = broad.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))
-                     .add(LinearInequality::make({LinearTerm{x, -1.0}}, 10.0, true));
+        broad =
+            broad.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))
+                .add(LinearInequality::make({LinearTerm{x, -1.0}}, 10.0, true));
 
         InequalitySystem<> narrow{};
         int xn = narrow.vars.find_or_add("x");
-        narrow = narrow.add(LinearInequality::make({LinearTerm{xn, 1.0}}, 0.0, true))
-                       .add(LinearInequality::make({LinearTerm{xn, -1.0}}, 5.0, true));
+        narrow =
+            narrow.add(LinearInequality::make({LinearTerm{xn, 1.0}}, 0.0, true))
+                .add(LinearInequality::make({LinearTerm{xn, -1.0}}, 5.0, true));
 
         ParseResult<> r{};
         r.clauses[0] = broad;
@@ -216,13 +227,15 @@ TEST(RemoveSubsumedClauses, DisjointKeptBoth) {
     constexpr auto result = [] {
         InequalitySystem<> s1{};
         int x1 = s1.vars.find_or_add("x");
-        s1 = s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0, true))
-               .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 5.0, true));
+        s1 =
+            s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0, true))
+                .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 5.0, true));
 
         InequalitySystem<> s2{};
         int x2 = s2.vars.find_or_add("x");
         s2 = s2.add(LinearInequality::make({LinearTerm{x2, 1.0}}, -10.0, true))
-               .add(LinearInequality::make({LinearTerm{x2, -1.0}}, 20.0, true));
+                 .add(LinearInequality::make({LinearTerm{x2, -1.0}}, 20.0,
+                                             true));
 
         ParseResult<> r{};
         r.clauses[0] = s1;
@@ -240,17 +253,17 @@ TEST(RemoveSubsumedClauses, ThreeClausesChainedSubsumption) {
         InequalitySystem<> s1{};
         int x1 = s1.vars.find_or_add("x");
         s1 = s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0))
-               .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 10.0));
+                 .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 10.0));
 
         InequalitySystem<> s2{};
         int x2 = s2.vars.find_or_add("x");
         s2 = s2.add(LinearInequality::make({LinearTerm{x2, 1.0}}, -1.0))
-               .add(LinearInequality::make({LinearTerm{x2, -1.0}}, 9.0));
+                 .add(LinearInequality::make({LinearTerm{x2, -1.0}}, 9.0));
 
         InequalitySystem<> s3{};
         int x3 = s3.vars.find_or_add("x");
         s3 = s3.add(LinearInequality::make({LinearTerm{x3, 1.0}}, -2.0))
-               .add(LinearInequality::make({LinearTerm{x3, -1.0}}, 8.0));
+                 .add(LinearInequality::make({LinearTerm{x3, -1.0}}, 8.0));
 
         ParseResult<> r{};
         r.clauses[0] = s1;
@@ -273,18 +286,19 @@ TEST(SimplifyDnf, RemovesUnsatAndSubsumed) {
     constexpr auto result = [] {
         InequalitySystem<> unsat{};
         int xu = unsat.vars.find_or_add("x");
-        unsat = unsat.add(LinearInequality::make({LinearTerm{xu, 1.0}}, 0.0, true))
-                     .add(LinearInequality::make({LinearTerm{xu, -1.0}}, 0.0, true));
+        unsat =
+            unsat.add(LinearInequality::make({LinearTerm{xu, 1.0}}, 0.0, true))
+                .add(LinearInequality::make({LinearTerm{xu, -1.0}}, 0.0, true));
 
         InequalitySystem<> broad{};
         int xb = broad.vars.find_or_add("x");
         broad = broad.add(LinearInequality::make({LinearTerm{xb, 1.0}}, 0.0))
-                     .add(LinearInequality::make({LinearTerm{xb, -1.0}}, 10.0));
+                    .add(LinearInequality::make({LinearTerm{xb, -1.0}}, 10.0));
 
         InequalitySystem<> narrow{};
         int xn = narrow.vars.find_or_add("x");
         narrow = narrow.add(LinearInequality::make({LinearTerm{xn, 1.0}}, -1.0))
-                       .add(LinearInequality::make({LinearTerm{xn, -1.0}}, 5.0));
+                     .add(LinearInequality::make({LinearTerm{xn, -1.0}}, 5.0));
 
         ParseResult<> r{};
         r.clauses[0] = unsat;
@@ -322,14 +336,17 @@ TEST(ClauseImpliesReal, StrongerImpliesWeaker) {
     // Premise is SAT for reals (would be UNSAT for integers)
     constexpr auto result = [] {
         InequalitySystem<> a{};
-        int x = a.vars.find_or_add("x", false);  // real
-        a = a.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))   // x > 0
-              .add(LinearInequality::make({LinearTerm{x, -1.0}}, 1.0, true)); // x < 1
+        int x = a.vars.find_or_add("x", false); // real
+        a = a.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0,
+                                         true)) // x > 0
+                .add(LinearInequality::make({LinearTerm{x, -1.0}}, 1.0,
+                                            true)); // x < 1
 
         InequalitySystem<> b{};
-        int xb = b.vars.find_or_add("x", false);  // real
-        b = b.add(LinearInequality::make({LinearTerm{xb, 1.0}}, 0.0))   // x >= 0
-              .add(LinearInequality::make({LinearTerm{xb, -1.0}}, 1.0)); // x <= 1
+        int xb = b.vars.find_or_add("x", false);                      // real
+        b = b.add(LinearInequality::make({LinearTerm{xb, 1.0}}, 0.0)) // x >= 0
+                .add(LinearInequality::make({LinearTerm{xb, -1.0}},
+                                            1.0)); // x <= 1
 
         return clause_implies(a, b);
     }();
@@ -341,13 +358,16 @@ TEST(RemoveUnsatClausesReal, KeepsRealSatClause) {
     // First clause is SAT for reals (UNSAT for integers) — both kept
     constexpr auto result = [] {
         InequalitySystem<> s1{};
-        int x1 = s1.vars.find_or_add("x", false);  // real
-        s1 = s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0, true))   // x > 0
-               .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 1.0, true)); // x < 1
+        int x1 = s1.vars.find_or_add("x", false); // real
+        s1 = s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0,
+                                           true)) // x > 0
+                 .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 1.0,
+                                             true)); // x < 1
 
         InequalitySystem<> s2{};
-        int x2 = s2.vars.find_or_add("x", false);  // real
-        s2 = s2.add(LinearInequality::make({LinearTerm{x2, 1.0}}, -5.0));  // x >= 5
+        int x2 = s2.vars.find_or_add("x", false); // real
+        s2 = s2.add(
+            LinearInequality::make({LinearTerm{x2, 1.0}}, -5.0)); // x >= 5
 
         ParseResult<> r{};
         r.clauses[0] = s1;
@@ -359,23 +379,29 @@ TEST(RemoveUnsatClausesReal, KeepsRealSatClause) {
 }
 
 TEST(SimplifyDnfReal, RemovesUnsatKeepsSat) {
-    // DNF: (x > 0 && x < 0) || (x > 0 && x < 1) || (x >= 0 && x <= 1), real vars
-    // First: UNSAT (always). Second ⊂ Third (subsumed). Result: 1 clause.
+    // DNF: (x > 0 && x < 0) || (x > 0 && x < 1) || (x >= 0 && x <= 1), real
+    // vars First: UNSAT (always). Second ⊂ Third (subsumed). Result: 1 clause.
     constexpr auto result = [] {
         InequalitySystem<> s1{};
-        int x1 = s1.vars.find_or_add("x", false);  // real
-        s1 = s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0, true))   // x > 0
-               .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 0.0, true)); // x < 0
+        int x1 = s1.vars.find_or_add("x", false); // real
+        s1 = s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0,
+                                           true)) // x > 0
+                 .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 0.0,
+                                             true)); // x < 0
 
         InequalitySystem<> s2{};
-        int x2 = s2.vars.find_or_add("x", false);  // real
-        s2 = s2.add(LinearInequality::make({LinearTerm{x2, 1.0}}, 0.0, true))   // x > 0
-               .add(LinearInequality::make({LinearTerm{x2, -1.0}}, 1.0, true)); // x < 1
+        int x2 = s2.vars.find_or_add("x", false); // real
+        s2 = s2.add(LinearInequality::make({LinearTerm{x2, 1.0}}, 0.0,
+                                           true)) // x > 0
+                 .add(LinearInequality::make({LinearTerm{x2, -1.0}}, 1.0,
+                                             true)); // x < 1
 
         InequalitySystem<> s3{};
-        int x3 = s3.vars.find_or_add("x", false);  // real
-        s3 = s3.add(LinearInequality::make({LinearTerm{x3, 1.0}}, 0.0))    // x >= 0
-               .add(LinearInequality::make({LinearTerm{x3, -1.0}}, 1.0));  // x <= 1
+        int x3 = s3.vars.find_or_add("x", false); // real
+        s3 =
+            s3.add(LinearInequality::make({LinearTerm{x3, 1.0}}, 0.0)) // x >= 0
+                .add(LinearInequality::make({LinearTerm{x3, -1.0}},
+                                            1.0)); // x <= 1
 
         ParseResult<> r{};
         r.clauses[0] = s1;

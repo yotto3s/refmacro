@@ -139,8 +139,7 @@ TEST(TesterFindings_Gap, NegRefinedInt) {
 TEST(TesterFindings_Gap, ComparisonRefinedOperands) {
     // x > y where x : {#v >= 0}, y : {#v >= 0} → Bool
     constexpr auto nat = tref(TInt, E::var("#v") >= E::lit(0));
-    constexpr TypeEnv<128> env =
-        TypeEnv<128>{}.bind("x", nat).bind("y", nat);
+    constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", nat).bind("y", nat);
     constexpr auto r = type_check(E::var("x") > E::var("y"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TBool),
@@ -165,8 +164,9 @@ TEST(TesterFindings_Gap, JoinReflexiveRefined) {
 TEST(TesterFindings_Gap, SubtypeReflexiveRefinedArrow) {
     constexpr auto nat = tref(TInt, E::var("#v") >= E::lit(0));
     constexpr auto t = tarr("x", nat, nat);
-    static_assert(is_subtype(t, t),
-                  "arrow type with refined components should be reflexive subtype");
+    static_assert(
+        is_subtype(t, t),
+        "arrow type with refined components should be reflexive subtype");
 }
 
 // ============================================================
@@ -179,8 +179,8 @@ TEST(TesterFindings_Gap, CondRefinedBranches) {
     constexpr auto neg = tref(TInt, E::var("#v") < E::lit(0));
     constexpr TypeEnv<128> env =
         TypeEnv<128>{}.bind("p", TBool).bind("x", pos).bind("y", neg);
-    constexpr auto e = refmacro::make_node<128>(
-        "cond", E::var("p"), E::var("x"), E::var("y"));
+    constexpr auto e =
+        refmacro::make_node<128>("cond", E::var("p"), E::var("x"), E::var("y"));
     constexpr auto r = type_check(e, env);
     static_assert(r.valid);
     // Result should be refined (disjunction of predicates)

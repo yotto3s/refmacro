@@ -24,7 +24,8 @@ consteval bool check() {
     bool unsat = fm_is_unsat(sys);
     // x=1, y=0 is a valid integer solution, so SAT.
     // BUG: fm_is_unsat returns true due to over-tightened rounding.
-    if (unsat) throw "BUG: system is SAT but FM says UNSAT";
+    if (unsat)
+        throw "BUG: system is SAT but FM says UNSAT";
     return true;
 }
 

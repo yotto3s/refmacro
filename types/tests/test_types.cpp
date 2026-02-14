@@ -21,7 +21,8 @@ using E = Expression<128>;
 // --- TypedExpr alias ---
 
 TEST(TypeAlias, TypedExprIsExpression128) {
-    static_assert(std::is_same_v<reftype::TypedExpr, refmacro::Expression<128>>);
+    static_assert(
+        std::is_same_v<reftype::TypedExpr, refmacro::Expression<128>>);
 }
 
 // --- Base type constants ---
@@ -47,8 +48,7 @@ TEST(TypeConstants, TRealTagAndChildren) {
 // --- Refinement type ---
 
 TEST(TypeConstructors, TrefStructure) {
-    static constexpr auto t =
-        tref(TInt, E::var("#v") > E::lit(0));
+    static constexpr auto t = tref(TInt, E::var("#v") > E::lit(0));
     static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "tref"));
     static_assert(t.ast.nodes[t.id].child_count == 2);
 }
@@ -75,15 +75,13 @@ TEST(TypeConstructors, TarrStructure) {
 // --- Annotation ---
 
 TEST(TypeConstructors, AnnStructure) {
-    static constexpr auto t =
-        ann(E::var("x"), TInt);
+    static constexpr auto t = ann(E::var("x"), TInt);
     static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "ann"));
     static_assert(t.ast.nodes[t.id].child_count == 2);
 }
 
 TEST(TypeConstructors, AnnArithmeticExpr) {
-    static constexpr auto t =
-        ann(E::var("x") + E::lit(1), TInt);
+    static constexpr auto t = ann(E::var("x") + E::lit(1), TInt);
     static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "ann"));
     static_assert(t.ast.nodes[t.id].child_count == 2);
     constexpr auto expr_id = t.ast.nodes[t.id].children[0];
@@ -93,9 +91,8 @@ TEST(TypeConstructors, AnnArithmeticExpr) {
 // --- Nested types ---
 
 TEST(TypeConstructors, NestedAnnotation) {
-    static constexpr auto t = ann(
-        E::var("x"),
-        tref(TInt, E::var("#v") > E::lit(0)));
+    static constexpr auto t =
+        ann(E::var("x"), tref(TInt, E::var("#v") > E::lit(0)));
     static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "ann"));
     constexpr auto type_id = t.ast.nodes[t.id].children[1];
     static_assert(refmacro::str_eq(t.ast.nodes[type_id].tag, "tref"));
@@ -103,10 +100,8 @@ TEST(TypeConstructors, NestedAnnotation) {
 
 TEST(TypeConstructors, DependentArrow) {
     // (x : {#v : Int | #v > 0}) -> {#v : Int | #v > x}
-    static constexpr auto t = tarr(
-        "x",
-        tref(TInt, E::var("#v") > E::lit(0)),
-        tref(TInt, E::var("#v") > E::var("x")));
+    static constexpr auto t = tarr("x", tref(TInt, E::var("#v") > E::lit(0)),
+                                   tref(TInt, E::var("#v") > E::var("x")));
     static_assert(refmacro::str_eq(t.ast.nodes[t.id].tag, "tarr"));
     static_assert(t.ast.nodes[t.id].child_count == 3);
 }
@@ -125,8 +120,7 @@ TEST(TypePrettyPrint, BaseTypes) {
 }
 
 TEST(TypePrettyPrint, RefinementType) {
-    static constexpr auto t =
-        tref(TInt, E::var("#v") > E::lit(0));
+    static constexpr auto t = tref(TInt, E::var("#v") > E::lit(0));
     static constexpr auto pp = reftype::pretty_print(t);
     static_assert(pp == "{#v : Int | (#v > 0)}");
 }
@@ -144,18 +138,15 @@ TEST(TypePrettyPrint, Annotation) {
 }
 
 TEST(TypePrettyPrint, NestedRefinement) {
-    static constexpr auto t = ann(
-        E::var("x"),
-        tref(TInt, E::var("#v") > E::lit(0)));
+    static constexpr auto t =
+        ann(E::var("x"), tref(TInt, E::var("#v") > E::lit(0)));
     static constexpr auto pp = reftype::pretty_print(t);
     static_assert(pp == "(x : {#v : Int | (#v > 0)})");
 }
 
 TEST(TypePrettyPrint, DependentArrow) {
-    static constexpr auto t = tarr(
-        "x",
-        tref(TInt, E::var("#v") > E::lit(0)),
-        tref(TInt, E::var("#v") > E::var("x")));
+    static constexpr auto t = tarr("x", tref(TInt, E::var("#v") > E::lit(0)),
+                                   tref(TInt, E::var("#v") > E::var("x")));
     static constexpr auto pp = reftype::pretty_print(t);
     static_assert(pp == "(x : {#v : Int | (#v > 0)}) -> {#v : Int | (#v > x)}");
 }
@@ -166,9 +157,9 @@ TEST(TypePrettyPrint, PosIntHelper) {
 }
 
 TEST(TypePrettyPrint, ExpressionFallback) {
-    // Core expression tags should still render correctly through reftype::pretty_print
-    static constexpr auto e =
-        E::var("x") > E::lit(1);
+    // Core expression tags should still render correctly through
+    // reftype::pretty_print
+    static constexpr auto e = E::var("x") > E::lit(1);
     static constexpr auto pp = reftype::pretty_print(e);
     static_assert(pp == "(x > 1)");
 }

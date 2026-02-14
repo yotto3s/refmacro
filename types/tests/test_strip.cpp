@@ -96,8 +96,7 @@ TEST(StripTypes, PreservesComparison) {
 
 TEST(StripTypes, PreservesLogical) {
     // ann(p && q, TBool) → p && q
-    static constexpr auto input =
-        ann(E::var("p") && E::var("q"), TBool);
+    static constexpr auto input = ann(E::var("p") && E::var("q"), TBool);
     static constexpr auto stripped = strip_types(input);
     static constexpr auto expected = E::var("p") && E::var("q");
     static_assert(types_equal(stripped, expected));
@@ -147,8 +146,7 @@ TEST(StripTypes, AnnotatedLambda) {
     // ann(lambda("x", x+1), tarr("x", TInt, TInt)) → lambda("x", x+1)
     static constexpr auto body = E::var("x") + E::lit(1);
     static constexpr auto lam = refmacro::lambda<128>("x", body);
-    static constexpr auto arrow_type =
-        reftype::tarr("x", TInt, TInt);
+    static constexpr auto arrow_type = reftype::tarr("x", TInt, TInt);
     static constexpr auto input = ann(lam, arrow_type);
     static constexpr auto stripped = strip_types(input);
     static_assert(types_equal(stripped, lam));
@@ -174,8 +172,7 @@ TEST(TypedCompile, LiteralArithmetic) {
 
 TEST(TypedCompile, NestedAnnotationCompile) {
     // ann(ann(lit(5), TInt) + lit(1), TInt) → compiles to 6
-    static constexpr auto e =
-        ann(ann(E::lit(5), TInt) + E::lit(1), TInt);
+    static constexpr auto e = ann(ann(E::lit(5), TInt) + E::lit(1), TInt);
     constexpr auto f = typed_full_compile<e>();
     static_assert(f() == 6);
 }
@@ -191,8 +188,7 @@ TEST(TypedCompile, VariableExpressionWithEnv) {
 
 TEST(TypedCompile, FullCompileWithEnv) {
     // typed_full_compile with env: var("x") * var("y") + lit(1)
-    static constexpr auto e =
-        ann(E::var("x") * E::var("y") + E::lit(1), TInt);
+    static constexpr auto e = ann(E::var("x") * E::var("y") + E::lit(1), TInt);
     static constexpr auto env =
         reftype::TypeEnv<128>{}.bind("x", TInt).bind("y", TInt);
     constexpr auto f = reftype::typed_full_compile<e, env>();
@@ -255,8 +251,8 @@ TEST(Pipeline, ConditionalCompile) {
     static constexpr auto typed = ann(cond_expr, TInt);
 
     // Verify type check with env
-    constexpr auto result = reftype::type_check(
-        typed, reftype::TypeEnv<128>{}.bind("p", TBool));
+    constexpr auto result =
+        reftype::type_check(typed, reftype::TypeEnv<128>{}.bind("p", TBool));
     static_assert(result.valid);
 
     // Strip and compile

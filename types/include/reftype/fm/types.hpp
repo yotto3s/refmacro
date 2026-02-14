@@ -1,8 +1,8 @@
 #ifndef REFTYPE_FM_TYPES_HPP
 #define REFTYPE_FM_TYPES_HPP
 
-#include <cstddef>
 #include <climits>
+#include <cstddef>
 #include <initializer_list>
 #include <optional>
 #include <refmacro/str_utils.hpp>
@@ -47,7 +47,8 @@ struct LinearInequality {
 // Variable metadata: name + integer/real type.
 // MaxVars: max variables tracked. 16 covers most refinement-type systems.
 template <std::size_t MaxVars = 16> struct VarInfo {
-    static_assert(MaxVars <= INT_MAX, "MaxVars must fit in int (var_id is int)");
+    static_assert(MaxVars <= INT_MAX,
+                  "MaxVars must fit in int (var_id is int)");
 
     char names[MaxVars][16]{};
     bool is_integer[MaxVars]{};

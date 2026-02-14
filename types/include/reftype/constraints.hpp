@@ -6,23 +6,23 @@
 
 namespace reftype {
 
-using refmacro::Expression;
 using refmacro::copy_str;
+using refmacro::Expression;
 
-// A single constraint: a boolean formula with an origin string for error reporting.
-template <std::size_t Cap = 128>
-struct Constraint {
+// A single constraint: a boolean formula with an origin string for error
+// reporting.
+template <std::size_t Cap = 128> struct Constraint {
     Expression<Cap> formula{};
     char origin[64]{};
 };
 
 // Immutable set of constraints. add() and merge() return new sets.
-template <std::size_t Cap = 128, int MaxConstraints = 32>
-struct ConstraintSet {
+template <std::size_t Cap = 128, int MaxConstraints = 32> struct ConstraintSet {
     Constraint<Cap> constraints[MaxConstraints]{};
     int count{0};
 
-    consteval ConstraintSet add(Expression<Cap> formula, const char* origin) const {
+    consteval ConstraintSet add(Expression<Cap> formula,
+                                const char* origin) const {
         if (count >= MaxConstraints)
             throw "ConstraintSet capacity exceeded";
         ConstraintSet result = *this;

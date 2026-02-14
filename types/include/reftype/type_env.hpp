@@ -6,15 +6,14 @@
 
 namespace reftype {
 
-using refmacro::Expression;
 using refmacro::copy_str;
+using refmacro::Expression;
 using refmacro::str_eq;
 using refmacro::str_len;
 
 // Compile-time map from variable names to their types (as Expression ASTs).
 // Immutable: bind() returns a new TypeEnv. Shadowing via reverse-order lookup.
-template <std::size_t Cap = 128, int MaxBindings = 16>
-struct TypeEnv {
+template <std::size_t Cap = 128, int MaxBindings = 16> struct TypeEnv {
     char names[MaxBindings][16]{};
     Expression<Cap> types[MaxBindings]{};
     int count{0};

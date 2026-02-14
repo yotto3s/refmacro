@@ -20,8 +20,7 @@ TEST(IsUnsat, SatisfiableSystem) {
     constexpr auto sys = [] {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
-        return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))
+        return s.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0))
             .add(LinearInequality::make({LinearTerm{x, -1.0}}, 5.0));
     }();
     static_assert(!is_unsat(sys));
@@ -33,8 +32,7 @@ TEST(IsUnsat, UnsatisfiableSystem) {
     constexpr auto sys = [] {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
-        return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, -5.0))
+        return s.add(LinearInequality::make({LinearTerm{x, 1.0}}, -5.0))
             .add(LinearInequality::make({LinearTerm{x, -1.0}}, 3.0));
     }();
     static_assert(is_unsat(sys));
@@ -43,8 +41,8 @@ TEST(IsUnsat, UnsatisfiableSystem) {
 
 TEST(IsUnsat, ConstantContradiction) {
     // -1 >= 0 → UNSAT
-    constexpr auto sys = InequalitySystem<>{}.add(
-        LinearInequality::make({}, -1.0));
+    constexpr auto sys =
+        InequalitySystem<>{}.add(LinearInequality::make({}, -1.0));
     static_assert(is_unsat(sys));
 }
 
@@ -53,8 +51,7 @@ TEST(IsUnsat, StrictBoundsUNSAT) {
     constexpr auto sys = [] {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
-        return s
-            .add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))
+        return s.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))
             .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0, true));
     }();
     static_assert(is_unsat(sys));
@@ -82,7 +79,7 @@ TEST(IsUnsatDNF, SingleUnsatClause) {
         InequalitySystem<> s{};
         int x = s.vars.find_or_add("x");
         s = s.add(LinearInequality::make({LinearTerm{x, 1.0}}, 0.0, true))
-              .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0, true));
+                .add(LinearInequality::make({LinearTerm{x, -1.0}}, 0.0, true));
         return single_clause(s);
     }();
     static_assert(is_unsat(result));
@@ -94,8 +91,9 @@ TEST(IsUnsatDNF, OneSatOneUnsat) {
     constexpr auto result = [] {
         InequalitySystem<> s1{};
         int x1 = s1.vars.find_or_add("x");
-        s1 = s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0, true))
-               .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 0.0, true));
+        s1 =
+            s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, 0.0, true))
+                .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 0.0, true));
         InequalitySystem<> s2{};
         int x2 = s2.vars.find_or_add("x");
         s2 = s2.add(LinearInequality::make({LinearTerm{x2, 1.0}}, 0.0));
@@ -114,12 +112,14 @@ TEST(IsUnsatDNF, AllClausesUnsat) {
     constexpr auto result = [] {
         InequalitySystem<> s1{};
         int x1 = s1.vars.find_or_add("x");
-        s1 = s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, -5.0, true))
-               .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 3.0, true));
+        s1 =
+            s1.add(LinearInequality::make({LinearTerm{x1, 1.0}}, -5.0, true))
+                .add(LinearInequality::make({LinearTerm{x1, -1.0}}, 3.0, true));
         InequalitySystem<> s2{};
         int x2 = s2.vars.find_or_add("x");
-        s2 = s2.add(LinearInequality::make({LinearTerm{x2, 1.0}}, -10.0, true))
-               .add(LinearInequality::make({LinearTerm{x2, -1.0}}, 8.0, true));
+        s2 =
+            s2.add(LinearInequality::make({LinearTerm{x2, 1.0}}, -10.0, true))
+                .add(LinearInequality::make({LinearTerm{x2, -1.0}}, 8.0, true));
         ParseResult<> r{};
         r.clauses[0] = s1;
         r.clauses[1] = s2;
@@ -244,7 +244,8 @@ TEST(IsValidImplicationReal, RealVsIntegerDifference) {
     static constexpr auto formula =
         (Expression::var("x") > 0.0) && (Expression::var("x") < 1.0);
 
-    // Integer: the formula itself is UNSAT, so any implication from it is vacuously true
+    // Integer: the formula itself is UNSAT, so any implication from it is
+    // vacuously true
     constexpr auto parsed_int = parse_to_system(formula);
     static_assert(is_unsat(parsed_int));
 
@@ -281,7 +282,8 @@ TEST(IsValidReal, NotValidForReals) {
 }
 
 TEST(IsValidReal, ValidForIntNotForReal) {
-    // !(x > 0 && x < 1) — valid for integers (inner UNSAT), NOT valid for reals (x=0.5)
+    // !(x > 0 && x < 1) — valid for integers (inner UNSAT), NOT valid for reals
+    // (x=0.5)
     static constexpr auto formula =
         !((Expression::var("x") > 0.0) && (Expression::var("x") < 1.0));
 
@@ -313,9 +315,9 @@ TEST(IsValidImplicationReal, RealMultiVarImplication) {
 }
 
 TEST(DisjunctiveConclusionFallbackReal, ValidImplication) {
-    // Real vars: same structure as DisjunctiveConclusionFallback::ValidImplication
-    // (x >= 1 && x <= 3) => ((x >= 0 && x <= 2) || (x >= 2 && x <= 4))
-    // [1,3] ⊆ [0,2] ∪ [2,4] → valid
+    // Real vars: same structure as
+    // DisjunctiveConclusionFallback::ValidImplication (x >= 1 && x <= 3) => ((x
+    // >= 0 && x <= 2) || (x >= 2 && x <= 4)) [1,3] ⊆ [0,2] ∪ [2,4] → valid
     static constexpr auto x = Expression::var("x");
     static constexpr auto P = (x >= 1.0) && (x <= 3.0);
     static constexpr auto Q =
@@ -347,7 +349,8 @@ TEST(IsUnsatDNF, ZeroClausesVacuouslyUNSAT) {
 TEST(SolverEndToEnd, DisjunctionSat) {
     // (x > 5) || (x < -5) → SAT (two satisfiable clauses)
     static constexpr auto formula =
-        (Expression::var("x") > 5.0) || (Expression::var("x") < Expression::lit(-5.0));
+        (Expression::var("x") > 5.0) ||
+        (Expression::var("x") < Expression::lit(-5.0));
     constexpr auto result = parse_to_system(formula);
     static_assert(result.clause_count == 2);
     static_assert(is_sat(result));

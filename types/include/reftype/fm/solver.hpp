@@ -99,10 +99,9 @@ is_valid_implication(const refmacro::Expression<Cap>& premise,
 // Overload with caller-supplied VarInfo for real-valued variables.
 template <std::size_t Cap, std::size_t MaxClauses = 8,
           std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
-consteval bool
-is_valid_implication(const refmacro::Expression<Cap>& premise,
-                     const refmacro::Expression<Cap>& conclusion,
-                     VarInfo<MaxVars> vars) {
+consteval bool is_valid_implication(const refmacro::Expression<Cap>& premise,
+                                    const refmacro::Expression<Cap>& conclusion,
+                                    VarInfo<MaxVars> vars) {
     return detail::is_valid_implication_impl<Cap, MaxClauses, MaxIneqs,
                                              MaxVars>(premise, conclusion,
                                                       vars);

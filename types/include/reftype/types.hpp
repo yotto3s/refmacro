@@ -13,16 +13,13 @@ using TypedExpr = Expression<128>;
 
 // --- Base type constructors (leaf nodes, any Cap) ---
 
-template <std::size_t Cap = 128>
-consteval Expression<Cap> tint() {
+template <std::size_t Cap = 128> consteval Expression<Cap> tint() {
     return make_node<Cap>("tint");
 }
-template <std::size_t Cap = 128>
-consteval Expression<Cap> tbool() {
+template <std::size_t Cap = 128> consteval Expression<Cap> tbool() {
     return make_node<Cap>("tbool");
 }
-template <std::size_t Cap = 128>
-consteval Expression<Cap> treal() {
+template <std::size_t Cap = 128> consteval Expression<Cap> treal() {
     return make_node<Cap>("treal");
 }
 
@@ -55,9 +52,9 @@ consteval Expression<Cap> ann(Expression<Cap> e, Expression<Cap> type) {
 // --- Common refinement helpers ---
 
 // Positive integer: {#v : Int | #v > 0}
-template <std::size_t Cap = 128>
-consteval Expression<Cap> pos_int() {
-    return tref<Cap>(tint<Cap>(), Expression<Cap>::var("#v") > Expression<Cap>::lit(0));
+template <std::size_t Cap = 128> consteval Expression<Cap> pos_int() {
+    return tref<Cap>(tint<Cap>(),
+                     Expression<Cap>::var("#v") > Expression<Cap>::lit(0));
 }
 
 } // namespace reftype

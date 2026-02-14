@@ -187,8 +187,8 @@ consteval LinearInequality to_inequality(const LinearExpr<MaxVars>& lhs,
 // --- Arithmetic parser ---
 
 template <std::size_t Cap, std::size_t MaxVars>
-consteval LinearExpr<MaxVars>
-parse_arith(refmacro::NodeView<Cap> node, VarInfo<MaxVars>& vars) {
+consteval LinearExpr<MaxVars> parse_arith(refmacro::NodeView<Cap> node,
+                                          VarInfo<MaxVars>& vars) {
     auto t = node.tag();
 
     if (t == "lit") {
@@ -298,13 +298,13 @@ parse_comparison(refmacro::NodeView<Cap> node, VarInfo<MaxVars>& vars,
     // For non-eq comparisons, determine the direction
     LinearInequality ineq{};
     if ((t == "gt" && !negate) || (t == "le" && negate)) {
-        ineq = to_inequality(lhs, rhs, true);   // lhs - rhs > 0
+        ineq = to_inequality(lhs, rhs, true); // lhs - rhs > 0
     } else if ((t == "ge" && !negate) || (t == "lt" && negate)) {
-        ineq = to_inequality(lhs, rhs, false);   // lhs - rhs >= 0
+        ineq = to_inequality(lhs, rhs, false); // lhs - rhs >= 0
     } else if ((t == "lt" && !negate) || (t == "ge" && negate)) {
-        ineq = to_inequality(rhs, lhs, true);   // rhs - lhs > 0
+        ineq = to_inequality(rhs, lhs, true); // rhs - lhs > 0
     } else if ((t == "le" && !negate) || (t == "gt" && negate)) {
-        ineq = to_inequality(rhs, lhs, false);   // rhs - lhs >= 0
+        ineq = to_inequality(rhs, lhs, false); // rhs - lhs >= 0
     } else {
         throw "unsupported comparison tag";
     }

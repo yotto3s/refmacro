@@ -50,8 +50,7 @@ consteval Expression<Cap> make_node(const char* tag, Expression<Cap> c0,
     int ids[1 + sizeof...(Rest)]{c0.id};
     [[maybe_unused]] std::size_t i = 1;
     ((ids[i++] = rest.id + result.ast.merge(rest.ast)), ...);
-    result.id =
-        result.ast.add_tagged_node(tag, ids, 1 + sizeof...(Rest));
+    result.id = result.ast.add_tagged_node(tag, ids, 1 + sizeof...(Rest));
     return result;
 }
 

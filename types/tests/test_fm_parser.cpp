@@ -33,8 +33,7 @@ TEST(ParseArith, Variable) {
 
 TEST(ParseArith, AddVarAndLit) {
     // x + 3
-    static constexpr auto e =
-        Expression<>::var("x") + Expression<>::lit(3.0);
+    static constexpr auto e = Expression<>::var("x") + Expression<>::lit(3.0);
     constexpr auto result = [] {
         VarInfo<> vars{};
         return parse_arith<64>(NodeView{e.ast, e.id}, vars);
@@ -45,21 +44,19 @@ TEST(ParseArith, AddVarAndLit) {
 
 TEST(ParseArith, SubVars) {
     // x - y
-    static constexpr auto e =
-        Expression<>::var("x") - Expression<>::var("y");
+    static constexpr auto e = Expression<>::var("x") - Expression<>::var("y");
     constexpr auto result = [] {
         VarInfo<> vars{};
         return parse_arith<64>(NodeView{e.ast, e.id}, vars);
     }();
-    static_assert(result.coeffs[0] == 1.0);   // x
-    static_assert(result.coeffs[1] == -1.0);  // y
+    static_assert(result.coeffs[0] == 1.0);  // x
+    static_assert(result.coeffs[1] == -1.0); // y
     static_assert(result.constant == 0.0);
 }
 
 TEST(ParseArith, MulByConstant) {
     // 2 * x
-    static constexpr auto e =
-        Expression<>::lit(2.0) * Expression<>::var("x");
+    static constexpr auto e = Expression<>::lit(2.0) * Expression<>::var("x");
     constexpr auto result = [] {
         VarInfo<> vars{};
         return parse_arith<64>(NodeView{e.ast, e.id}, vars);
@@ -70,8 +67,7 @@ TEST(ParseArith, MulByConstant) {
 
 TEST(ParseArith, MulVarByConstantRHS) {
     // x * 3
-    static constexpr auto e =
-        Expression<>::var("x") * Expression<>::lit(3.0);
+    static constexpr auto e = Expression<>::var("x") * Expression<>::lit(3.0);
     constexpr auto result = [] {
         VarInfo<> vars{};
         return parse_arith<64>(NodeView{e.ast, e.id}, vars);
@@ -92,8 +88,7 @@ TEST(ParseArith, Negation) {
 
 TEST(ParseArith, DivByConstant) {
     // x / 2
-    static constexpr auto e =
-        Expression<>::var("x") / Expression<>::lit(2.0);
+    static constexpr auto e = Expression<>::var("x") / Expression<>::lit(2.0);
     constexpr auto result = [] {
         VarInfo<> vars{};
         return parse_arith<64>(NodeView{e.ast, e.id}, vars);
@@ -104,16 +99,15 @@ TEST(ParseArith, DivByConstant) {
 
 TEST(ParseArith, ComplexExpression) {
     // 2*x + 3*y - 5
-    static constexpr auto e =
-        Expression<>::lit(2.0) * Expression<>::var("x") +
-        Expression<>::lit(3.0) * Expression<>::var("y") -
-        Expression<>::lit(5.0);
+    static constexpr auto e = Expression<>::lit(2.0) * Expression<>::var("x") +
+                              Expression<>::lit(3.0) * Expression<>::var("y") -
+                              Expression<>::lit(5.0);
     constexpr auto result = [] {
         VarInfo<> vars{};
         return parse_arith<64>(NodeView{e.ast, e.id}, vars);
     }();
-    static_assert(result.coeffs[0] == 2.0);   // x
-    static_assert(result.coeffs[1] == 3.0);   // y
+    static_assert(result.coeffs[0] == 2.0); // x
+    static_assert(result.coeffs[1] == 3.0); // y
     static_assert(result.constant == -5.0);
 }
 
@@ -323,8 +317,8 @@ TEST(ParseFormula, DistributeConjOverDisj) {
         (Expression<>::var("y") > 0.0);
     constexpr auto result = parse_to_system(e);
     static_assert(result.clause_count == 2);
-    static_assert(result.clauses[0].count == 2);  // x>0 AND y>0
-    static_assert(result.clauses[1].count == 2);  // x<-1 AND y>0
+    static_assert(result.clauses[0].count == 2); // x>0 AND y>0
+    static_assert(result.clauses[1].count == 2); // x<-1 AND y>0
 }
 
 // ============================================================
@@ -333,8 +327,7 @@ TEST(ParseFormula, DistributeConjOverDisj) {
 
 TEST(ParseFormula, TwoVarComparison) {
     // x > y → x - y > 0
-    static constexpr auto e =
-        Expression<>::var("x") > Expression<>::var("y");
+    static constexpr auto e = Expression<>::var("x") > Expression<>::var("y");
     constexpr auto result = parse_to_system(e);
     static_assert(result.is_conjunctive());
     static_assert(result.system().count == 1);
@@ -377,7 +370,7 @@ TEST(ParseToSystemVarInfo, RealValuedVariables) {
     static constexpr auto e = Expression<>::var("x") > 0.0;
     constexpr auto result = [] {
         VarInfo<> vars{};
-        vars.find_or_add("x", false);  // real-valued
+        vars.find_or_add("x", false); // real-valued
         return parse_to_system(e, vars);
     }();
     static_assert(result.is_conjunctive());
@@ -392,13 +385,13 @@ TEST(ParseToSystemVarInfo, RealNewVarInheritsType) {
         (Expression<>::var("x") > 0.0) && (Expression<>::var("y") < 5.0);
     constexpr auto result = [] {
         VarInfo<> vars{};
-        vars.find_or_add("x", false);  // real-valued
+        vars.find_or_add("x", false); // real-valued
         return parse_to_system(e, vars);
     }();
     static_assert(result.is_conjunctive());
     static_assert(result.system().vars.count == 2);
-    static_assert(result.system().vars.is_integer[0] == false);  // x
-    static_assert(result.system().vars.is_integer[1] == false);  // y
+    static_assert(result.system().vars.is_integer[0] == false); // x
+    static_assert(result.system().vars.is_integer[1] == false); // y
 }
 
 TEST(ParseToSystemVarInfo, RealDisjunction) {
@@ -426,7 +419,8 @@ TEST(ParseToSystemVarInfo, IntegerDefault) {
     }();
     static_assert(result_default.system().vars.is_integer[0] == true);
     static_assert(result_explicit.system().vars.is_integer[0] == true);
-    static_assert(result_default.system().count == result_explicit.system().count);
+    static_assert(result_default.system().count ==
+                  result_explicit.system().count);
 }
 
 // ============================================================
@@ -443,8 +437,7 @@ TEST(ParseToSystemVarInfo, IntegerDefault) {
 
 TEST(ParseArith, MulConstantTimesConstant) {
     // 2 * 3 → constant 6 (both sides constant, no non-linear error)
-    static constexpr auto e =
-        Expression<>::lit(2.0) * Expression<>::lit(3.0);
+    static constexpr auto e = Expression<>::lit(2.0) * Expression<>::lit(3.0);
     constexpr auto result = [] {
         VarInfo<> vars{};
         return parse_arith<64>(NodeView{e.ast, e.id}, vars);
@@ -456,27 +449,25 @@ TEST(ParseArith, MulConstantTimesConstant) {
 TEST(ParseArithReal, InheritsRealType) {
     // Pre-register x as real, parse 2*x + y - 3
     // Verify coefficients AND that both x,y are real in resulting VarInfo
-    static constexpr auto e =
-        Expression<>::lit(2.0) * Expression<>::var("x") +
-        Expression<>::var("y") - Expression<>::lit(3.0);
+    static constexpr auto e = Expression<>::lit(2.0) * Expression<>::var("x") +
+                              Expression<>::var("y") - Expression<>::lit(3.0);
     constexpr auto result = [] {
         VarInfo<> vars{};
-        vars.find_or_add("x", false);  // real
+        vars.find_or_add("x", false); // real
         auto r = parse_arith<64>(NodeView{e.ast, e.id}, vars);
         return std::pair{r, vars};
     }();
-    static_assert(result.first.coeffs[0] == 2.0);   // x
-    static_assert(result.first.coeffs[1] == 1.0);    // y
+    static_assert(result.first.coeffs[0] == 2.0); // x
+    static_assert(result.first.coeffs[1] == 1.0); // y
     static_assert(result.first.constant == -3.0);
     static_assert(result.second.count == 2);
-    static_assert(result.second.is_integer[0] == false);  // x: real
-    static_assert(result.second.is_integer[1] == false);  // y: inherits real
+    static_assert(result.second.is_integer[0] == false); // x: real
+    static_assert(result.second.is_integer[1] == false); // y: inherits real
 }
 
 TEST(ParseArith, DivByNonZeroConstant) {
     // x / 3 → valid (divisor is non-zero constant)
-    static constexpr auto e =
-        Expression<>::var("x") / Expression<>::lit(3.0);
+    static constexpr auto e = Expression<>::var("x") / Expression<>::lit(3.0);
     constexpr auto result = [] {
         VarInfo<> vars{};
         return parse_arith<64>(NodeView{e.ast, e.id}, vars);

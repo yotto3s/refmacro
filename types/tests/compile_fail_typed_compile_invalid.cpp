@@ -11,8 +11,7 @@ using refmacro::Expression;
 using E = Expression<128>;
 
 // lit(0) annotated as positive int — invalid (0 is not > 0)
-static constexpr auto e =
-    reftype::ann(E::lit(0), reftype::pos_int());
+static constexpr auto e = reftype::ann(E::lit(0), reftype::pos_int());
 constexpr auto f = reftype::typed_full_compile<e>();
 
 int main() { return static_cast<int>(f()); }

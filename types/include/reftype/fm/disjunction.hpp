@@ -64,8 +64,7 @@ remove_unsat_clauses(const ParseResult<MaxClauses, MaxIneqs, MaxVars>& result) {
 // is typically small (≤ 8).
 template <std::size_t MaxClauses = 8, std::size_t MaxIneqs = 64,
           std::size_t MaxVars = 16>
-consteval ParseResult<MaxClauses, MaxIneqs, MaxVars>
-remove_subsumed_clauses(
+consteval ParseResult<MaxClauses, MaxIneqs, MaxVars> remove_subsumed_clauses(
     const ParseResult<MaxClauses, MaxIneqs, MaxVars>& result) {
     bool subsumed[MaxClauses]{};
 

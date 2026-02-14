@@ -30,9 +30,8 @@ consteval Expression<Cap> strip_types(Expression<Cap> e) {
                 return rec(n.child(0));
 
             // Bare type nodes outside annotations => error
-            if (n.tag() == "tint" || n.tag() == "tbool" ||
-                n.tag() == "treal" || n.tag() == "tref" ||
-                n.tag() == "tarr")
+            if (n.tag() == "tint" || n.tag() == "tbool" || n.tag() == "treal" ||
+                n.tag() == "tref" || n.tag() == "tarr")
                 throw "strip_types: bare type node outside annotation";
 
             // Leaf nodes: copy the full node (preserves tag, payload, name)
@@ -56,8 +55,7 @@ consteval Expression<Cap> strip_types(Expression<Cap> e) {
                 auto child = rec(n.child(i));
                 ids[i] = child.id + result.ast.merge(child.ast);
             }
-            result.id =
-                result.ast.add_tagged_node(tag, ids, n.child_count());
+            result.id = result.ast.add_tagged_node(tag, ids, n.child_count());
             return result;
         });
 }
@@ -72,7 +70,11 @@ consteval Expression<Cap> strip_types(Expression<Cap> e) {
 // variable, unsupported tag).
 
 template <auto expr, auto... Macros>
-    requires(sizeof...(Macros) == 0 || (... && requires { Macros.tag; Macros.fn; }))
+    requires(sizeof...(Macros) == 0 || (... &&
+                                        requires {
+                                            Macros.tag;
+                                            Macros.fn;
+                                        }))
 consteval auto typed_compile() {
     constexpr auto result = type_check(expr);
     static_assert(result.valid, "typed_compile: type check failed");
@@ -81,7 +83,10 @@ consteval auto typed_compile() {
 }
 
 template <auto expr, auto env, auto... Macros>
-    requires requires { env.count; env.lookup(""); }
+    requires requires {
+        env.count;
+        env.lookup("");
+    }
 consteval auto typed_compile() {
     constexpr auto result = type_check(expr, env);
     static_assert(result.valid, "typed_compile: type check failed");
@@ -101,7 +106,10 @@ template <auto expr> consteval auto typed_full_compile() {
 }
 
 template <auto expr, auto env>
-    requires requires { env.count; env.lookup(""); }
+    requires requires {
+        env.count;
+        env.lookup("");
+    }
 consteval auto typed_full_compile() {
     using namespace refmacro;
     return typed_compile<expr, env, MAdd, MSub, MMul, MDiv, MNeg, MCond, MLand,

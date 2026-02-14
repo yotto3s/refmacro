@@ -38,8 +38,8 @@ template <std::size_t Cap = 64> struct AST {
         return add_tagged_node(tag_name, children.begin(), children.size());
     }
 
-    consteval int add_tagged_node(const char* tag_name,
-                                  const int* children, std::size_t n_children) {
+    consteval int add_tagged_node(const char* tag_name, const int* children,
+                                  std::size_t n_children) {
         if (n_children > 8)
             throw "ASTNode supports at most 8 children";
         ASTNode n{};
