@@ -42,6 +42,14 @@ TEST(Integration, ArithmeticExpression) {
     EXPECT_EQ(f(), 11);
 }
 
+TEST(Integration, DivisionExpression) {
+    // ann(lit(10) / lit(2), TInt) → 10 / 2 = 5
+    static constexpr auto e = ann(E::lit(10) / E::lit(2), TInt);
+    constexpr auto f = typed_full_compile<e>();
+    static_assert(f() == 5);
+    EXPECT_EQ(f(), 5);
+}
+
 TEST(Integration, ArithmeticWithVariables) {
     // ann(x + y * lit(2), TInt) with env {x:Int, y:Int}
     static constexpr auto e = ann(E::var("x") + E::var("y") * E::lit(2), TInt);
@@ -140,6 +148,7 @@ TEST(Integration, ComparisonCompile) {
     static_assert(f(-1) == false);
     EXPECT_TRUE(f(5));
     EXPECT_FALSE(f(0));
+    EXPECT_FALSE(f(-1));
 }
 
 // --- Logical pipeline ---
@@ -154,6 +163,29 @@ TEST(Integration, LogicalCompile) {
     static_assert(f(true, false) == false);
     EXPECT_TRUE(f(true, true));
     EXPECT_FALSE(f(false, true));
+}
+
+TEST(Integration, LogicalOrCompile) {
+    // ann(p || q, TBool) → logical OR at runtime
+    static constexpr auto e = ann(E::var("p") || E::var("q"), TBool);
+    static constexpr auto env =
+        TypeEnv<128>{}.bind("p", TBool).bind("q", TBool);
+    constexpr auto f = reftype::typed_full_compile<e, env>();
+    static_assert(f(false, true) == true);
+    static_assert(f(false, false) == false);
+    EXPECT_TRUE(f(true, false));
+    EXPECT_FALSE(f(false, false));
+}
+
+TEST(Integration, LogicalNotCompile) {
+    // ann(!p, TBool) → logical NOT at runtime
+    static constexpr auto e = ann(!E::var("p"), TBool);
+    static constexpr auto env = TypeEnv<128>{}.bind("p", TBool);
+    constexpr auto f = reftype::typed_full_compile<e, env>();
+    static_assert(f(true) == false);
+    static_assert(f(false) == true);
+    EXPECT_FALSE(f(true));
+    EXPECT_TRUE(f(false));
 }
 
 // --- Negation pipeline ---
