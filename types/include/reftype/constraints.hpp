@@ -17,9 +17,14 @@ template <std::size_t Cap = 128> struct Constraint {
 };
 
 // Immutable set of constraints. add() and merge() return new sets.
-template <std::size_t Cap = 128, int MaxConstraints = 32> struct ConstraintSet {
+// Available infrastructure for deferred constraint solving.
+// Currently, the type checker calls is_subtype() directly at annotation points.
+// This type is tested and ready for future extensions (e.g., global constraint
+// collection).
+template <std::size_t Cap = 128, std::size_t MaxConstraints = 32>
+struct ConstraintSet {
     Constraint<Cap> constraints[MaxConstraints]{};
-    int count{0};
+    std::size_t count{0};
 
     consteval ConstraintSet add(Expression<Cap> formula,
                                 const char* origin) const {
@@ -34,7 +39,7 @@ template <std::size_t Cap = 128, int MaxConstraints = 32> struct ConstraintSet {
 
     consteval ConstraintSet merge(const ConstraintSet& other) const {
         ConstraintSet result = *this;
-        for (int i = 0; i < other.count; ++i) {
+        for (std::size_t i = 0; i < other.count; ++i) {
             if (result.count >= MaxConstraints)
                 throw "ConstraintSet capacity exceeded on merge";
             result.constraints[result.count++] = other.constraints[i];
