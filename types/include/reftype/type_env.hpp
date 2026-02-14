@@ -13,10 +13,10 @@ using refmacro::str_len;
 
 // Compile-time map from variable names to their types (as Expression ASTs).
 // Immutable: bind() returns a new TypeEnv. Shadowing via reverse-order lookup.
-template <std::size_t Cap = 128, int MaxBindings = 16> struct TypeEnv {
+template <std::size_t Cap = 128, std::size_t MaxBindings = 16> struct TypeEnv {
     char names[MaxBindings][16]{};
     Expression<Cap> types[MaxBindings]{};
-    int count{0};
+    std::size_t count{0};
 
     // Append binding (supports shadowing — later bindings win)
     consteval TypeEnv bind(const char* name, Expression<Cap> type) const {
@@ -33,15 +33,15 @@ template <std::size_t Cap = 128, int MaxBindings = 16> struct TypeEnv {
 
     // Reverse-order search for correct shadowing
     consteval Expression<Cap> lookup(const char* name) const {
-        for (int i = count - 1; i >= 0; --i)
-            if (str_eq(names[i], name))
-                return types[i];
+        for (std::size_t i = count; i > 0; --i)
+            if (str_eq(names[i - 1], name))
+                return types[i - 1];
         throw "type error: unbound variable";
     }
 
     consteval bool has(const char* name) const {
-        for (int i = count - 1; i >= 0; --i)
-            if (str_eq(names[i], name))
+        for (std::size_t i = count; i > 0; --i)
+            if (str_eq(names[i - 1], name))
                 return true;
         return false;
     }

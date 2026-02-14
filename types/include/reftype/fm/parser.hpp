@@ -234,6 +234,10 @@ consteval LinearExpr<MaxVars> parse_arith(refmacro::NodeView<Cap> node,
         throw "non-linear: variable * variable";
     }
 
+    // Note: division may produce non-exact coefficients (e.g., 1.0/3.0).
+    // The FM solver's integer rounding guards against this for integer
+    // variables, but callers using real-valued variables should be aware of FP
+    // precision limits.
     if (t == "div") {
         auto a = parse_arith<Cap>(node.child(0), vars);
         auto b = parse_arith<Cap>(node.child(1), vars);

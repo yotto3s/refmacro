@@ -131,6 +131,8 @@ consteval bool base_compatible(const Expression<Cap>& sub,
 template <std::size_t Cap>
 consteval Expression<Cap> wider_base(const Expression<Cap>& t1,
                                      const Expression<Cap>& t2) {
+    if (!is_base(t1) || !is_base(t2))
+        throw "wider_base: arguments must be base types";
     auto tag1 = type_tag(t1);
     auto tag2 = type_tag(t2);
 
