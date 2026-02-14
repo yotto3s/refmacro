@@ -14,6 +14,7 @@
 #include <reftype/strip.hpp>
 #include <reftype/subtype.hpp>
 #include <reftype/type_env.hpp>
+#include <reftype/typerule.hpp>
 #include <reftype/types.hpp>
 
 #endif // REFTYPE_REFINEMENT_HPP
