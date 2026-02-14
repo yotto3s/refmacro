@@ -17,8 +17,9 @@ using refmacro::str_eq;
 // --- Structured error reporting ---
 
 template <std::size_t N = 512>
-consteval void report_error(const char* category, const char* expected,
-                            const char* actual, const char* context) {
+[[noreturn]] consteval void
+report_error(const char* category, const char* expected, const char* actual,
+             const char* context) {
     refmacro::FixedString<N> msg{};
     msg.append("type error: ");
     msg.append(category);
@@ -32,7 +33,8 @@ consteval void report_error(const char* category, const char* expected,
 }
 
 template <std::size_t N = 512>
-consteval void report_error(const char* category, const char* context) {
+[[noreturn]] consteval void report_error(const char* category,
+                                         const char* context) {
     refmacro::FixedString<N> msg{};
     msg.append("type error: ");
     msg.append(category);
