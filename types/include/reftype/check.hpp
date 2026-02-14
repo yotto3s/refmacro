@@ -52,8 +52,11 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
     // --- Literals: singleton refinement type ---
     if (str_eq(node.tag, "lit")) {
         double val = node.payload;
-        auto int_val = static_cast<long long>(val);
-        bool is_int = (val == static_cast<double>(int_val));
+        constexpr double ll_max = static_cast<double>(
+            (1LL << 52));   // 2^52: largest exact integer in double
+        bool in_range = (val >= -ll_max && val <= ll_max);
+        auto int_val = in_range ? static_cast<long long>(val) : 0LL;
+        bool is_int = in_range && (val == static_cast<double>(int_val));
         auto base = is_int ? tint<Cap>() : treal<Cap>();
         auto pred = Expression<Cap>::var("#v") == Expression<Cap>::lit(val);
         return {tref(base, pred)};
@@ -107,6 +110,8 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
 
         if (lk != BaseKind::Int && lk != BaseKind::Real)
             throw "type error: non-numeric operand in arithmetic";
+        if (rk != BaseKind::Int && rk != BaseKind::Real)
+            throw "type error: non-numeric operand in arithmetic";
         if (lk != rk)
             throw "type error: arithmetic operands must have same type";
 
@@ -135,6 +140,8 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
         auto rk = get_base_kind(right.type);
 
         if (lk != BaseKind::Int && lk != BaseKind::Real)
+            throw "type error: non-numeric operand in comparison";
+        if (rk != BaseKind::Int && rk != BaseKind::Real)
             throw "type error: non-numeric operand in comparison";
         if (lk != rk)
             throw "type error: comparison operands must have same type";

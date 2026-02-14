@@ -157,6 +157,33 @@ TEST(TypeChecker, NegInt) {
     static_assert(types_equal(r.type, TInt));
 }
 
+TEST(TypeChecker, NegReal) {
+    constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", TReal);
+    constexpr auto neg = refmacro::make_node<128>("neg", E::var("x"));
+    constexpr auto r = type_check(neg, env);
+    static_assert(r.valid);
+    static_assert(types_equal(r.type, TReal));
+}
+
+// --- Arithmetic with mixed base/refined operands of same kind ---
+
+TEST(TypeChecker, AddBaseAndRefinedInt) {
+    constexpr auto nat = tref(TInt, E::var("#v") >= E::lit(0));
+    constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", TInt).bind("y", nat);
+    constexpr auto r = type_check(E::var("x") + E::var("y"), env);
+    static_assert(r.valid);
+    static_assert(types_equal(r.type, TInt));
+}
+
+TEST(TypeChecker, MulBaseAndRefinedReal) {
+    constexpr auto pos_real = tref(TReal, E::var("#v") > E::lit(0.0));
+    constexpr TypeEnv<128> env =
+        TypeEnv<128>{}.bind("x", TReal).bind("y", pos_real);
+    constexpr auto r = type_check(E::var("x") * E::var("y"), env);
+    static_assert(r.valid);
+    static_assert(types_equal(r.type, TReal));
+}
+
 // --- Comparisons ---
 
 TEST(TypeChecker, GtIntInt) {
