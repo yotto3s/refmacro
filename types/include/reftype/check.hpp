@@ -14,8 +14,7 @@ using refmacro::str_eq;
 
 // --- TypeResult ---
 
-template <std::size_t Cap = 128>
-struct TypeResult {
+template <std::size_t Cap = 128> struct TypeResult {
     Expression<Cap> type{};
     bool valid{true};
 };
@@ -25,9 +24,12 @@ struct TypeResult {
 enum class BaseKind { None, Bool, Int, Real };
 
 consteval BaseKind tag_to_kind(const char* tag) {
-    if (str_eq(tag, "tbool")) return BaseKind::Bool;
-    if (str_eq(tag, "tint")) return BaseKind::Int;
-    if (str_eq(tag, "treal")) return BaseKind::Real;
+    if (str_eq(tag, "tbool"))
+        return BaseKind::Bool;
+    if (str_eq(tag, "tint"))
+        return BaseKind::Int;
+    if (str_eq(tag, "treal"))
+        return BaseKind::Real;
     return BaseKind::None;
 }
 
@@ -67,8 +69,8 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
         Expression<Cap> declared_type{expr.ast, node.children[1]};
 
         // Annotated lambda: check body against arrow output type
-        if (str_eq(expr.ast.nodes[node.children[0]].tag, "lambda")
-            && is_arrow(declared_type)) {
+        if (str_eq(expr.ast.nodes[node.children[0]].tag, "lambda") &&
+            is_arrow(declared_type)) {
             const auto& lambda_node = expr.ast.nodes[node.children[0]];
             auto param_name = expr.ast.nodes[lambda_node.children[0]].name;
             Expression<Cap> body{expr.ast, lambda_node.children[1]};
@@ -79,24 +81,24 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
             auto extended_env = env.bind(param_name, input_type);
             auto body_result = synth(body, extended_env);
 
-            bool valid = body_result.valid
-                      && is_subtype(body_result.type, output_type);
+            bool valid =
+                body_result.valid && is_subtype(body_result.type, output_type);
             return {declared_type, valid};
         }
 
         auto child_result = synth(child_expr, env);
-        bool valid = child_result.valid
-                  && is_subtype(child_result.type, declared_type);
+        bool valid =
+            child_result.valid && is_subtype(child_result.type, declared_type);
         return {declared_type, valid};
     }
 
     // --- Binary arithmetic: add, sub, mul, div ---
     // Note: Bool is excluded from numeric operations despite Bool <: Int in the
-    // subtype lattice. Bool is its own domain for logical operations (land, lor,
-    // lnot). Implicit promotion from Bool to Int is not supported in arithmetic
-    // or comparisons — use an explicit annotation if needed.
-    if (str_eq(node.tag, "add") || str_eq(node.tag, "sub")
-        || str_eq(node.tag, "mul") || str_eq(node.tag, "div")) {
+    // subtype lattice. Bool is its own domain for logical operations (land,
+    // lor, lnot). Implicit promotion from Bool to Int is not supported in
+    // arithmetic or comparisons — use an explicit annotation if needed.
+    if (str_eq(node.tag, "add") || str_eq(node.tag, "sub") ||
+        str_eq(node.tag, "mul") || str_eq(node.tag, "div")) {
         auto left = synth(Expression<Cap>{expr.ast, node.children[0]}, env);
         auto right = synth(Expression<Cap>{expr.ast, node.children[1]}, env);
 
@@ -123,9 +125,9 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
     }
 
     // --- Comparisons: eq, lt, gt, le, ge ---
-    if (str_eq(node.tag, "eq") || str_eq(node.tag, "lt")
-        || str_eq(node.tag, "gt") || str_eq(node.tag, "le")
-        || str_eq(node.tag, "ge")) {
+    if (str_eq(node.tag, "eq") || str_eq(node.tag, "lt") ||
+        str_eq(node.tag, "gt") || str_eq(node.tag, "le") ||
+        str_eq(node.tag, "ge")) {
         auto left = synth(Expression<Cap>{expr.ast, node.children[0]}, env);
         auto right = synth(Expression<Cap>{expr.ast, node.children[1]}, env);
 
@@ -200,8 +202,8 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
         auto arg_result = synth(arg, env);
         auto input_type = get_arrow_input(fn_result.type);
 
-        bool valid = fn_result.valid && arg_result.valid
-                  && is_subtype(arg_result.type, input_type);
+        bool valid = fn_result.valid && arg_result.valid &&
+                     is_subtype(arg_result.type, input_type);
         return {get_arrow_output(fn_result.type), valid};
     }
 

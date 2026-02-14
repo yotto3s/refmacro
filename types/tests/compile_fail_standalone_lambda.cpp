@@ -7,7 +7,7 @@
 
 using E = refmacro::Expression<128>;
 
-constexpr auto result = reftype::type_check(
-    refmacro::lambda<128>("x", E::var("x") + E::lit(1)));
+constexpr auto result =
+    reftype::type_check(refmacro::lambda<128>("x", E::var("x") + E::lit(1)));
 
 int main() { (void)result; }

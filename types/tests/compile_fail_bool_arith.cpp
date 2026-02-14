@@ -6,10 +6,9 @@
 
 using E = refmacro::Expression<128>;
 
-constexpr auto result = reftype::type_check(
-    E::var("x") + E::var("y"),
-    reftype::TypeEnv<128>{}
-        .bind("x", reftype::TBool)
-        .bind("y", reftype::TBool));
+constexpr auto result = reftype::type_check(E::var("x") + E::var("y"),
+                                            reftype::TypeEnv<128>{}
+                                                .bind("x", reftype::TBool)
+                                                .bind("y", reftype::TBool));
 
 int main() { (void)result; }

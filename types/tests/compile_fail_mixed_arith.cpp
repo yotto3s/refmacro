@@ -7,8 +7,6 @@ using E = refmacro::Expression<128>;
 
 constexpr auto result = reftype::type_check(
     E::var("x") + E::var("y"),
-    reftype::TypeEnv<128>{}
-        .bind("x", reftype::TInt)
-        .bind("y", reftype::TReal));
+    reftype::TypeEnv<128>{}.bind("x", reftype::TInt).bind("y", reftype::TReal));
 
 int main() { (void)result; }

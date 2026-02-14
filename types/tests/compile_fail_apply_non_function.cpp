@@ -6,8 +6,8 @@
 
 using E = refmacro::Expression<128>;
 
-constexpr auto result = reftype::type_check(
-    refmacro::apply<128>(E::var("x"), E::lit(5)),
-    reftype::TypeEnv<128>{}.bind("x", reftype::TInt));
+constexpr auto result =
+    reftype::type_check(refmacro::apply<128>(E::var("x"), E::lit(5)),
+                        reftype::TypeEnv<128>{}.bind("x", reftype::TInt));
 
 int main() { (void)result; }

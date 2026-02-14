@@ -103,36 +103,29 @@ TEST(TypeChecker, AnnBaseTypeMismatch) {
 // --- Arithmetic ---
 
 TEST(TypeChecker, AddIntInt) {
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("x", TInt)
-        .bind("y", TInt);
+    constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", TInt).bind("y", TInt);
     constexpr auto r = type_check(E::var("x") + E::var("y"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TInt));
 }
 
 TEST(TypeChecker, AddRealReal) {
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("x", TReal)
-        .bind("y", TReal);
+    constexpr TypeEnv<128> env =
+        TypeEnv<128>{}.bind("x", TReal).bind("y", TReal);
     constexpr auto r = type_check(E::var("x") + E::var("y"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TReal));
 }
 
 TEST(TypeChecker, SubIntInt) {
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("x", TInt)
-        .bind("y", TInt);
+    constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", TInt).bind("y", TInt);
     constexpr auto r = type_check(E::var("x") - E::var("y"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TInt));
 }
 
 TEST(TypeChecker, MulIntInt) {
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("x", TInt)
-        .bind("y", TInt);
+    constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", TInt).bind("y", TInt);
     constexpr auto r = type_check(E::var("x") * E::var("y"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TInt));
@@ -141,9 +134,7 @@ TEST(TypeChecker, MulIntInt) {
 TEST(TypeChecker, ArithWithRefinedOperands) {
     // Refined operands: base type extracted for result
     constexpr auto nat = tref(TInt, E::var("#v") >= E::lit(0));
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("x", nat)
-        .bind("y", nat);
+    constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", nat).bind("y", nat);
     constexpr auto r = type_check(E::var("x") + E::var("y"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TInt));
@@ -169,18 +160,14 @@ TEST(TypeChecker, NegInt) {
 // --- Comparisons ---
 
 TEST(TypeChecker, GtIntInt) {
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("x", TInt)
-        .bind("y", TInt);
+    constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", TInt).bind("y", TInt);
     constexpr auto r = type_check(E::var("x") > E::var("y"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TBool));
 }
 
 TEST(TypeChecker, EqIntInt) {
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("x", TInt)
-        .bind("y", TInt);
+    constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", TInt).bind("y", TInt);
     constexpr auto r = type_check(E::var("x") == E::var("y"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TBool));
@@ -195,9 +182,8 @@ TEST(TypeChecker, ComparisonLiterals) {
 // --- Logical ---
 
 TEST(TypeChecker, LandBoolBool) {
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("p", TBool)
-        .bind("q", TBool);
+    constexpr TypeEnv<128> env =
+        TypeEnv<128>{}.bind("p", TBool).bind("q", TBool);
     constexpr auto r = type_check(E::var("p") && E::var("q"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TBool));
@@ -224,8 +210,8 @@ TEST(TypeChecker, ComparisonInLogical) {
 TEST(TypeChecker, CondSameType) {
     // cond(true_expr, lit(1), lit(2)) — both Int
     constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("p", TBool);
-    constexpr auto e = refmacro::make_node<128>(
-        "cond", E::var("p"), E::lit(1), E::lit(2));
+    constexpr auto e =
+        refmacro::make_node<128>("cond", E::var("p"), E::lit(1), E::lit(2));
     constexpr auto r = type_check(e, env);
     static_assert(r.valid);
     // join of two Int singletons
@@ -235,12 +221,10 @@ TEST(TypeChecker, CondSameType) {
 TEST(TypeChecker, CondJoinTypes) {
     // cond(p, x:Nat, y:Int) where Nat={#v>=0}, result = join(Nat, Int) = Int
     constexpr auto nat = tref(TInt, E::var("#v") >= E::lit(0));
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("p", TBool)
-        .bind("x", nat)
-        .bind("y", TInt);
-    constexpr auto e = refmacro::make_node<128>(
-        "cond", E::var("p"), E::var("x"), E::var("y"));
+    constexpr TypeEnv<128> env =
+        TypeEnv<128>{}.bind("p", TBool).bind("x", nat).bind("y", TInt);
+    constexpr auto e =
+        refmacro::make_node<128>("cond", E::var("p"), E::var("x"), E::var("y"));
     constexpr auto r = type_check(e, env);
     static_assert(r.valid);
     // join(Nat, Int) = Int (refined + unrefined = drop refinement)
@@ -252,12 +236,10 @@ TEST(TypeChecker, CondOverArrowTypes) {
     // Should succeed: join of alpha-equivalent arrows
     constexpr auto arrow_f = tarr("x", TInt, TInt);
     constexpr auto arrow_g = tarr("y", TInt, TInt);
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("p", TBool)
-        .bind("f", arrow_f)
-        .bind("g", arrow_g);
-    constexpr auto e = refmacro::make_node<128>(
-        "cond", E::var("p"), E::var("f"), E::var("g"));
+    constexpr TypeEnv<128> env =
+        TypeEnv<128>{}.bind("p", TBool).bind("f", arrow_f).bind("g", arrow_g);
+    constexpr auto e =
+        refmacro::make_node<128>("cond", E::var("p"), E::var("f"), E::var("g"));
     constexpr auto r = type_check(e, env);
     static_assert(r.valid);
     static_assert(reftype::is_arrow(r.type));
@@ -277,8 +259,8 @@ TEST(TypeChecker, LetBinding) {
 
 TEST(TypeChecker, LetBindingArithmetic) {
     // let x = 5 in x + 1 → type = Int
-    constexpr auto e = refmacro::let_<128>(
-        "x", E::lit(5), E::var("x") + E::lit(1));
+    constexpr auto e =
+        refmacro::let_<128>("x", E::lit(5), E::var("x") + E::lit(1));
     constexpr auto r = type_check(e);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TInt));
@@ -287,8 +269,7 @@ TEST(TypeChecker, LetBindingArithmetic) {
 TEST(TypeChecker, LetBindingShadowing) {
     // let x = 5 in let x = 3.14 in x → type = {#v:Real|#v==3.14}
     constexpr auto e = refmacro::let_<128>(
-        "x", E::lit(5),
-        refmacro::let_<128>("x", E::lit(3.14), E::var("x")));
+        "x", E::lit(5), refmacro::let_<128>("x", E::lit(3.14), E::var("x")));
     constexpr auto r = type_check(e);
     static_assert(r.valid);
     static_assert(get_base_kind(r.type) == BaseKind::Real);
@@ -351,9 +332,8 @@ TEST(TypeChecker, BaseKindClassification) {
 // --- Logical or ---
 
 TEST(TypeChecker, LorBoolBool) {
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("p", TBool)
-        .bind("q", TBool);
+    constexpr TypeEnv<128> env =
+        TypeEnv<128>{}.bind("p", TBool).bind("q", TBool);
     constexpr auto r = type_check(E::var("p") || E::var("q"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TBool));
@@ -362,18 +342,15 @@ TEST(TypeChecker, LorBoolBool) {
 // --- Division ---
 
 TEST(TypeChecker, DivIntInt) {
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("x", TInt)
-        .bind("y", TInt);
+    constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", TInt).bind("y", TInt);
     constexpr auto r = type_check(E::var("x") / E::var("y"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TInt));
 }
 
 TEST(TypeChecker, DivRealReal) {
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("x", TReal)
-        .bind("y", TReal);
+    constexpr TypeEnv<128> env =
+        TypeEnv<128>{}.bind("x", TReal).bind("y", TReal);
     constexpr auto r = type_check(E::var("x") / E::var("y"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TReal));
@@ -382,18 +359,14 @@ TEST(TypeChecker, DivRealReal) {
 // --- le/ge comparisons ---
 
 TEST(TypeChecker, LeIntInt) {
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("x", TInt)
-        .bind("y", TInt);
+    constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", TInt).bind("y", TInt);
     constexpr auto r = type_check(E::var("x") <= E::var("y"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TBool));
 }
 
 TEST(TypeChecker, GeIntInt) {
-    constexpr TypeEnv<128> env = TypeEnv<128>{}
-        .bind("x", TInt)
-        .bind("y", TInt);
+    constexpr TypeEnv<128> env = TypeEnv<128>{}.bind("x", TInt).bind("y", TInt);
     constexpr auto r = type_check(E::var("x") >= E::var("y"), env);
     static_assert(r.valid);
     static_assert(types_equal(r.type, TBool));

@@ -20,19 +20,16 @@ consteval const char* type_tag(const Expression<Cap>& e) {
 
 // --- AST node classification ---
 
-template <std::size_t Cap>
-consteval bool is_base(const Expression<Cap>& e) {
+template <std::size_t Cap> consteval bool is_base(const Expression<Cap>& e) {
     const auto* tag = type_tag(e);
     return str_eq(tag, "tint") || str_eq(tag, "tbool") || str_eq(tag, "treal");
 }
 
-template <std::size_t Cap>
-consteval bool is_refined(const Expression<Cap>& e) {
+template <std::size_t Cap> consteval bool is_refined(const Expression<Cap>& e) {
     return str_eq(type_tag(e), "tref");
 }
 
-template <std::size_t Cap>
-consteval bool is_arrow(const Expression<Cap>& e) {
+template <std::size_t Cap> consteval bool is_arrow(const Expression<Cap>& e) {
     return str_eq(type_tag(e), "tarr");
 }
 
@@ -74,10 +71,14 @@ consteval bool nodes_equal(const refmacro::AST<CapA>& ast_a, int id_a,
     const auto& a = ast_a.nodes[id_a];
     const auto& b = ast_b.nodes[id_b];
 
-    if (!str_eq(a.tag, b.tag)) return false;
-    if (a.payload != b.payload) return false;
-    if (!str_eq(a.name, b.name)) return false;
-    if (a.child_count != b.child_count) return false;
+    if (!str_eq(a.tag, b.tag))
+        return false;
+    if (a.payload != b.payload)
+        return false;
+    if (!str_eq(a.name, b.name))
+        return false;
+    if (a.child_count != b.child_count)
+        return false;
 
     for (int i = 0; i < a.child_count; ++i)
         if (!nodes_equal(ast_a, a.children[i], ast_b, b.children[i]))
@@ -96,9 +97,12 @@ consteval bool types_equal(const Expression<Cap>& a, const Expression<Cap>& b) {
 
 // Bool <: Int <: Real (transitive)
 consteval bool base_widens(const char* sub, const char* super) {
-    if (str_eq(sub, "tbool") && str_eq(super, "tint")) return true;
-    if (str_eq(sub, "tint") && str_eq(super, "treal")) return true;
-    if (str_eq(sub, "tbool") && str_eq(super, "treal")) return true;
+    if (str_eq(sub, "tbool") && str_eq(super, "tint"))
+        return true;
+    if (str_eq(sub, "tint") && str_eq(super, "treal"))
+        return true;
+    if (str_eq(sub, "tbool") && str_eq(super, "treal"))
+        return true;
     return false;
 }
 
@@ -128,9 +132,12 @@ consteval Expression<Cap> wider_base(const Expression<Cap>& t1,
     auto tag1 = type_tag(t1);
     auto tag2 = type_tag(t2);
 
-    if (str_eq(tag1, tag2)) return t1;
-    if (str_eq(tag1, "treal") || str_eq(tag2, "treal")) return treal<Cap>();
-    if (str_eq(tag1, "tint") || str_eq(tag2, "tint")) return tint<Cap>();
+    if (str_eq(tag1, tag2))
+        return t1;
+    if (str_eq(tag1, "treal") || str_eq(tag2, "treal"))
+        return treal<Cap>();
+    if (str_eq(tag1, "tint") || str_eq(tag2, "tint"))
+        return tint<Cap>();
     throw "incompatible base types for widening";
 }
 
@@ -140,7 +147,8 @@ template <std::size_t Cap>
 consteval bool is_subtype(const Expression<Cap>& sub,
                           const Expression<Cap>& super) {
     // Reflexivity
-    if (types_equal(sub, super)) return true;
+    if (types_equal(sub, super))
+        return true;
 
     // Base <: base — widening
     if (is_base(sub) && is_base(super))
@@ -177,8 +185,8 @@ consteval bool is_subtype(const Expression<Cap>& sub,
 
     // Arrow <: arrow — contra/co variance
     if (is_arrow(sub) && is_arrow(super))
-        return is_subtype(get_arrow_input(super), get_arrow_input(sub))
-            && is_subtype(get_arrow_output(sub), get_arrow_output(super));
+        return is_subtype(get_arrow_input(super), get_arrow_input(sub)) &&
+               is_subtype(get_arrow_output(sub), get_arrow_output(super));
 
     return false;
 }
@@ -188,7 +196,8 @@ consteval bool is_subtype(const Expression<Cap>& sub,
 template <std::size_t Cap>
 consteval Expression<Cap> join(const Expression<Cap>& t1,
                                const Expression<Cap>& t2) {
-    if (types_equal(t1, t2)) return t1;
+    if (types_equal(t1, t2))
+        return t1;
 
     // Base + base — wider
     if (is_base(t1) && is_base(t2))
@@ -209,8 +218,8 @@ consteval Expression<Cap> join(const Expression<Cap>& t1,
 
     // Arrow + arrow — alpha-equivalent (same input/output, ignore binder name)
     if (is_arrow(t1) && is_arrow(t2)) {
-        if (types_equal(get_arrow_input(t1), get_arrow_input(t2))
-            && types_equal(get_arrow_output(t1), get_arrow_output(t2)))
+        if (types_equal(get_arrow_input(t1), get_arrow_input(t2)) &&
+            types_equal(get_arrow_output(t1), get_arrow_output(t2)))
             return t1;
         throw "type error: incompatible arrow types for join";
     }

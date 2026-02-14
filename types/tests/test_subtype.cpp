@@ -233,9 +233,10 @@ TEST(Subtype, ArrowCovariantFails) {
 
 TEST(Subtype, ArrowContravariant) {
     // (x : Nat) -> Int <: (x : Int) -> Int
-    // Wait — contravariant means (x : wider_input) -> ... <: (x : narrower_input) -> ...
-    // Actually: (A2 → B1) <: (A1 → B2) iff A1 <: A2 and B1 <: B2
-    // So: (x : Int) -> Int <: (x : Nat) -> Int iff Nat <: Int (yes) and Int <: Int (yes)
+    // Wait — contravariant means (x : wider_input) -> ... <: (x :
+    // narrower_input) -> ... Actually: (A2 → B1) <: (A1 → B2) iff A1 <: A2 and
+    // B1 <: B2 So: (x : Int) -> Int <: (x : Nat) -> Int iff Nat <: Int (yes)
+    // and Int <: Int (yes)
     constexpr auto nat = tref(TInt, E::var("#v") >= E::lit(0));
     constexpr auto sub = tarr("x", TInt, TInt);
     constexpr auto super = tarr("x", nat, TInt);
@@ -348,7 +349,8 @@ TEST(Join, ArrowSameBinder) {
 }
 
 TEST(Join, ArrowAlphaEquivalent) {
-    // join((x:Int)->Bool, (y:Int)->Bool) should succeed despite different binder names
+    // join((x:Int)->Bool, (y:Int)->Bool) should succeed despite different
+    // binder names
     constexpr auto a = tarr("x", TInt, TBool);
     constexpr auto b = tarr("y", TInt, TBool);
     constexpr auto result = join(a, b);
