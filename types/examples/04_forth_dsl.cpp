@@ -7,6 +7,7 @@
 // Build: cmake --build build --target 04_forth_dsl
 // Run:   ./build/types/examples/04_forth_dsl
 
+#include <array>
 #include <cstdio>
 #include <refmacro/control.hpp>
 #include <refmacro/math.hpp>
@@ -234,38 +235,52 @@ inline constexpr auto TRFNew = def_typerule(
         return TypeResult<Cap>{depth<Cap>(0), true};
     });
 
-// Helper macro for unary stack ops that shift depth by delta and require
-// min_depth
-#define FORTH_UNARY_RULE(NAME, TAG, DELTA, MIN_DEPTH)                          \
-    inline constexpr auto NAME = def_typerule(                                 \
-        TAG, [](const auto& expr, const auto& env, auto synth_rec) {           \
-            constexpr auto Cap =                                               \
-                sizeof(expr.ast.nodes) / sizeof(expr.ast.nodes[0]);            \
-            const auto& node = expr.ast.nodes[expr.id];                        \
-            auto [tr, b] = synth_and_bounds<Cap>(                              \
-                expr, refmacro::str_eq(node.tag, "f_push") ? 1 : 0, env,       \
-                synth_rec);                                                    \
-            if (!b.ok)                                                         \
-                report_error(TAG ": cannot determine stack depth", TAG);       \
-            if constexpr ((MIN_DEPTH) > 0) {                                   \
-                if (!is_subtype(tr.type, min_depth<Cap>(MIN_DEPTH)))           \
-                    report_error(TAG ": stack underflow",                      \
-                                 "depth >= " #MIN_DEPTH, "insufficient depth", \
-                                 TAG);                                         \
-            }                                                                  \
-            return TypeResult<Cap>{                                            \
-                depth_range<Cap>(b.lo + (DELTA), b.hi + (DELTA)), tr.valid};   \
-        })
+// Config for unary stack ops (structural type, NTTP-compatible)
+struct ForthUnaryConfig {
+    char tag[16]{};
+    int delta{};        // depth change (+1, -1, 0)
+    int min_depth{};    // minimum stack depth required
+    int stack_child{0}; // which child is the stack expr (1 for f_push)
+};
 
-FORTH_UNARY_RULE(TRFPush, "f_push", +1, 0);
-FORTH_UNARY_RULE(TRFDup, "f_dup", +1, 1);
-FORTH_UNARY_RULE(TRFDrop, "f_drop", -1, 1);
-FORTH_UNARY_RULE(TRFSwap, "f_swap", 0, 2);
-FORTH_UNARY_RULE(TRFAdd, "f_add", -1, 2);
-FORTH_UNARY_RULE(TRFSub, "f_sub", -1, 2);
-FORTH_UNARY_RULE(TRFMul, "f_mul", -1, 2);
+inline constexpr std::array forth_unary_configs = {
+    ForthUnaryConfig{"f_push", +1, 0, 1}, ForthUnaryConfig{"f_dup", +1, 1, 0},
+    ForthUnaryConfig{"f_drop", -1, 1, 0}, ForthUnaryConfig{"f_swap", 0, 2, 0},
+    ForthUnaryConfig{"f_add", -1, 2, 0},  ForthUnaryConfig{"f_sub", -1, 2, 0},
+    ForthUnaryConfig{"f_mul", -1, 2, 0},
+};
 
-#undef FORTH_UNARY_RULE
+template <ForthUnaryConfig Cfg>
+inline constexpr auto forth_unary_rule = def_typerule(
+    Cfg.tag, [](const auto& expr, const auto& env, auto synth_rec) {
+        constexpr auto Cap = sizeof(expr.ast.nodes) / sizeof(expr.ast.nodes[0]);
+        auto [tr, b] =
+            synth_and_bounds<Cap>(expr, Cfg.stack_child, env, synth_rec);
+        if (!b.ok)
+            report_error("cannot determine stack depth", Cfg.tag);
+        if constexpr (Cfg.min_depth > 0) {
+            constexpr auto depth_msg = [] {
+                refmacro::FixedString<32> s{};
+                s.append("depth >= ");
+                s.append_int(Cfg.min_depth);
+                return s;
+            }();
+            if (!is_subtype(tr.type, min_depth<Cap>(Cfg.min_depth)))
+                report_error("stack underflow", depth_msg.data,
+                             "insufficient depth", Cfg.tag);
+        }
+        return TypeResult<Cap>{
+            depth_range<Cap>(b.lo + Cfg.delta, b.hi + Cfg.delta), tr.valid};
+    });
+
+// Unary stack op type rules — generated from config table
+inline constexpr auto& TRFPush = forth_unary_rule<forth_unary_configs[0]>;
+inline constexpr auto& TRFDup = forth_unary_rule<forth_unary_configs[1]>;
+inline constexpr auto& TRFDrop = forth_unary_rule<forth_unary_configs[2]>;
+inline constexpr auto& TRFSwap = forth_unary_rule<forth_unary_configs[3]>;
+inline constexpr auto& TRFAdd = forth_unary_rule<forth_unary_configs[4]>;
+inline constexpr auto& TRFSub = forth_unary_rule<forth_unary_configs[5]>;
+inline constexpr auto& TRFMul = forth_unary_rule<forth_unary_configs[6]>;
 
 // f_if: pops condition, runs one of two lambda branches, returns range
 inline constexpr auto TRFIf =
