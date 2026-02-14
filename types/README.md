@@ -128,7 +128,7 @@ Refinement implication (`P => Q`) is decided by a **Fourier-Motzkin elimination*
 
 ## Architecture
 
-```
+```text
 types/include/reftype/
 ├── types.hpp            Type constructors (TInt, TBool, TReal, tref, tarr, ann)
 ├── pretty.hpp           Type-aware pretty printing
