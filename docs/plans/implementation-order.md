@@ -175,5 +175,5 @@ Each step is a logical unit of work suitable for a single branch/PR:
 - [x] Step 10 — Subtype checking ([phase5-subtype-checking.md](phase5-subtype-checking.md))
 - [x] Step 11 — Bidirectional type checker + def_typerule ([phase4-type-checker.md](phase4-type-checker.md))
 - [x] Step 12 — strip_types + pipeline wiring ([phase7-strip-compile-pipeline.md](phase7-strip-compile-pipeline.md))
-- [ ] Step 13 — Error reporting ([phase8-error-reporting.md](phase8-error-reporting.md))
+- [x] Step 13 — Error reporting ([phase8-error-reporting.md](phase8-error-reporting.md))
 - [x] Step 14 — End-to-end integration test + example
