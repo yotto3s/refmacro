@@ -1,6 +1,7 @@
 #ifndef REFMACRO_PRETTY_PRINT_HPP
 #define REFMACRO_PRETTY_PRINT_HPP
 
+#include <limits>
 #include <refmacro/ast.hpp>
 #include <refmacro/expr.hpp>
 
@@ -51,18 +52,19 @@ template <std::size_t N = 256> struct FixedString {
     }
 
     consteval void append_double(double v) {
+        constexpr auto inf = std::numeric_limits<double>::infinity();
         if (v != v) {
             append("NaN");
             return;
-        } // NaN
-        if (v > 1e308) {
+        }
+        if (v == inf) {
             append("inf");
             return;
-        } // +infinity
-        if (v < -1e308) {
+        }
+        if (v == -inf) {
             append("-inf");
             return;
-        } // -infinity
+        }
         if (v < 0.0) {
             append_char('-');
             v = -v;
