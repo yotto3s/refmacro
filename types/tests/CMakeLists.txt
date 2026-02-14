@@ -54,6 +54,10 @@ add_executable(test_tester_findings test_tester_findings.cpp)
 target_link_libraries(test_tester_findings PRIVATE reftype::reftype GTest::gtest_main)
 target_compile_options(test_tester_findings PRIVATE -Wall -Wextra -Werror)
 
+add_executable(reftype_test_integration test_integration.cpp)
+target_link_libraries(reftype_test_integration PRIVATE reftype::reftype GTest::gtest_main)
+target_compile_options(reftype_test_integration PRIVATE -Wall -Wextra -Werror)
+
 # --- Compile-fail tests ---
 # These targets should FAIL to compile (consteval throw = compile error).
 # EXCLUDE_FROM_ALL prevents building with the default target.
@@ -105,3 +109,4 @@ gtest_discover_tests(test_subtype PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_type_checker PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_strip PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_tester_findings PROPERTIES TIMEOUT 60)
+gtest_discover_tests(reftype_test_integration PROPERTIES TIMEOUT 120)

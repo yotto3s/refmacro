@@ -10,3 +10,7 @@ target_link_libraries(reftype INTERFACE refmacro::refmacro)
 if(REFMACRO_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
+
+if(REFMACRO_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
