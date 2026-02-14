@@ -185,6 +185,28 @@ static_assert(var_clamp_fn(5, 0, 10) == 5);   // in range: unchanged
 static_assert(var_clamp_fn(-1, 0, 10) == 0);  // below lo: clamped to 0
 static_assert(var_clamp_fn(15, 0, 10) == 10); // above hi: clamped to 10
 
+// --- Section 7: Expression bounds with subtype checking ---
+//
+// clamp(x, lo + 1, hi - 1) with inner bounds annotated with WIDER type
+// {#v : Int | #v >= lo && #v <= hi}. The type rule synthesizes
+// {#v >= lo + 1 && #v <= hi - 1}. The FM solver proves:
+//   (#v >= lo + 1 && #v <= hi - 1) => (#v >= lo && #v <= hi)
+// because lo + 1 >= lo and hi - 1 <= hi always hold.
+
+static constexpr auto expr_bounds_type =
+    tref(TInt, E::var("#v") >= E::var("lo") && E::var("#v") <= E::var("hi"));
+static constexpr auto expr_bounds_expr =
+    ann(clamp(E::var("x"), E::var("lo") + E::lit(1), E::var("hi") - E::lit(1)),
+        expr_bounds_type);
+static constexpr auto expr_bounds_env =
+    TypeEnv<128>{}.bind("x", TInt).bind("lo", TInt).bind("hi", TInt);
+
+constexpr auto expr_bounds_fn =
+    clamp_compile<expr_bounds_expr, expr_bounds_env>();
+static_assert(expr_bounds_fn(5, 0, 10) == 5);  // in range [1,9]: unchanged
+static_assert(expr_bounds_fn(0, 0, 10) == 1);  // below lo+1: clamped to 1
+static_assert(expr_bounds_fn(10, 0, 10) == 9); // above hi-1: clamped to 9
+
 int main() {
     std::printf("Section 3 (clamp 50):  %d\n", static_cast<int>(clamp_fn(50)));
     std::printf("Section 3 (clamp -5):  %d\n", static_cast<int>(clamp_fn(-5)));
@@ -198,6 +220,12 @@ int main() {
                 static_cast<int>(var_clamp_fn(-1, 0, 10)));
     std::printf("Section 6 (var 15,0,10):  %d\n",
                 static_cast<int>(var_clamp_fn(15, 0, 10)));
+    std::printf("Section 7 (expr 5,0,10):  %d\n",
+                static_cast<int>(expr_bounds_fn(5, 0, 10)));
+    std::printf("Section 7 (expr 0,0,10):  %d\n",
+                static_cast<int>(expr_bounds_fn(0, 0, 10)));
+    std::printf("Section 7 (expr 10,0,10): %d\n",
+                static_cast<int>(expr_bounds_fn(10, 0, 10)));
     std::printf("All custom type rule examples passed!\n");
     return 0;
 }
