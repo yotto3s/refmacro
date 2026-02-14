@@ -40,51 +40,17 @@ consteval Expression<Cap> make_node(const char* tag) {
     return result;
 }
 
-// Unary
-template <std::size_t Cap = 64>
-consteval Expression<Cap> make_node(const char* tag, Expression<Cap> c0) {
-    Expression<Cap> result;
-    result.ast = c0.ast;
-    result.id = result.ast.add_tagged_node(tag, {c0.id});
-    return result;
-}
-
-// Binary
-template <std::size_t Cap = 64>
+// N-ary (1-8 children)
+template <std::size_t Cap = 64, std::same_as<Expression<Cap>>... Rest>
+    requires(sizeof...(Rest) <= 7)
 consteval Expression<Cap> make_node(const char* tag, Expression<Cap> c0,
-                                    Expression<Cap> c1) {
+                                    Rest... rest) {
     Expression<Cap> result;
     result.ast = c0.ast;
-    int off1 = result.ast.merge(c1.ast);
-    result.id = result.ast.add_tagged_node(tag, {c0.id, c1.id + off1});
-    return result;
-}
-
-// Ternary
-template <std::size_t Cap = 64>
-consteval Expression<Cap> make_node(const char* tag, Expression<Cap> c0,
-                                    Expression<Cap> c1, Expression<Cap> c2) {
-    Expression<Cap> result;
-    result.ast = c0.ast;
-    int off1 = result.ast.merge(c1.ast);
-    int off2 = result.ast.merge(c2.ast);
-    result.id =
-        result.ast.add_tagged_node(tag, {c0.id, c1.id + off1, c2.id + off2});
-    return result;
-}
-
-// Quaternary
-template <std::size_t Cap = 64>
-consteval Expression<Cap> make_node(const char* tag, Expression<Cap> c0,
-                                    Expression<Cap> c1, Expression<Cap> c2,
-                                    Expression<Cap> c3) {
-    Expression<Cap> result;
-    result.ast = c0.ast;
-    int off1 = result.ast.merge(c1.ast);
-    int off2 = result.ast.merge(c2.ast);
-    int off3 = result.ast.merge(c3.ast);
-    result.id = result.ast.add_tagged_node(
-        tag, {c0.id, c1.id + off1, c2.id + off2, c3.id + off3});
+    int ids[1 + sizeof...(Rest)]{c0.id};
+    [[maybe_unused]] std::size_t i = 1;
+    ((ids[i++] = rest.id + result.ast.merge(rest.ast)), ...);
+    result.id = result.ast.add_tagged_node(tag, ids, 1 + sizeof...(Rest));
     return result;
 }
 

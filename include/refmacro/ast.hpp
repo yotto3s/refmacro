@@ -5,32 +5,9 @@
 #include <initializer_list>
 #include <utility>
 
+#include <refmacro/str_utils.hpp>
+
 namespace refmacro {
-
-// --- Consteval string utilities ---
-
-consteval void copy_str(char* dst, const char* src, std::size_t max_len = 16) {
-    std::size_t i = 0;
-    for (; i < max_len - 1 && src[i] != '\0'; ++i)
-        dst[i] = src[i];
-    dst[i] = '\0';
-}
-
-consteval bool str_eq(const char* a, const char* b) {
-    for (std::size_t i = 0;; ++i) {
-        if (a[i] != b[i])
-            return false;
-        if (a[i] == '\0')
-            return true;
-    }
-}
-
-consteval std::size_t str_len(const char* s) {
-    std::size_t len = 0;
-    while (s[len] != '\0')
-        ++len;
-    return len;
-}
 
 // --- AST Node (structural type — works as NTTP) ---
 
@@ -58,15 +35,18 @@ template <std::size_t Cap = 64> struct AST {
 
     consteval int add_tagged_node(const char* tag_name,
                                   std::initializer_list<int> children) {
-        if (children.size() > 8)
+        return add_tagged_node(tag_name, children.begin(), children.size());
+    }
+
+    consteval int add_tagged_node(const char* tag_name, const int* children,
+                                  std::size_t n_children) {
+        if (n_children > 8)
             throw "ASTNode supports at most 8 children";
         ASTNode n{};
         copy_str(n.tag, tag_name);
-        int i = 0;
-        for (int c : children) {
-            n.children[i++] = c;
-        }
-        n.child_count = static_cast<int>(children.size());
+        for (std::size_t i = 0; i < n_children; ++i)
+            n.children[i] = children[i];
+        n.child_count = static_cast<int>(n_children);
         return add_node(n);
     }
 

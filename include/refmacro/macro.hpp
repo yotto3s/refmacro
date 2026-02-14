@@ -17,16 +17,10 @@ template <typename CompileFn> struct Macro {
     CompileFn fn{};
 
     // Build AST nodes -- lowering is deferred
-    consteval Expr operator()() const { return make_node<>(tag); }
-    consteval Expr operator()(Expr c0) const { return make_node(tag, c0); }
-    consteval Expr operator()(Expr c0, Expr c1) const {
-        return make_node(tag, c0, c1);
-    }
-    consteval Expr operator()(Expr c0, Expr c1, Expr c2) const {
-        return make_node(tag, c0, c1, c2);
-    }
-    consteval Expr operator()(Expr c0, Expr c1, Expr c2, Expr c3) const {
-        return make_node(tag, c0, c1, c2, c3);
+    consteval Expr operator()(std::same_as<Expr> auto... children) const
+        requires(sizeof...(children) <= 8)
+    {
+        return make_node(tag, children...);
     }
 };
 
