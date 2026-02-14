@@ -14,6 +14,7 @@ A header-only C++26 compile-time AST metaprogramming framework with Lisp-like ma
 - **Pipe operator**: Chain transforms with `expr | differentiate | simplify`
 - **Operator overloads**: Arithmetic (`+`, `-`, `*`, `/`), comparison (`==`, `<`, `>`, `<=`, `>=`), and logical (`&&`, `||`, `!`) operators on `Expr`
 - **Extensible**: Define custom DSL nodes — everything beyond `var` and `lit` is user-defined via macros
+- **Refinement type system**: Compile-time type checking with refinement predicates, subtype checking, and a Fourier-Motzkin solver — see [`types/README.md`](types/README.md)
 
 ## Requirements
 
@@ -106,6 +107,31 @@ static_assert(relu(3.0) == 3.0);
 | `pretty_print.hpp` | Consteval AST rendering |
 | `math.hpp` | Math macros, operators, `simplify()`, `differentiate()` |
 | `refmacro.hpp` | Umbrella include |
+| `types/` | Refinement type system — see [`types/README.md`](types/README.md) |
+
+## Refinement Types
+
+A compile-time refinement type system built as a library on top of refmacro. Types are AST nodes, type rules follow the same `defmacro` pattern, and refinement predicates are validated by a Fourier-Motzkin solver. See [`types/README.md`](types/README.md) for full documentation.
+
+```cpp
+#include <reftype/refinement.hpp>
+using reftype::ann, reftype::pos_int, reftype::TInt, reftype::typed_full_compile;
+using E = refmacro::Expression<128>;
+
+// Type-annotated arithmetic
+static constexpr auto expr = ann(E::lit(3) + E::lit(4), TInt);
+constexpr auto fn = typed_full_compile<expr>();
+static_assert(fn() == 7);
+
+// Refinement type: {#v : Int | #v > 0}
+static constexpr auto refined = ann(E::lit(5), pos_int());
+constexpr auto rf = typed_full_compile<refined>();
+static_assert(rf() == 5);
+
+// Compile-time error: lit(0) does not satisfy #v > 0
+// static constexpr auto bad = ann(E::lit(0), pos_int());
+// constexpr auto bad_fn = typed_full_compile<bad>(); // error!
+```
 
 ## Building
 
