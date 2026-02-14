@@ -42,6 +42,10 @@ add_executable(test_type_checker test_type_checker.cpp)
 target_link_libraries(test_type_checker PRIVATE reftype::reftype GTest::gtest_main)
 target_compile_options(test_type_checker PRIVATE -Wall -Wextra -Werror)
 
+add_executable(test_strip test_strip.cpp)
+target_link_libraries(test_strip PRIVATE reftype::reftype GTest::gtest_main)
+target_compile_options(test_strip PRIVATE -Wall -Wextra -Werror)
+
 # --- Compile-fail tests ---
 # These targets should FAIL to compile (consteval throw = compile error).
 # EXCLUDE_FROM_ALL prevents building with the default target.
@@ -68,6 +72,8 @@ add_compile_fail_test(compile_fail_bool_arith compile_fail_bool_arith.cpp)
 add_compile_fail_test(compile_fail_standalone_lambda compile_fail_standalone_lambda.cpp)
 add_compile_fail_test(compile_fail_apply_non_function compile_fail_apply_non_function.cpp)
 add_compile_fail_test(compile_fail_unbound_var compile_fail_unbound_var.cpp)
+add_compile_fail_test(compile_fail_bare_type_node compile_fail_bare_type_node.cpp)
+add_compile_fail_test(compile_fail_typed_compile_invalid compile_fail_typed_compile_invalid.cpp)
 
 include(GoogleTest)
 gtest_discover_tests(test_fm_types PROPERTIES TIMEOUT 60)
@@ -81,3 +87,4 @@ gtest_discover_tests(test_type_env PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_constraints PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_subtype PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_type_checker PROPERTIES TIMEOUT 60)
+gtest_discover_tests(test_strip PROPERTIES TIMEOUT 60)
