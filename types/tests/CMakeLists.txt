@@ -86,6 +86,7 @@ add_compile_fail_test(compile_fail_apply_non_function compile_fail_apply_non_fun
 add_compile_fail_test(compile_fail_unbound_var compile_fail_unbound_var.cpp)
 add_compile_fail_test(compile_fail_bare_type_node compile_fail_bare_type_node.cpp)
 add_compile_fail_test(compile_fail_typed_compile_invalid compile_fail_typed_compile_invalid.cpp)
+add_compile_fail_test(compile_fail_wider_base_nonbase compile_fail_wider_base_nonbase.cpp)
 # Regression test for the former compile-fail case (F1 bug: false UNSAT
 # with non-integer coefficients). Now that the rounding bug is fixed, the
 # static_assert succeeds and the test compiles and runs cleanly.
