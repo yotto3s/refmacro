@@ -69,7 +69,7 @@ consteval FixedString<256> pp_node(const refmacro::AST<Cap>& ast, int id) {
 
 } // namespace detail
 
-template <std::size_t Cap = 64>
+template <std::size_t Cap = 128>
 consteval refmacro::FixedString<256>
 pretty_print(const refmacro::Expression<Cap>& e) {
     return detail::pp_node(e.ast, e.id);

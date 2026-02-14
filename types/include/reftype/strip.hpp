@@ -42,7 +42,10 @@ consteval Expression<Cap> strip_types(Expression<Cap> e) {
                 return leaf;
             }
 
-            // Parent nodes: rebuild with recursively stripped children
+            // Parent nodes: rebuild with recursively stripped children.
+            // Invariant: only leaf nodes carry name/payload; parent nodes
+            // are fully defined by their tag and children, so make_node
+            // reconstruction is lossless here.
             const auto* tag = n.ast.nodes[n.id].tag;
 
             if (n.child_count() == 1)
@@ -74,6 +77,15 @@ template <auto expr, auto... Macros> consteval auto typed_compile() {
     return refmacro::compile<stripped, Macros...>();
 }
 
+template <auto expr, auto env, auto... Macros>
+    requires requires { env.count; env.lookup(""); }
+consteval auto typed_compile() {
+    constexpr auto result = type_check(expr, env);
+    static_assert(result.valid, "typed_compile: type check failed");
+    constexpr auto stripped = strip_types(expr);
+    return refmacro::compile<stripped, Macros...>();
+}
+
 // --- typed_full_compile: type check + strip + compile with all macros ---
 //
 // Includes math macros (MAdd, MSub, MMul, MDiv, MNeg) and control-flow
@@ -83,6 +95,14 @@ template <auto expr> consteval auto typed_full_compile() {
     using namespace refmacro;
     return typed_compile<expr, MAdd, MSub, MMul, MDiv, MNeg, MCond, MLand, MLor,
                          MLnot, MEq, MLt, MGt, MLe, MGe, MProgn>();
+}
+
+template <auto expr, auto env>
+    requires requires { env.count; env.lookup(""); }
+consteval auto typed_full_compile() {
+    using namespace refmacro;
+    return typed_compile<expr, env, MAdd, MSub, MMul, MDiv, MNeg, MCond, MLand,
+                         MLor, MLnot, MEq, MLt, MGt, MLe, MGe, MProgn>();
 }
 
 } // namespace reftype
