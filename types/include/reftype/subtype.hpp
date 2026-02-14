@@ -226,7 +226,7 @@ consteval Expression<Cap> join(const Expression<Cap>& t1,
             types_equal(get_arrow_output(t1), get_arrow_output(t2)))
             return t1;
         {
-            refmacro::FixedString<512> msg{};
+            refmacro::PrintBuffer<512> msg{};
             msg.append(
                 "type error: incompatible arrow types for join\n  type 1: ");
             msg.append(reftype::pretty_print(t1).data);
@@ -237,7 +237,7 @@ consteval Expression<Cap> join(const Expression<Cap>& t1,
     }
 
     {
-        refmacro::FixedString<512> msg{};
+        refmacro::PrintBuffer<512> msg{};
         msg.append("type error: incompatible types for join\n  type 1: ");
         msg.append(reftype::pretty_print(t1).data);
         msg.append("\n  type 2: ");

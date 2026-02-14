@@ -21,7 +21,7 @@ template <std::size_t N = 512>
 [[noreturn]] consteval void
 report_error(const char* category, const char* expected, const char* actual,
              const char* context) {
-    refmacro::FixedString<N> msg{};
+    refmacro::PrintBuffer<N> msg{};
     msg.append("type error: ");
     msg.append(category);
     msg.append("\n  expected: ");
@@ -36,7 +36,7 @@ report_error(const char* category, const char* expected, const char* actual,
 template <std::size_t N = 512>
 [[noreturn]] consteval void report_error(const char* category,
                                          const char* context) {
-    refmacro::FixedString<N> msg{};
+    refmacro::PrintBuffer<N> msg{};
     msg.append("type error: ");
     msg.append(category);
     msg.append("\n  at: ");
