@@ -166,6 +166,25 @@ static_assert(subtype_fn(7) == 5); // clamped to hi
 //       ann(clamp(E::var("x"), E::lit(0), E::lit(100)), narrow_type);
 //   constexpr auto bad_fn = clamp_compile<bad_expr, clamp_env>();
 
+// --- Section 6: Variable bounds ---
+//
+// clamp(x, lo, hi) where lo and hi are variables, not literals.
+// The type rule extracts the variable sub-expressions and synthesizes
+// {#v : Int | #v >= lo && #v <= hi}. The annotation matches exactly,
+// so the FM solver trivially proves the implication.
+
+static constexpr auto var_clamp_type =
+    tref(TInt, E::var("#v") >= E::var("lo") && E::var("#v") <= E::var("hi"));
+static constexpr auto var_clamp_expr =
+    ann(clamp(E::var("x"), E::var("lo"), E::var("hi")), var_clamp_type);
+static constexpr auto var_clamp_env =
+    TypeEnv<128>{}.bind("x", TInt).bind("lo", TInt).bind("hi", TInt);
+
+constexpr auto var_clamp_fn = clamp_compile<var_clamp_expr, var_clamp_env>();
+static_assert(var_clamp_fn(5, 0, 10) == 5);   // in range: unchanged
+static_assert(var_clamp_fn(-1, 0, 10) == 0);  // below lo: clamped to 0
+static_assert(var_clamp_fn(15, 0, 10) == 10); // above hi: clamped to 10
+
 int main() {
     std::printf("Section 3 (clamp 50):  %d\n", static_cast<int>(clamp_fn(50)));
     std::printf("Section 3 (clamp -5):  %d\n", static_cast<int>(clamp_fn(-5)));
@@ -173,6 +192,12 @@ int main() {
     std::printf("Section 4 (subtype 3): %d\n", static_cast<int>(subtype_fn(3)));
     std::printf("Section 4 (subtype 0): %d\n", static_cast<int>(subtype_fn(0)));
     std::printf("Section 4 (subtype 7): %d\n", static_cast<int>(subtype_fn(7)));
+    std::printf("Section 6 (var 5,0,10):   %d\n",
+                static_cast<int>(var_clamp_fn(5, 0, 10)));
+    std::printf("Section 6 (var -1,0,10):  %d\n",
+                static_cast<int>(var_clamp_fn(-1, 0, 10)));
+    std::printf("Section 6 (var 15,0,10):  %d\n",
+                static_cast<int>(var_clamp_fn(15, 0, 10)));
     std::printf("All custom type rule examples passed!\n");
     return 0;
 }
