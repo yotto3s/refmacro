@@ -99,6 +99,7 @@ add_compile_fail_test(compile_fail_unbound_var compile_fail_unbound_var.cpp)
 add_compile_fail_test(compile_fail_bare_type_node compile_fail_bare_type_node.cpp)
 add_compile_fail_test(compile_fail_typed_compile_invalid compile_fail_typed_compile_invalid.cpp)
 add_compile_fail_test(compile_fail_wider_base_nonbase compile_fail_wider_base_nonbase.cpp)
+add_compile_fail_test(compile_fail_dim_mismatch compile_fail_dim_mismatch.cpp)
 # Regression test for the former compile-fail case (F1 bug: typed_compile lost
 # auto-tracked macros). Now that typed_compile extracts embedded macros from
 # expr's type, the test compiles and runs cleanly.
