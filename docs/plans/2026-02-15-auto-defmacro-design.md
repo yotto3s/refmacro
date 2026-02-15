@@ -192,15 +192,17 @@ consteval auto operator+(double lhs, Expression<Cap, Ms...> rhs) {
 }
 ```
 
-### Comparison + logical operators (in expr.hpp)
+### Comparison + logical operators (in control.hpp)
 
-Comparison and logical operators remain in `expr.hpp` and accept mixed macro types:
+Comparison and logical operators live in `control.hpp` and delegate to their corresponding MacroCallers, preserving macro tracking:
 
 ```cpp
+inline constexpr auto MEq = defmacro<"eq">([](auto l, auto r) { ... });
+
 template <std::size_t Cap, auto... Ms1, auto... Ms2>
 consteval auto operator==(Expression<Cap, Ms1...> lhs,
                           Expression<Cap, Ms2...> rhs) {
-    return make_node("eq", Expression<Cap>(lhs), Expression<Cap>(rhs));
+    return MEq(lhs, rhs);  // delegates to MacroCaller, embeds MEq
 }
 ```
 

@@ -110,13 +110,13 @@ TEST(TypesSubsystemBugs, F2_AnnStripsEmbeddedMacros) {
 //      containing tref(...) loses all auto-tracked macros.
 TEST(TypesSubsystemBugs, F2_TrefStripsEmbeddedMacros) {
     // Build a predicate with auto-tracked arithmetic
-    // #v + 1 > 0  (+ creates MAdd-tracked expression, > strips)
+    // #v + 1 > 0  (+ and > are MacroCallers that preserve/accumulate macros)
     static constexpr auto pred =
         Expression<128>::var("#v") + Expression<128>::lit(1) >
         Expression<128>::lit(0);
-    // pred already has type Expression<128> because > strips macros
+    // pred carries MAdd and MGt in its type from the operator MacroCallers
 
-    // tref also returns Expression<128>
+    // tref returns Expression<128> (no macros), stripping the tracked macros
     static constexpr auto ref_type = reftype::tref(reftype::tint(), pred);
 
     // Verify this works for type operations (no macros needed)

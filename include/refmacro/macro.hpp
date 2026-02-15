@@ -27,6 +27,8 @@ template <FixedString Tag, typename CompileFn> struct MacroSpec {
 
 template <typename Spec> struct MacroCaller {
     using spec_type = Spec;
+    static_assert(sizeof(Spec::tag.data) <= 16,
+                  "Macro tag too long; maximum 15 characters");
 
     // Backward-compatible fields (same layout as old Macro)
     char tag[16]{};

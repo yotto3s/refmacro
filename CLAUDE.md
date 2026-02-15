@@ -29,7 +29,7 @@ Everything else is user-defined via macros.
 ### Headers
 
 - `ast.hpp` — ASTNode, AST<Cap>, consteval string utilities
-- `expr.hpp` — Expression<Cap, auto... Macros>, lit(), var(), make_node(), comparison/logical operator overloads
+- `expr.hpp` — Expression<Cap, auto... Macros>, lit(), var(), make_node()
 - `macro.hpp` — FixedString, MacroSpec, MacroCaller, defmacro<"tag">(fn)
 - `compile.hpp` — compile<expr>(), unified_compiler, VarMap, Scope, TagStr
 - `control.hpp` — Control-flow macros (MCond, comparisons, logical), lambda(), apply(), let_(), full_compile<>()

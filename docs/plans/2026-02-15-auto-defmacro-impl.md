@@ -1,6 +1,6 @@
 # Auto-tracking defmacro Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> This document outlines an implementation plan that can be followed step-by-step.
 
 **Goal:** Make `defmacro<"tag">(fn)` the single source of truth so `compile<e>()` auto-discovers macros without explicit passing.
 
