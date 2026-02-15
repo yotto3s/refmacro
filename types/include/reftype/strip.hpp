@@ -61,10 +61,30 @@ consteval Expression<Cap> strip_types(Expression<Cap, Ms...> e) {
         });
 }
 
+// --- Helper: compile stripped AST with macros extracted from original expr ---
+//
+// strip_types returns Expression<Cap> (no macros), losing any macros embedded
+// in the original expression's type. This helper recovers them by extracting
+// Embedded... from the original Expression<Cap, Embedded...> and forwarding
+// them as extra macros to compile, alongside any explicitly-passed Macros.
+
+namespace detail {
+
+template <auto stripped, auto... Extra, std::size_t Cap, auto... Embedded>
+consteval auto compile_with_macros_from(Expression<Cap, Embedded...>) {
+    return refmacro::compile<stripped, Embedded..., Extra...>();
+}
+
+} // namespace detail
+
 // --- typed_compile: type check + strip + compile in one step ---
 //
 // Usage:
 //   constexpr auto f = typed_compile<expr, MAdd, MSub, ...>();
+//
+// Auto-tracked macros embedded in expr's type are automatically forwarded
+// to compile, so typed_compile<expr>() works without explicit Macros when
+// the expression was built with auto-tracking operators.
 //
 // Fails at compile time if type checking fails: either via static_assert
 // (when type_check returns invalid) or via consteval throw (e.g. unbound
@@ -80,7 +100,7 @@ consteval auto typed_compile() {
     constexpr auto result = type_check(expr);
     static_assert(result.valid, "typed_compile: type check failed");
     constexpr auto stripped = strip_types(expr);
-    return refmacro::compile<stripped, Macros...>();
+    return detail::compile_with_macros_from<stripped, Macros...>(expr);
 }
 
 template <auto expr, auto env, auto... Macros>
@@ -92,7 +112,7 @@ consteval auto typed_compile() {
     constexpr auto result = type_check(expr, env);
     static_assert(result.valid, "typed_compile: type check failed");
     constexpr auto stripped = strip_types(expr);
-    return refmacro::compile<stripped, Macros...>();
+    return detail::compile_with_macros_from<stripped, Macros...>(expr);
 }
 
 // --- typed_full_compile: type check + strip + compile with all macros ---

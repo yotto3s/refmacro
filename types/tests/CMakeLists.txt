@@ -62,6 +62,10 @@ add_executable(reftype_test_integration test_integration.cpp)
 target_link_libraries(reftype_test_integration PRIVATE reftype::reftype GTest::gtest_main)
 target_compile_options(reftype_test_integration PRIVATE -Wall -Wextra -Werror)
 
+add_executable(test_types_subsystem_bugs test_types_subsystem_bugs.cpp)
+target_link_libraries(test_types_subsystem_bugs PRIVATE reftype::reftype GTest::gtest_main)
+target_compile_options(test_types_subsystem_bugs PRIVATE -Wall -Wextra -Werror)
+
 # --- Compile-fail tests ---
 # These targets should FAIL to compile (consteval throw = compile error).
 # EXCLUDE_FROM_ALL prevents building with the default target.
@@ -91,6 +95,13 @@ add_compile_fail_test(compile_fail_unbound_var compile_fail_unbound_var.cpp)
 add_compile_fail_test(compile_fail_bare_type_node compile_fail_bare_type_node.cpp)
 add_compile_fail_test(compile_fail_typed_compile_invalid compile_fail_typed_compile_invalid.cpp)
 add_compile_fail_test(compile_fail_wider_base_nonbase compile_fail_wider_base_nonbase.cpp)
+# Regression test for the former compile-fail case (F1 bug: typed_compile lost
+# auto-tracked macros). Now that typed_compile extracts embedded macros from
+# expr's type, the test compiles and runs cleanly.
+add_executable(test_typed_compile_auto_macros compile_fail_typed_compile_auto_macros.cpp)
+target_link_libraries(test_typed_compile_auto_macros PRIVATE reftype::reftype)
+target_compile_options(test_typed_compile_auto_macros PRIVATE -Wall -Wextra -Werror)
+add_test(NAME test_typed_compile_auto_macros COMMAND test_typed_compile_auto_macros)
 # Regression test for the former compile-fail case (F1 bug: false UNSAT
 # with non-integer coefficients). Now that the rounding bug is fixed, the
 # static_assert succeeds and the test compiles and runs cleanly.
@@ -116,3 +127,4 @@ gtest_discover_tests(test_type_rules PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_strip PROPERTIES TIMEOUT 60)
 gtest_discover_tests(test_tester_findings PROPERTIES TIMEOUT 60)
 gtest_discover_tests(reftype_test_integration PROPERTIES TIMEOUT 120)
+gtest_discover_tests(test_types_subsystem_bugs PROPERTIES TIMEOUT 60)

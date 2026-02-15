@@ -62,10 +62,13 @@ consteval Expression<Cap> tarr(const char* param, Expression<Cap, Ms1...> in,
 }
 
 // Type annotation: expr : type
+// Preserves auto-tracked macros from the child expression (Ms1...) so that
+// typed_compile can extract them. Type-level macros (Ms2...) are not
+// preserved since types are only consumed by the type checker / FM solver.
 template <std::size_t Cap = 128, auto... Ms1, auto... Ms2>
-consteval Expression<Cap> ann(Expression<Cap, Ms1...> e,
-                              Expression<Cap, Ms2...> type) {
-    Expression<Cap> result;
+consteval Expression<Cap, Ms1...> ann(Expression<Cap, Ms1...> e,
+                                      Expression<Cap, Ms2...> type) {
+    Expression<Cap, Ms1...> result;
     result.ast = e.ast;
     int off = result.ast.merge(type.ast);
     result.id = result.ast.add_tagged_node("ann", {e.id, type.id + off});
