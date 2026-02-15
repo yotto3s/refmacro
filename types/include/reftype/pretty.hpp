@@ -31,6 +31,30 @@ consteval PrintBuffer<256> pp_node(const refmacro::AST<Cap>& ast, int id) {
         return s;
     }
 
+    // dim(L, T, M) — dimensional type
+    if (str_eq(n.tag, "tdim") && n.child_count == 3) {
+        int l = static_cast<int>(ast.nodes[n.children[0]].payload);
+        int t = static_cast<int>(ast.nodes[n.children[1]].payload);
+        int m = static_cast<int>(ast.nodes[n.children[2]].payload);
+        s.append("dim(");
+        auto append_int = [&](int v) {
+            if (v < 0) {
+                s.append_char('-');
+                v = -v;
+            }
+            if (v >= 10)
+                s.append_char('0' + (v / 10));
+            s.append_char('0' + (v % 10));
+        };
+        append_int(l);
+        s.append_char(',');
+        append_int(t);
+        s.append_char(',');
+        append_int(m);
+        s.append_char(')');
+        return s;
+    }
+
     // {#v : Base | pred}
     if (str_eq(n.tag, "tref") && n.child_count == 2) {
         s.append("{#v : ");

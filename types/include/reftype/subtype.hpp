@@ -158,6 +158,10 @@ consteval bool is_subtype(const Expression<Cap>& sub,
     if (types_equal(sub, super))
         return true;
 
+    // Dim <: Dim — structural equality (exponents must match exactly)
+    if (str_eq(type_tag(sub), "tdim") && str_eq(type_tag(super), "tdim"))
+        return detail::nodes_equal(sub.ast, sub.id, super.ast, super.id);
+
     // Base <: base — widening
     if (is_base(sub) && is_base(super))
         return base_widens(type_tag(sub), type_tag(super));
@@ -206,6 +210,19 @@ consteval Expression<Cap> join(const Expression<Cap>& t1,
                                const Expression<Cap>& t2) {
     if (types_equal(t1, t2))
         return t1;
+
+    // Dim + Dim — same exponents required (no widening between dimensions)
+    if (str_eq(type_tag(t1), "tdim") && str_eq(type_tag(t2), "tdim")) {
+        if (!detail::nodes_equal(t1.ast, t1.id, t2.ast, t2.id)) {
+            refmacro::PrintBuffer<512> msg{};
+            msg.append("type error: dimension mismatch in join\n  type 1: ");
+            msg.append(reftype::pretty_print(t1).data);
+            msg.append("\n  type 2: ");
+            msg.append(reftype::pretty_print(t2).data);
+            throw msg.data;
+        }
+        return t1;
+    }
 
     // Base + base — wider
     if (is_base(t1) && is_base(t2))

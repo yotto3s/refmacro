@@ -32,7 +32,7 @@ consteval Expression<Cap> strip_types(Expression<Cap, Ms...> e) {
 
             // Bare type nodes outside annotations => error
             if (n.tag() == "tint" || n.tag() == "tbool" || n.tag() == "treal" ||
-                n.tag() == "tref" || n.tag() == "tarr")
+                n.tag() == "tref" || n.tag() == "tarr" || n.tag() == "tdim")
                 throw "strip_types: bare type node outside annotation";
 
             // Leaf nodes: copy the full node (preserves tag, payload, name)
