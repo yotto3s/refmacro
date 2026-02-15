@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <refmacro/control.hpp>
 #include <refmacro/math.hpp>
+#include <refmacro/pretty_print.hpp>
 #include <reftype/refinement.hpp>
 
 using refmacro::Expression;
@@ -118,58 +119,20 @@ template <std::size_t Cap = 128> consteval Expression<Cap> min_depth(int n) {
 }
 
 // ===================================================================
-// Forth AST constructors
+// Forth AST constructors (only for non-macro nodes)
 // ===================================================================
+// Basic ops (f_new, f_push, f_dup, ...) use MacroCaller directly.
+// f_if and f_times use make_node — they are rewritten before compilation.
 
-template <std::size_t Cap = 128> consteval Expression<Cap> f_new() {
-    return make_node<Cap>("f_new");
+template <std::size_t Cap = 128, typename... Exprs>
+consteval auto f_if(Exprs... children) {
+    return make_node<Cap>("f_if", children...);
 }
 
-template <std::size_t Cap = 128>
-consteval Expression<Cap> f_push(int n, Expression<Cap> s) {
-    return make_node("f_push", Expression<Cap>::lit(n), s);
-}
-
-template <std::size_t Cap = 128>
-consteval Expression<Cap> f_dup(Expression<Cap> s) {
-    return make_node("f_dup", s);
-}
-
-template <std::size_t Cap = 128>
-consteval Expression<Cap> f_drop(Expression<Cap> s) {
-    return make_node("f_drop", s);
-}
-
-template <std::size_t Cap = 128>
-consteval Expression<Cap> f_swap(Expression<Cap> s) {
-    return make_node("f_swap", s);
-}
-
-template <std::size_t Cap = 128>
-consteval Expression<Cap> f_add(Expression<Cap> s) {
-    return make_node("f_add", s);
-}
-
-template <std::size_t Cap = 128>
-consteval Expression<Cap> f_sub(Expression<Cap> s) {
-    return make_node("f_sub", s);
-}
-
-template <std::size_t Cap = 128>
-consteval Expression<Cap> f_mul(Expression<Cap> s) {
-    return make_node("f_mul", s);
-}
-
-template <std::size_t Cap = 128>
-consteval Expression<Cap> f_if(Expression<Cap> s, Expression<Cap> then_fn,
-                               Expression<Cap> else_fn) {
-    return make_node("f_if", s, then_fn, else_fn);
-}
-
-template <std::size_t Cap = 128>
-consteval Expression<Cap> f_times(int count, Expression<Cap> body_fn,
-                                  Expression<Cap> s) {
-    return make_node("f_times", Expression<Cap>::lit(count), body_fn, s);
+template <std::size_t Cap = 128, auto... Ms1, auto... Ms2>
+consteval auto f_times(int count, Expression<Cap, Ms1...> body_fn,
+                       Expression<Cap, Ms2...> s) {
+    return make_node<Cap>("f_times", Expression<Cap>::lit(count), body_fn, s);
 }
 
 // ===================================================================
@@ -178,37 +141,31 @@ consteval Expression<Cap> f_times(int count, Expression<Cap> body_fn,
 // Only basic ops need macros. f_if and f_times are rewritten into
 // apply(lambda) form before compilation, so they don't need macros.
 
-inline constexpr auto MFNew = refmacro::defmacro(
-    "f_new", []() { return [](auto...) constexpr { return 0; }; });
+inline constexpr auto MFNew = refmacro::defmacro<"f_new">(
+    []() { return [](auto...) constexpr { return 0; }; });
 
 inline constexpr auto MFPush =
-    refmacro::defmacro("f_push", [](auto /*n*/, auto s) {
+    refmacro::defmacro<"f_push">([](auto /*n*/, auto s) {
         return [=](auto... a) constexpr { return s(a...) + 1; };
     });
 
-inline constexpr auto MFDup = refmacro::defmacro("f_dup", [](auto s) {
-    return [=](auto... a) constexpr { return s(a...) + 1; };
-});
+inline constexpr auto MFDup = refmacro::defmacro<"f_dup">(
+    [](auto s) { return [=](auto... a) constexpr { return s(a...) + 1; }; });
 
-inline constexpr auto MFDrop = refmacro::defmacro("f_drop", [](auto s) {
-    return [=](auto... a) constexpr { return s(a...) - 1; };
-});
+inline constexpr auto MFDrop = refmacro::defmacro<"f_drop">(
+    [](auto s) { return [=](auto... a) constexpr { return s(a...) - 1; }; });
 
-inline constexpr auto MFSwap = refmacro::defmacro("f_swap", [](auto s) {
-    return [=](auto... a) constexpr { return s(a...); };
-});
+inline constexpr auto MFSwap = refmacro::defmacro<"f_swap">(
+    [](auto s) { return [=](auto... a) constexpr { return s(a...); }; });
 
-inline constexpr auto MFAdd = refmacro::defmacro("f_add", [](auto s) {
-    return [=](auto... a) constexpr { return s(a...) - 1; };
-});
+inline constexpr auto MFAdd = refmacro::defmacro<"f_add">(
+    [](auto s) { return [=](auto... a) constexpr { return s(a...) - 1; }; });
 
-inline constexpr auto MFSub = refmacro::defmacro("f_sub", [](auto s) {
-    return [=](auto... a) constexpr { return s(a...) - 1; };
-});
+inline constexpr auto MFSub = refmacro::defmacro<"f_sub">(
+    [](auto s) { return [=](auto... a) constexpr { return s(a...) - 1; }; });
 
-inline constexpr auto MFMul = refmacro::defmacro("f_mul", [](auto s) {
-    return [=](auto... a) constexpr { return s(a...) - 1; };
-});
+inline constexpr auto MFMul = refmacro::defmacro<"f_mul">(
+    [](auto s) { return [=](auto... a) constexpr { return s(a...) - 1; }; });
 
 // ===================================================================
 // Forth type rules — compile-time stack depth verification
@@ -260,7 +217,7 @@ inline constexpr auto forth_unary_rule = def_typerule(
             report_error("cannot determine stack depth", Cfg.tag);
         if constexpr (Cfg.min_depth > 0) {
             constexpr auto depth_msg = [] {
-                refmacro::FixedString<32> s{};
+                refmacro::PrintBuffer<32> s{};
                 s.append("depth >= ");
                 s.append_int(Cfg.min_depth);
                 return s;
@@ -468,8 +425,8 @@ template <auto expr> consteval auto forth_compile() {
 // ===================================================================
 // push 5, push 3, add, dup, mul → depth 1
 
-static constexpr auto prog1 =
-    f_mul(f_dup(f_add(f_push(3, f_push(5, f_new())))));
+static constexpr auto prog1 = MFMul(MFDup(
+    MFAdd(MFPush(E::lit(3), MFPush(E::lit(5), MFNew.operator()<128>())))));
 constexpr auto fn1 = forth_compile<prog1>();
 static_assert(fn1() == 1); // depth: 0→1→2→1→2→1
 
@@ -478,11 +435,12 @@ static_assert(fn1() == 1); // depth: 0→1→2→1→2→1
 // ===================================================================
 // push 5, push 3, push <cond>, IF push(10) ELSE push(20) THEN → depth 3
 
-static constexpr auto prog2 =
-    f_if(f_push(1, f_push(3, f_push(5, f_new()))),            // depth 3
-         refmacro::lambda<128>("d", f_push(10, E::var("d"))), // then: +1
-         refmacro::lambda<128>("d", f_push(20, E::var("d")))  // else: +1
-    );
+static constexpr auto prog2 = f_if(
+    MFPush(E::lit(1),
+           MFPush(E::lit(3), MFPush(E::lit(5), MFNew.operator()<128>()))),
+    refmacro::lambda<128>("d", MFPush(E::lit(10), E::var("d"))), // then: +1
+    refmacro::lambda<128>("d", MFPush(E::lit(20), E::var("d")))  // else: +1
+);
 constexpr auto fn2 = forth_compile<prog2>();
 static_assert(fn2() == 3); // depth: 0→1→2→3→pop→2→push→3
 
@@ -492,9 +450,10 @@ static_assert(fn2() == 3); // depth: 0→1→2→3→pop→2→push→3
 // IF push(10) ELSE push(20), push(30) THEN → range {2..3}
 
 static constexpr auto prog3 = f_if(
-    f_push(1, f_push(5, f_new())),                                  // depth 2
-    refmacro::lambda<128>("d", f_push(10, E::var("d"))),            // then: d+1
-    refmacro::lambda<128>("d", f_push(30, f_push(20, E::var("d")))) // else: d+2
+    MFPush(E::lit(1), MFPush(E::lit(5), MFNew.operator()<128>())), // depth 2
+    refmacro::lambda<128>("d", MFPush(E::lit(10), E::var("d"))),   // then: d+1
+    refmacro::lambda<128>(
+        "d", MFPush(E::lit(30), MFPush(E::lit(20), E::var("d")))) // else: d+2
 );
 
 // Type check to verify the range
@@ -509,10 +468,11 @@ static_assert(is_subtype(r3.type, depth_range(2, 3)));
 // ===================================================================
 // After prog3 (range {2..3}), add is safe because 2 >= 2
 
-static constexpr auto prog4 = f_add(
-    f_if(f_push(1, f_push(5, f_new())),
-         refmacro::lambda<128>("d", f_push(10, E::var("d"))),
-         refmacro::lambda<128>("d", f_push(30, f_push(20, E::var("d"))))));
+static constexpr auto prog4 =
+    MFAdd(f_if(MFPush(E::lit(1), MFPush(E::lit(5), MFNew.operator()<128>())),
+               refmacro::lambda<128>("d", MFPush(E::lit(10), E::var("d"))),
+               refmacro::lambda<128>(
+                   "d", MFPush(E::lit(30), MFPush(E::lit(20), E::var("d"))))));
 
 constexpr auto r4 = type_check<TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap,
                                TRFAdd, TRFSub, TRFMul, TRFIf, TRFTimes>(prog4);
@@ -524,15 +484,15 @@ static_assert(r4.valid); // FM proves {2..3} >= 2
 // push 5, then loop 3x: dup (+1) then add (-1) = net 0
 
 static constexpr auto prog5 =
-    f_times(3, refmacro::lambda<128>("d", f_add(f_dup(E::var("d")))),
-            f_push(5, f_new()));
+    f_times(3, refmacro::lambda<128>("d", MFAdd(MFDup(E::var("d")))),
+            MFPush(E::lit(5), MFNew.operator()<128>()));
 constexpr auto fn5 = forth_compile<prog5>();
 static_assert(fn5() == 1); // depth stays at 1
 
 // ===================================================================
 // Demo 6: Error — stack underflow (uncomment to see compile error)
 // ===================================================================
-//   static constexpr auto err1 = f_drop(f_new());
+//   static constexpr auto err1 = MFDrop(MFNew.operator()<128>());
 //   constexpr auto err1_r = type_check<
 //       TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap,
 //       TRFAdd, TRFSub, TRFMul, TRFIf, TRFTimes>(err1);
@@ -542,10 +502,11 @@ static_assert(fn5() == 1); // depth stays at 1
 // Demo 7: Error — range too wide for double-add (uncomment)
 // ===================================================================
 //   // After unbalanced IF: {1..2}. Second add needs >= 2 but range includes 1.
-//   static constexpr auto err2 = f_add(f_add(f_if(
-//       f_push(1, f_push(5, f_new())),
-//       refmacro::lambda<128>("d", f_push(10, E::var("d"))),
-//       refmacro::lambda<128>("d", f_push(30, f_push(20, E::var("d"))))
+//   static constexpr auto err2 = MFAdd(MFAdd(f_if(
+//       MFPush(E::lit(1), MFPush(E::lit(5), MFNew.operator()<128>())),
+//       refmacro::lambda<128>("d", MFPush(E::lit(10), E::var("d"))),
+//       refmacro::lambda<128>("d", MFPush(E::lit(30), MFPush(E::lit(20),
+//       E::var("d"))))
 //   )));
 //   constexpr auto err2_r = type_check<
 //       TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap,
@@ -557,8 +518,8 @@ static_assert(fn5() == 1); // depth stays at 1
 // ===================================================================
 //   static constexpr auto err3 = f_times(
 //       3,
-//       refmacro::lambda<128>("d", f_push(5, E::var("d"))),  // net +1
-//       f_push(5, f_new())
+//       refmacro::lambda<128>("d", MFPush(E::lit(5), E::var("d"))),  // net +1
+//       MFPush(E::lit(5), MFNew.operator()<128>())
 //   );
 //   constexpr auto err3_r = type_check<
 //       TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap,
