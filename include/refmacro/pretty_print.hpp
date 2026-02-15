@@ -229,8 +229,8 @@ consteval PrintBuffer<256> pp_node(const AST<Cap>& ast, int id) {
 
 } // namespace detail
 
-template <std::size_t Cap = 64>
-consteval PrintBuffer<256> pretty_print(const Expression<Cap>& e) {
+template <std::size_t Cap = 64, auto... Ms>
+consteval PrintBuffer<256> pretty_print(const Expression<Cap, Ms...>& e) {
     return detail::pp_node(e.ast, e.id);
 }
 
