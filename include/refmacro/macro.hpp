@@ -36,7 +36,8 @@ template <typename Spec> struct MacroCaller {
 
     // Nullary
     consteval auto operator()() const {
-        Expression<64> result;
+        constexpr MacroCaller self{};
+        Expression<64, self> result;
         result.id = result.ast.add_tagged_node(tag, {});
         return result;
     }

@@ -45,7 +45,7 @@ consteval Expression<Cap> tref(Expression<Cap, Ms1...> base,
 }
 
 // Arrow type: (param : In) -> Out
-template <std::size_t Cap = 128, auto... Ms1, auto... Ms2, auto... Ms3>
+template <std::size_t Cap = 128, auto... Ms1, auto... Ms2>
 consteval Expression<Cap> tarr(const char* param, Expression<Cap, Ms1...> in,
                                Expression<Cap, Ms2...> out) {
     Expression<Cap> result;
