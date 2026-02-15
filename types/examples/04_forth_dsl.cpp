@@ -29,7 +29,6 @@ using reftype::report_error;
 using reftype::tint;
 using reftype::TInt;
 using reftype::tref;
-using reftype::type_check;
 using reftype::TypeEnv;
 using reftype::TypeResult;
 
@@ -387,6 +386,26 @@ consteval Expression<Cap> rewrite_forth(Expression<Cap> e) {
 }
 
 // ===================================================================
+// Forth type-check helper — wraps the 10 type rules
+// ===================================================================
+
+template <auto expr> consteval auto forth_type_check() {
+    return reftype::type_check<TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap,
+                               TRFAdd, TRFSub, TRFMul, TRFIf, TRFTimes>(expr);
+}
+
+template <auto expr, auto env>
+    requires requires {
+        env.count;
+        env.lookup("");
+    }
+consteval auto forth_type_check() {
+    return reftype::type_check<TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap,
+                               TRFAdd, TRFSub, TRFMul, TRFIf, TRFTimes>(expr,
+                                                                        env);
+}
+
+// ===================================================================
 // Forth compile pipeline
 // ===================================================================
 // Pipeline: type_check → strip_types → rewrite_forth → compile
@@ -396,9 +415,7 @@ consteval Expression<Cap> rewrite_forth(Expression<Cap> e) {
 
 template <auto expr, auto env> consteval auto forth_compile() {
     using namespace refmacro;
-    constexpr auto result =
-        type_check<TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap, TRFAdd, TRFSub,
-                   TRFMul, TRFIf, TRFTimes>(expr, env);
+    constexpr auto result = forth_type_check<expr, env>();
     static_assert(result.valid, "forth_compile: type check failed");
     constexpr auto stripped = reftype::strip_types(expr);
     constexpr auto rewritten = rewrite_forth(stripped);
@@ -409,9 +426,7 @@ template <auto expr, auto env> consteval auto forth_compile() {
 
 template <auto expr> consteval auto forth_compile() {
     using namespace refmacro;
-    constexpr auto result =
-        type_check<TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap, TRFAdd, TRFSub,
-                   TRFMul, TRFIf, TRFTimes>(expr);
+    constexpr auto result = forth_type_check<expr>();
     static_assert(result.valid, "forth_compile: type check failed");
     constexpr auto stripped = reftype::strip_types(expr);
     constexpr auto rewritten = rewrite_forth(stripped);
@@ -457,8 +472,7 @@ static constexpr auto prog3 = f_if(
 );
 
 // Type check to verify the range
-constexpr auto r3 = type_check<TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap,
-                               TRFAdd, TRFSub, TRFMul, TRFIf, TRFTimes>(prog3);
+constexpr auto r3 = forth_type_check<prog3>();
 static_assert(r3.valid);
 // Result type should be {#v >= 2 && #v <= 3}
 static_assert(is_subtype(r3.type, depth_range(2, 3)));
@@ -474,8 +488,7 @@ static constexpr auto prog4 =
                refmacro::lambda<128>(
                    "d", MFPush(E::lit(30), MFPush(E::lit(20), E::var("d"))))));
 
-constexpr auto r4 = type_check<TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap,
-                               TRFAdd, TRFSub, TRFMul, TRFIf, TRFTimes>(prog4);
+constexpr auto r4 = forth_type_check<prog4>();
 static_assert(r4.valid); // FM proves {2..3} >= 2
 
 // ===================================================================
@@ -493,9 +506,7 @@ static_assert(fn5() == 1); // depth stays at 1
 // Demo 6: Error — stack underflow (uncomment to see compile error)
 // ===================================================================
 //   static constexpr auto err1 = MFDrop(MFNew.operator()<128>());
-//   constexpr auto err1_r = type_check<
-//       TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap,
-//       TRFAdd, TRFSub, TRFMul, TRFIf, TRFTimes>(err1);
+//   constexpr auto err1_r = forth_type_check<err1>();
 //   static_assert(err1_r.valid); // fails: drop requires depth >= 1
 
 // ===================================================================
@@ -508,9 +519,7 @@ static_assert(fn5() == 1); // depth stays at 1
 //       refmacro::lambda<128>("d", MFPush(E::lit(30), MFPush(E::lit(20),
 //       E::var("d"))))
 //   )));
-//   constexpr auto err2_r = type_check<
-//       TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap,
-//       TRFAdd, TRFSub, TRFMul, TRFIf, TRFTimes>(err2);
+//   constexpr auto err2_r = forth_type_check<err2>();
 //   static_assert(err2_r.valid); // fails: {1..2} </: {#v >= 2}
 
 // ===================================================================
@@ -521,9 +530,7 @@ static_assert(fn5() == 1); // depth stays at 1
 //       refmacro::lambda<128>("d", MFPush(E::lit(5), E::var("d"))),  // net +1
 //       MFPush(E::lit(5), MFNew.operator()<128>())
 //   );
-//   constexpr auto err3_r = type_check<
-//       TRFNew, TRFPush, TRFDup, TRFDrop, TRFSwap,
-//       TRFAdd, TRFSub, TRFMul, TRFIf, TRFTimes>(err3);
+//   constexpr auto err3_r = forth_type_check<err3>();
 //   static_assert(err3_r.valid); // fails: body {2} != input {1}
 
 int main() {
