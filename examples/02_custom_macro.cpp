@@ -9,7 +9,7 @@
 using namespace refmacro;
 
 // A unary "abs" macro: abs(x) = x < 0 ? -x : x
-constexpr auto Abs = defmacro("abs", [](auto x) {
+constexpr auto Abs = defmacro<"abs">([](auto x) {
     return [=](auto... a) constexpr {
         auto v = x(a...);
         return v < 0 ? -v : v;
@@ -17,7 +17,7 @@ constexpr auto Abs = defmacro("abs", [](auto x) {
 });
 
 // A ternary "clamp" macro: clamp(val, lo, hi)
-constexpr auto Clamp = defmacro("clamp", [](auto val, auto lo, auto hi) {
+constexpr auto Clamp = defmacro<"clamp">([](auto val, auto lo, auto hi) {
     return [=](auto... a) constexpr {
         auto v = val(a...);
         auto l = lo(a...);

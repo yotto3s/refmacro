@@ -21,7 +21,7 @@ template <std::size_t N = 512>
 [[noreturn]] consteval void
 report_error(const char* category, const char* expected, const char* actual,
              const char* context) {
-    refmacro::FixedString<N> msg{};
+    refmacro::PrintBuffer<N> msg{};
     msg.append("type error: ");
     msg.append(category);
     msg.append("\n  expected: ");
@@ -36,7 +36,7 @@ report_error(const char* category, const char* expected, const char* actual,
 template <std::size_t N = 512>
 [[noreturn]] consteval void report_error(const char* category,
                                          const char* context) {
-    refmacro::FixedString<N> msg{};
+    refmacro::PrintBuffer<N> msg{};
     msg.append("type error: ");
     msg.append(category);
     msg.append("\n  at: ");
@@ -388,19 +388,21 @@ consteval TypeResult<Cap> synth(const Expression<Cap>& expr,
 
 // --- Top-level type checking ---
 
-template <auto... ExtraRules, std::size_t Cap = 128>
-consteval TypeResult<Cap> type_check(const Expression<Cap>& e) {
+template <auto... ExtraRules, std::size_t Cap = 128, auto... Ms>
+consteval TypeResult<Cap> type_check(const Expression<Cap, Ms...>& e) {
+    Expression<Cap> plain = e; // strip macros
     return synth<TRAnn, TRAdd, TRSub, TRMul, TRDiv, TRNeg, TREq, TRLt, TRGt,
                  TRLe, TRGe, TRLand, TRLor, TRLnot, TRCond, TRApply, TRLambda,
-                 TRProgn, ExtraRules...>(e, TypeEnv<Cap>{});
+                 TRProgn, ExtraRules...>(plain, TypeEnv<Cap>{});
 }
 
-template <auto... ExtraRules, std::size_t Cap = 128>
-consteval TypeResult<Cap> type_check(const Expression<Cap>& e,
+template <auto... ExtraRules, std::size_t Cap = 128, auto... Ms>
+consteval TypeResult<Cap> type_check(const Expression<Cap, Ms...>& e,
                                      const TypeEnv<Cap>& env) {
+    Expression<Cap> plain = e; // strip macros
     return synth<TRAnn, TRAdd, TRSub, TRMul, TRDiv, TRNeg, TREq, TRLt, TRGt,
                  TRLe, TRGe, TRLand, TRLor, TRLnot, TRCond, TRApply, TRLambda,
-                 TRProgn, ExtraRules...>(e, env);
+                 TRProgn, ExtraRules...>(plain, env);
 }
 
 } // namespace reftype

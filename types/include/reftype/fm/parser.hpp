@@ -391,9 +391,9 @@ parse_negated(refmacro::NodeView<Cap> node, VarInfo<MaxVars>& vars) {
 // during parsing are registered into `vars`, so callers can pre-populate
 // it with real-valued variables (find_or_add(name, false)) before calling.
 template <std::size_t Cap, std::size_t MaxClauses = 8,
-          std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
+          std::size_t MaxIneqs = 64, std::size_t MaxVars = 16, auto... Ms>
 consteval ParseResult<MaxClauses, MaxIneqs, MaxVars>
-parse_to_system(const refmacro::Expression<Cap>& formula,
+parse_to_system(const refmacro::Expression<Cap, Ms...>& formula,
                 VarInfo<MaxVars>& vars) {
     auto result = parse_formula<Cap, MaxClauses, MaxIneqs>(
         refmacro::NodeView<Cap>{formula.ast, formula.id}, vars);
@@ -407,9 +407,9 @@ parse_to_system(const refmacro::Expression<Cap>& formula,
 
 // Convenience overload: all variables default to integer-valued.
 template <std::size_t Cap, std::size_t MaxClauses = 8,
-          std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
+          std::size_t MaxIneqs = 64, std::size_t MaxVars = 16, auto... Ms>
 consteval ParseResult<MaxClauses, MaxIneqs, MaxVars>
-parse_to_system(const refmacro::Expression<Cap>& formula) {
+parse_to_system(const refmacro::Expression<Cap, Ms...>& formula) {
     VarInfo<MaxVars> vars{};
     return parse_to_system<Cap, MaxClauses, MaxIneqs>(formula, vars);
 }

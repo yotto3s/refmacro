@@ -111,17 +111,18 @@ consteval bool trees_equal(const AST<Cap>& a, int a_id, const AST<Cap>& b,
 
 // --- rewrite: bottom-up rule application until fixed point ---
 
-template <std::size_t Cap = 64, typename Rule>
-consteval Expression<Cap> rewrite(Expression<Cap> e, Rule rule,
-                                  int max_iters = 100) {
+template <std::size_t Cap = 64, auto... Ms, typename Rule>
+consteval Expression<Cap, Ms...> rewrite(Expression<Cap, Ms...> e, Rule rule,
+                                         int max_iters = 100) {
+    Expression<Cap> plain = e; // strip macros via converting constructor
     for (int iter = 0; iter < max_iters; ++iter) {
-        auto result = detail::rebuild_bottom_up<Cap>(e.ast, e.id, rule);
-        if (detail::trees_equal(e.ast, e.id, result.ast, result.id)) {
-            return result;
+        auto result = detail::rebuild_bottom_up<Cap>(plain.ast, plain.id, rule);
+        if (detail::trees_equal(plain.ast, plain.id, result.ast, result.id)) {
+            return result; // implicit conversion back to Expression<Cap, Ms...>
         }
-        e = result;
+        plain = result;
     }
-    return e;
+    return plain; // implicit conversion back to Expression<Cap, Ms...>
 }
 
 // --- fold: bottom-up accumulation over AST ---
@@ -138,13 +139,15 @@ template <typename T, int MaxChildren = 8> struct FoldChildren {
     }
 };
 
-template <std::size_t Cap = 64, typename Visitor>
-consteval auto fold(Expression<Cap> e, Visitor visitor) {
-    using R = decltype(visitor(NodeView<Cap>{e.ast, 0}, FoldChildren<int>{}));
+template <std::size_t Cap = 64, auto... Ms, typename Visitor>
+consteval auto fold(Expression<Cap, Ms...> e, Visitor visitor) {
+    Expression<Cap> plain = e;
+    using R =
+        decltype(visitor(NodeView<Cap>{plain.ast, 0}, FoldChildren<int>{}));
     auto recurse = [&](auto self, int id) consteval -> R {
-        NodeView<Cap> view{e.ast, id};
+        NodeView<Cap> view{plain.ast, id};
         FoldChildren<R> children;
-        auto n = e.ast.nodes[id];
+        auto n = plain.ast.nodes[id];
         for (int i = 0; i < n.child_count; ++i) {
             if (children.count >= children.capacity)
                 throw "FoldChildren: capacity exceeded";
@@ -152,21 +155,23 @@ consteval auto fold(Expression<Cap> e, Visitor visitor) {
         }
         return visitor(view, children);
     };
-    return recurse(recurse, e.id);
+    return recurse(recurse, plain.id);
 }
 
 // --- transform: structural recursion with user visitor ---
 
-template <std::size_t Cap = 64, typename Visitor>
-consteval Expression<Cap> transform(Expression<Cap> e, Visitor visitor) {
+template <std::size_t Cap = 64, auto... Ms, typename Visitor>
+consteval Expression<Cap, Ms...> transform(Expression<Cap, Ms...> e,
+                                           Visitor visitor) {
+    Expression<Cap> plain = e;
     auto recurse = [&](auto self, int id) consteval -> Expression<Cap> {
-        NodeView<Cap> view{e.ast, id};
+        NodeView<Cap> view{plain.ast, id};
         auto rec = [&](NodeView<Cap> child) consteval -> Expression<Cap> {
             return self(self, child.id);
         };
         return visitor(view, rec);
     };
-    return recurse(recurse, e.id);
+    return recurse(recurse, plain.id); // implicit conversion
 }
 
 } // namespace refmacro

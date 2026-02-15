@@ -5,14 +5,14 @@ using namespace refmacro;
 
 // --- Custom macros (file scope for NTTP use) ---
 
-constexpr auto Abs = defmacro("abs", [](auto x) {
+constexpr auto Abs = defmacro<"abs">([](auto x) {
     return [=](auto... a) constexpr {
         auto v = x(a...);
         return v < 0 ? -v : v;
     };
 });
 
-constexpr auto Clamp = defmacro("clamp", [](auto val, auto lo, auto hi) {
+constexpr auto Clamp = defmacro<"clamp">([](auto val, auto lo, auto hi) {
     return [=](auto... a) constexpr {
         auto v = val(a...);
         auto l = lo(a...);

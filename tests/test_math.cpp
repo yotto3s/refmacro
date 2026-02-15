@@ -240,3 +240,9 @@ TEST(ExprBinding, Pipeline) {
     constexpr auto fn = math_compile<df>();
     static_assert(fn(3.0) == 8.0);
 }
+
+TEST(PrettyPrint, PrintBufferRename) {
+    constexpr auto e = Expr::lit(1.0);
+    constexpr refmacro::PrintBuffer<256> s = pretty_print(e);
+    static_assert(s == "1");
+}

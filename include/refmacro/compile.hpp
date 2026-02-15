@@ -186,10 +186,24 @@ consteval auto compile_node(auto locals) {
 
 // --- Public API ---
 
-template <auto e, auto... Macros> consteval auto compile() {
-    constexpr auto vm = extract_var_map(e.ast, e.id);
-    return detail::compile_node<e.ast, e.id, vm, Scope{}, Macros...>(
-        std::tuple{});
+namespace detail {
+
+template <auto e, typename ExprType, auto... ExtraMacros>
+struct unified_compiler;
+
+template <auto e, std::size_t Cap, auto... Embedded, auto... Extra>
+struct unified_compiler<e, Expression<Cap, Embedded...>, Extra...> {
+    static consteval auto run() {
+        constexpr auto vm = extract_var_map(e.ast, e.id);
+        return compile_node<e.ast, e.id, vm, Scope{}, Embedded..., Extra...>(
+            std::tuple{});
+    }
+};
+
+} // namespace detail
+
+template <auto e, auto... ExtraMacros> consteval auto compile() {
+    return detail::unified_compiler<e, decltype(e), ExtraMacros...>::run();
 }
 
 } // namespace refmacro

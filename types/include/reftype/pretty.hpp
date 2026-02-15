@@ -8,13 +8,13 @@ namespace reftype {
 
 namespace detail {
 
-using refmacro::FixedString;
+using refmacro::PrintBuffer;
 using refmacro::str_eq;
 
 template <std::size_t Cap>
-consteval FixedString<256> pp_node(const refmacro::AST<Cap>& ast, int id) {
+consteval PrintBuffer<256> pp_node(const refmacro::AST<Cap>& ast, int id) {
     auto n = ast.nodes[id];
-    FixedString<256> s;
+    PrintBuffer<256> s;
 
     // --- Type-specific tags ---
 
@@ -69,9 +69,9 @@ consteval FixedString<256> pp_node(const refmacro::AST<Cap>& ast, int id) {
 
 } // namespace detail
 
-template <std::size_t Cap = 128>
-consteval refmacro::FixedString<256>
-pretty_print(const refmacro::Expression<Cap>& e) {
+template <std::size_t Cap = 128, auto... Ms>
+consteval refmacro::PrintBuffer<256>
+pretty_print(const refmacro::Expression<Cap, Ms...>& e) {
     return detail::pp_node(e.ast, e.id);
 }
 

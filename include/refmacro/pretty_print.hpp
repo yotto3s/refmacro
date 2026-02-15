@@ -7,12 +7,12 @@
 
 namespace refmacro {
 
-template <std::size_t N = 256> struct FixedString {
+template <std::size_t N = 256> struct PrintBuffer {
     char data[N]{};
     std::size_t len{0};
 
-    consteval FixedString() = default;
-    consteval FixedString(const char* s) {
+    consteval PrintBuffer() = default;
+    consteval PrintBuffer(const char* s) {
         while (s[len] != '\0' && len < N - 1) {
             data[len] = s[len];
             ++len;
@@ -23,7 +23,7 @@ template <std::size_t N = 256> struct FixedString {
         for (std::size_t i = 0; s[i] != '\0' && len < N - 1; ++i)
             data[len++] = s[i];
     }
-    consteval void append(const FixedString& o) {
+    consteval void append(const PrintBuffer& o) {
         for (std::size_t i = 0; i < o.len && len < N - 1; ++i)
             data[len++] = o.data[i];
     }
@@ -127,9 +127,9 @@ consteval const char* infix_sym(const char* tag) {
 }
 
 template <std::size_t Cap>
-consteval FixedString<256> pp_node(const AST<Cap>& ast, int id) {
+consteval PrintBuffer<256> pp_node(const AST<Cap>& ast, int id) {
     auto n = ast.nodes[id];
-    FixedString<256> s;
+    PrintBuffer<256> s;
 
     if (str_eq(n.tag, "lit")) {
         s.append_double(n.payload);
@@ -229,8 +229,8 @@ consteval FixedString<256> pp_node(const AST<Cap>& ast, int id) {
 
 } // namespace detail
 
-template <std::size_t Cap = 64>
-consteval FixedString<256> pretty_print(const Expression<Cap>& e) {
+template <std::size_t Cap = 64, auto... Ms>
+consteval PrintBuffer<256> pretty_print(const Expression<Cap, Ms...>& e) {
     return detail::pp_node(e.ast, e.id);
 }
 

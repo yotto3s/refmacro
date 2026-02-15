@@ -11,83 +11,86 @@ namespace refmacro {
 
 // --- Math macros (lowering to lambdas) ---
 
-inline constexpr auto MAdd = defmacro("add", [](auto lhs, auto rhs) {
+inline constexpr auto MAdd = defmacro<"add">([](auto lhs, auto rhs) {
     return [=](auto... a) constexpr { return lhs(a...) + rhs(a...); };
 });
 
-inline constexpr auto MSub = defmacro("sub", [](auto lhs, auto rhs) {
+inline constexpr auto MSub = defmacro<"sub">([](auto lhs, auto rhs) {
     return [=](auto... a) constexpr { return lhs(a...) - rhs(a...); };
 });
 
-inline constexpr auto MMul = defmacro("mul", [](auto lhs, auto rhs) {
+inline constexpr auto MMul = defmacro<"mul">([](auto lhs, auto rhs) {
     return [=](auto... a) constexpr { return lhs(a...) * rhs(a...); };
 });
 
-inline constexpr auto MDiv = defmacro("div", [](auto lhs, auto rhs) {
+inline constexpr auto MDiv = defmacro<"div">([](auto lhs, auto rhs) {
     return [=](auto... a) constexpr { return lhs(a...) / rhs(a...); };
 });
 
-inline constexpr auto MNeg = defmacro("neg", [](auto x) {
-    return [=](auto... a) constexpr { return -x(a...); };
-});
+inline constexpr auto MNeg = defmacro<"neg">(
+    [](auto x) { return [=](auto... a) constexpr { return -x(a...); }; });
 
-// --- Operator sugar (creates AST nodes, no lowering) ---
+// --- Operator sugar (auto-tracks macros via MacroCaller delegation) ---
 
-template <std::size_t Cap>
-consteval Expression<Cap> operator+(Expression<Cap> lhs, Expression<Cap> rhs) {
-    return make_node("add", lhs, rhs);
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator+(Expression<Cap, Ms1...> lhs,
+                         Expression<Cap, Ms2...> rhs) {
+    return MAdd(lhs, rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator-(Expression<Cap> lhs, Expression<Cap> rhs) {
-    return make_node("sub", lhs, rhs);
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator-(Expression<Cap, Ms1...> lhs,
+                         Expression<Cap, Ms2...> rhs) {
+    return MSub(lhs, rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator*(Expression<Cap> lhs, Expression<Cap> rhs) {
-    return make_node("mul", lhs, rhs);
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator*(Expression<Cap, Ms1...> lhs,
+                         Expression<Cap, Ms2...> rhs) {
+    return MMul(lhs, rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator/(Expression<Cap> lhs, Expression<Cap> rhs) {
-    return make_node("div", lhs, rhs);
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator/(Expression<Cap, Ms1...> lhs,
+                         Expression<Cap, Ms2...> rhs) {
+    return MDiv(lhs, rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator-(Expression<Cap> x) {
-    return make_node("neg", x);
+template <std::size_t Cap, auto... Ms>
+consteval auto operator-(Expression<Cap, Ms...> x) {
+    return MNeg(x);
 }
 
 // double on LHS
-template <std::size_t Cap>
-consteval Expression<Cap> operator+(double lhs, Expression<Cap> rhs) {
-    return Expression<Cap>::lit(lhs) + rhs;
+template <std::size_t Cap, auto... Ms>
+consteval auto operator+(double lhs, Expression<Cap, Ms...> rhs) {
+    return MAdd(Expression<Cap>::lit(lhs), rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator-(double lhs, Expression<Cap> rhs) {
-    return Expression<Cap>::lit(lhs) - rhs;
+template <std::size_t Cap, auto... Ms>
+consteval auto operator-(double lhs, Expression<Cap, Ms...> rhs) {
+    return MSub(Expression<Cap>::lit(lhs), rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator*(double lhs, Expression<Cap> rhs) {
-    return Expression<Cap>::lit(lhs) * rhs;
+template <std::size_t Cap, auto... Ms>
+consteval auto operator*(double lhs, Expression<Cap, Ms...> rhs) {
+    return MMul(Expression<Cap>::lit(lhs), rhs);
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator/(double lhs, Expression<Cap> rhs) {
-    return Expression<Cap>::lit(lhs) / rhs;
+template <std::size_t Cap, auto... Ms>
+consteval auto operator/(double lhs, Expression<Cap, Ms...> rhs) {
+    return MDiv(Expression<Cap>::lit(lhs), rhs);
 }
 
 // double on RHS
-template <std::size_t Cap>
-consteval Expression<Cap> operator+(Expression<Cap> lhs, double rhs) {
-    return lhs + Expression<Cap>::lit(rhs);
+template <std::size_t Cap, auto... Ms>
+consteval auto operator+(Expression<Cap, Ms...> lhs, double rhs) {
+    return MAdd(lhs, Expression<Cap>::lit(rhs));
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator-(Expression<Cap> lhs, double rhs) {
-    return lhs - Expression<Cap>::lit(rhs);
+template <std::size_t Cap, auto... Ms>
+consteval auto operator-(Expression<Cap, Ms...> lhs, double rhs) {
+    return MSub(lhs, Expression<Cap>::lit(rhs));
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator*(Expression<Cap> lhs, double rhs) {
-    return lhs * Expression<Cap>::lit(rhs);
+template <std::size_t Cap, auto... Ms>
+consteval auto operator*(Expression<Cap, Ms...> lhs, double rhs) {
+    return MMul(lhs, Expression<Cap>::lit(rhs));
 }
-template <std::size_t Cap>
-consteval Expression<Cap> operator/(Expression<Cap> lhs, double rhs) {
-    return lhs / Expression<Cap>::lit(rhs);
+template <std::size_t Cap, auto... Ms>
+consteval auto operator/(Expression<Cap, Ms...> lhs, double rhs) {
+    return MDiv(lhs, Expression<Cap>::lit(rhs));
 }
 
 // --- Convenience: compile with all math macros ---
@@ -115,13 +118,14 @@ consteval double eval_op(std::string_view tag, double lhs, double rhs) {
 }
 } // namespace detail
 
-template <std::size_t Cap = 64>
-consteval Expression<Cap> simplify(Expression<Cap> e) {
+template <std::size_t Cap = 64, auto... Ms>
+consteval Expression<Cap, Ms...> simplify(Expression<Cap, Ms...> e) {
+    Expression<Cap> plain = e; // strip macros
     auto is_lit = [](NodeView<Cap> v, double val) consteval {
         return v.tag() == "lit" && v.payload() == val;
     };
-    return rewrite(
-        e,
+    auto result = rewrite(
+        plain,
         [is_lit](NodeView<Cap> n) consteval -> std::optional<Expression<Cap>> {
             // x + 0 -> x, 0 + x -> x
             if (n.tag() == "add" && n.child_count() == 2) {
@@ -168,14 +172,18 @@ consteval Expression<Cap> simplify(Expression<Cap> e) {
             }
             return std::nullopt;
         });
+    return result; // implicit conversion back to Expression<Cap, Ms...>
 }
 
 // --- differentiate: symbolic differentiation via structural recursion ---
 
-template <std::size_t Cap = 64>
-consteval Expression<Cap> differentiate(Expression<Cap> e, const char* var) {
-    return transform(
-        e, [var](NodeView<Cap> n, auto recurse) consteval -> Expression<Cap> {
+template <std::size_t Cap = 64, auto... Ms>
+consteval Expression<Cap, Ms...> differentiate(Expression<Cap, Ms...> e,
+                                               const char* var) {
+    Expression<Cap> plain = e; // strip macros
+    auto result = transform(
+        plain,
+        [var](NodeView<Cap> n, auto recurse) consteval -> Expression<Cap> {
             if (n.tag() == "lit")
                 return Expression<Cap>::lit(0.0);
             if (n.tag() == "var")
@@ -199,6 +207,7 @@ consteval Expression<Cap> differentiate(Expression<Cap> e, const char* var) {
             }
             return Expression<Cap>::lit(0.0);
         });
+    return result; // implicit conversion back to Expression<Cap, Ms...>
 }
 
 } // namespace refmacro
