@@ -10,11 +10,8 @@
 #include <refmacro/math.hpp>
 #include <reftype/refinement.hpp>
 
-using refmacro::compile;
 using refmacro::defmacro;
 using refmacro::Expression;
-using refmacro::make_node;
-using refmacro::str_eq;
 using reftype::ann;
 using reftype::BaseKind;
 using reftype::def_typerule;
@@ -37,16 +34,9 @@ using refmacro::to_expr;
 // clamp(x, lo, hi) clamps x to the range [lo, hi].
 // We define both an AST constructor and a runtime lowering macro.
 
-// AST constructor: builds a 3-child "clamp" node
-template <std::size_t Cap = 128>
-consteval Expression<Cap> clamp(Expression<Cap> x, Expression<Cap> lo,
-                                Expression<Cap> hi) {
-    return make_node("clamp", x, lo, hi);
-}
-
 // Runtime lowering: cond(x < lo, lo, cond(x > hi, hi, x))
 // The macro receives compiled children as lambdas and returns a lambda.
-inline constexpr auto MClamp = defmacro("clamp", [](auto x, auto lo, auto hi) {
+inline constexpr auto MClamp = defmacro<"clamp">([](auto x, auto lo, auto hi) {
     return [=](auto... a) constexpr {
         auto xv = x(a...);
         auto lov = lo(a...);
@@ -111,18 +101,16 @@ inline constexpr auto TRClamp = def_typerule(
 
 // Helper: type check with TRClamp, strip annotations, compile with all macros
 template <auto expr, auto env> consteval auto clamp_compile() {
-    using namespace refmacro;
     constexpr auto result = type_check<TRClamp>(expr, env);
     static_assert(result.valid, "clamp_compile: type check failed");
     constexpr auto stripped = strip_types(expr);
-    return compile<stripped, MClamp, MAdd, MSub, MMul, MDiv, MNeg, MCond, MLand,
-                   MLor, MLnot, MEq, MLt, MGt, MLe, MGe, MProgn>();
+    return reftype::detail::compile_with_macros_from<stripped>(expr);
 }
 
 static constexpr auto clamp_type =
     tref(TInt, E::var("#v") >= E::lit(0) && E::var("#v") <= E::lit(100));
 static constexpr auto clamp_expr =
-    ann(clamp(E::var("x"), E::lit(0), E::lit(100)), clamp_type);
+    ann(MClamp(E::var("x"), E::lit(0), E::lit(100)), clamp_type);
 static constexpr auto clamp_env = TypeEnv<128>{}.bind("x", TInt);
 
 constexpr auto clamp_fn = clamp_compile<clamp_expr, clamp_env>();
@@ -146,7 +134,7 @@ static_assert(clamp_fn(200) == 100); // above hi: clamped to 100
 static constexpr auto wider_type =
     tref(TInt, E::var("#v") >= E::lit(0) && E::var("#v") <= E::lit(10));
 static constexpr auto subtype_expr =
-    ann(clamp(E::var("x"), E::lit(1), E::lit(5)), wider_type);
+    ann(MClamp(E::var("x"), E::lit(1), E::lit(5)), wider_type);
 
 constexpr auto subtype_fn = clamp_compile<subtype_expr, clamp_env>();
 static_assert(subtype_fn(3) == 3); // in range
@@ -163,7 +151,7 @@ static_assert(subtype_fn(7) == 5); // clamped to hi
 //   static constexpr auto narrow_type =
 //       tref(TInt, E::var("#v") >= E::lit(0) && E::var("#v") <= E::lit(50));
 //   static constexpr auto bad_expr =
-//       ann(clamp(E::var("x"), E::lit(0), E::lit(100)), narrow_type);
+//       ann(MClamp(E::var("x"), E::lit(0), E::lit(100)), narrow_type);
 //   constexpr auto bad_fn = clamp_compile<bad_expr, clamp_env>();
 
 // --- Section 6: Variable bounds ---
@@ -176,7 +164,7 @@ static_assert(subtype_fn(7) == 5); // clamped to hi
 static constexpr auto var_clamp_type =
     tref(TInt, E::var("#v") >= E::var("lo") && E::var("#v") <= E::var("hi"));
 static constexpr auto var_clamp_expr =
-    ann(clamp(E::var("x"), E::var("lo"), E::var("hi")), var_clamp_type);
+    ann(MClamp(E::var("x"), E::var("lo"), E::var("hi")), var_clamp_type);
 static constexpr auto var_clamp_env =
     TypeEnv<128>{}.bind("x", TInt).bind("lo", TInt).bind("hi", TInt);
 
@@ -196,7 +184,7 @@ static_assert(var_clamp_fn(15, 0, 10) == 10); // above hi: clamped to 10
 static constexpr auto expr_bounds_type =
     tref(TInt, E::var("#v") >= E::var("lo") && E::var("#v") <= E::var("hi"));
 static constexpr auto expr_bounds_expr =
-    ann(clamp(E::var("x"), E::var("lo") + E::lit(1), E::var("hi") - E::lit(1)),
+    ann(MClamp(E::var("x"), E::var("lo") + E::lit(1), E::var("hi") - E::lit(1)),
         expr_bounds_type);
 static constexpr auto expr_bounds_env =
     TypeEnv<128>{}.bind("x", TInt).bind("lo", TInt).bind("hi", TInt);
