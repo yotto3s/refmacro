@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <refmacro/compile.hpp>
 #include <refmacro/macro.hpp>
 
 using namespace refmacro;
@@ -59,4 +60,43 @@ TEST(NewDefmacro, OldStyleStillWorks) {
     constexpr auto x = Expr::var("x");
     constexpr auto e = OldAdd(x, Expr::lit(1.0));
     static_assert(str_eq(e.ast.nodes[e.id].tag, "add"));
+}
+
+TEST(AutoCompile, UnaryMacro) {
+    constexpr auto x = Expr::var("x");
+    constexpr auto e = MyNeg(x);
+    constexpr auto fn = compile<e>(); // no macro list!
+    static_assert(fn(5.0) == -5.0);
+}
+
+TEST(AutoCompile, BinaryMacro) {
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
+    constexpr auto e = MyAdd(x, y);
+    constexpr auto fn = compile<e>();
+    static_assert(fn(3.0, 4.0) == 7.0);
+}
+
+TEST(AutoCompile, NestedMacros) {
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
+    constexpr auto e = MyNeg(MyAdd(x, y));
+    constexpr auto fn = compile<e>();
+    static_assert(fn(3.0, 4.0) == -7.0);
+}
+
+TEST(AutoCompile, TernaryMacro) {
+    constexpr auto x = Expr::var("x");
+    constexpr auto e = MyCond(x, Expr::lit(1.0), Expr::lit(0.0));
+    constexpr auto fn = compile<e>();
+    static_assert(fn(1.0) == 1.0);
+    static_assert(fn(0.0) == 0.0);
+}
+
+TEST(AutoCompile, BackwardCompatExplicitMacros) {
+    // Old style: pass macros explicitly — still works
+    constexpr auto x = Expr::var("x");
+    constexpr auto e = make_node("neg", x);  // raw node, no macro tracking
+    constexpr auto fn = compile<e, MyNeg>(); // must pass explicitly
+    static_assert(fn(5.0) == -5.0);
 }
