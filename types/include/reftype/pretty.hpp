@@ -69,9 +69,9 @@ consteval PrintBuffer<256> pp_node(const refmacro::AST<Cap>& ast, int id) {
 
 } // namespace detail
 
-template <std::size_t Cap = 128>
+template <std::size_t Cap = 128, auto... Ms>
 consteval refmacro::PrintBuffer<256>
-pretty_print(const refmacro::Expression<Cap>& e) {
+pretty_print(const refmacro::Expression<Cap, Ms...>& e) {
     return detail::pp_node(e.ast, e.id);
 }
 

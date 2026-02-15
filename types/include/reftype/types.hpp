@@ -2,6 +2,7 @@
 #define REFTYPE_TYPES_HPP
 
 #include <refmacro/ast.hpp>
+#include <refmacro/control.hpp>
 #include <refmacro/expr.hpp>
 
 namespace reftype {

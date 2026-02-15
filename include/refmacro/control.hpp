@@ -65,9 +65,9 @@ inline constexpr auto MProgn = defmacro<"progn">([](auto a, auto b) {
 // --- Lambda / Apply / Let (first-class AST nodes, handled by compile_node) ---
 
 template <std::size_t Cap = 64, auto... Ms>
-consteval Expression<Cap> lambda(const char* param,
-                                 Expression<Cap, Ms...> body) {
-    Expression<Cap> result;
+consteval Expression<Cap, Ms...> lambda(const char* param,
+                                        Expression<Cap, Ms...> body) {
+    Expression<Cap, Ms...> result;
     result.ast = body.ast;
     ASTNode param_node{};
     copy_str(param_node.tag, "var");
@@ -78,9 +78,9 @@ consteval Expression<Cap> lambda(const char* param,
 }
 
 template <std::size_t Cap = 64, auto... Ms1, auto... Ms2>
-consteval Expression<Cap> apply(Expression<Cap, Ms1...> fn,
-                                Expression<Cap, Ms2...> arg) {
-    Expression<Cap> result;
+consteval Expression<Cap, Ms1..., Ms2...> apply(Expression<Cap, Ms1...> fn,
+                                                Expression<Cap, Ms2...> arg) {
+    Expression<Cap, Ms1..., Ms2...> result;
     result.ast = fn.ast;
     int off = result.ast.merge(arg.ast);
     result.id = result.ast.add_tagged_node("apply", {fn.id, arg.id + off});
@@ -88,9 +88,99 @@ consteval Expression<Cap> apply(Expression<Cap, Ms1...> fn,
 }
 
 template <std::size_t Cap = 64, auto... Ms1, auto... Ms2>
-consteval Expression<Cap> let_(const char* name, Expression<Cap, Ms1...> val,
-                               Expression<Cap, Ms2...> body) {
+consteval auto let_(const char* name, Expression<Cap, Ms1...> val,
+                    Expression<Cap, Ms2...> body) {
     return apply(lambda(name, body), val);
+}
+
+// --- Comparison operator sugar (delegates to MacroCaller for auto-tracking)
+// ---
+
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator==(Expression<Cap, Ms1...> lhs,
+                          Expression<Cap, Ms2...> rhs) {
+    return MEq(lhs, rhs);
+}
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator<(Expression<Cap, Ms1...> lhs,
+                         Expression<Cap, Ms2...> rhs) {
+    return MLt(lhs, rhs);
+}
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator>(Expression<Cap, Ms1...> lhs,
+                         Expression<Cap, Ms2...> rhs) {
+    return MGt(lhs, rhs);
+}
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator<=(Expression<Cap, Ms1...> lhs,
+                          Expression<Cap, Ms2...> rhs) {
+    return MLe(lhs, rhs);
+}
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator>=(Expression<Cap, Ms1...> lhs,
+                          Expression<Cap, Ms2...> rhs) {
+    return MGe(lhs, rhs);
+}
+
+// double on LHS (comparison)
+template <std::size_t Cap, auto... Ms>
+consteval auto operator==(double lhs, Expression<Cap, Ms...> rhs) {
+    return MEq(Expression<Cap>::lit(lhs), rhs);
+}
+template <std::size_t Cap, auto... Ms>
+consteval auto operator<(double lhs, Expression<Cap, Ms...> rhs) {
+    return MLt(Expression<Cap>::lit(lhs), rhs);
+}
+template <std::size_t Cap, auto... Ms>
+consteval auto operator>(double lhs, Expression<Cap, Ms...> rhs) {
+    return MGt(Expression<Cap>::lit(lhs), rhs);
+}
+template <std::size_t Cap, auto... Ms>
+consteval auto operator<=(double lhs, Expression<Cap, Ms...> rhs) {
+    return MLe(Expression<Cap>::lit(lhs), rhs);
+}
+template <std::size_t Cap, auto... Ms>
+consteval auto operator>=(double lhs, Expression<Cap, Ms...> rhs) {
+    return MGe(Expression<Cap>::lit(lhs), rhs);
+}
+
+// double on RHS (comparison)
+template <std::size_t Cap, auto... Ms>
+consteval auto operator==(Expression<Cap, Ms...> lhs, double rhs) {
+    return MEq(lhs, Expression<Cap>::lit(rhs));
+}
+template <std::size_t Cap, auto... Ms>
+consteval auto operator<(Expression<Cap, Ms...> lhs, double rhs) {
+    return MLt(lhs, Expression<Cap>::lit(rhs));
+}
+template <std::size_t Cap, auto... Ms>
+consteval auto operator>(Expression<Cap, Ms...> lhs, double rhs) {
+    return MGt(lhs, Expression<Cap>::lit(rhs));
+}
+template <std::size_t Cap, auto... Ms>
+consteval auto operator<=(Expression<Cap, Ms...> lhs, double rhs) {
+    return MLe(lhs, Expression<Cap>::lit(rhs));
+}
+template <std::size_t Cap, auto... Ms>
+consteval auto operator>=(Expression<Cap, Ms...> lhs, double rhs) {
+    return MGe(lhs, Expression<Cap>::lit(rhs));
+}
+
+// --- Logical operator sugar (delegates to MacroCaller for auto-tracking) ---
+
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator&&(Expression<Cap, Ms1...> lhs,
+                          Expression<Cap, Ms2...> rhs) {
+    return MLand(lhs, rhs);
+}
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator||(Expression<Cap, Ms1...> lhs,
+                          Expression<Cap, Ms2...> rhs) {
+    return MLor(lhs, rhs);
+}
+template <std::size_t Cap, auto... Ms>
+consteval auto operator!(Expression<Cap, Ms...> x) {
+    return MLnot(x);
 }
 
 // --- Convenience: compile with all control-flow macros ---
