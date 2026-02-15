@@ -15,8 +15,17 @@ using refmacro::Expression;
 using reftype::ann;
 using reftype::TypeEnv;
 
+// 128-node AST capacity — sufficient for multi-variable physics expressions
 using E = Expression<128>;
-using namespace reftype::dim;
+using reftype::dim::dim_typed_compile;
+using reftype::dim::t_joule;
+using reftype::dim::t_kg;
+using reftype::dim::t_meter;
+using reftype::dim::t_mps;
+using reftype::dim::t_mps2;
+using reftype::dim::t_newton;
+using reftype::dim::t_second;
+using reftype::dim::tdim;
 
 // ===================================================================
 // Section 1: SI units and dimensional types
@@ -30,6 +39,14 @@ using namespace reftype::dim;
 //   t_second = dim(0,1,0)     t_mps2   = dim(1,-2,0)
 //   t_kg     = dim(0,0,1)     t_newton = dim(1,-2,1)
 //   t_scalar = dim(0,0,0)     t_joule  = dim(2,-2,1)
+
+// Verify unit constants have the expected exponents
+static_assert(reftype::dim::dim_exp(t_meter, 0) == 1);  // L=1
+static_assert(reftype::dim::dim_exp(t_meter, 1) == 0);  // T=0
+static_assert(reftype::dim::dim_exp(t_meter, 2) == 0);  // M=0
+static_assert(reftype::dim::dim_exp(t_newton, 0) == 1); // kg*m/s^2
+static_assert(reftype::dim::dim_exp(t_newton, 1) == -2);
+static_assert(reftype::dim::dim_exp(t_newton, 2) == 1);
 
 // ===================================================================
 // Section 2: Kinematics — position equation
@@ -94,7 +111,10 @@ static_assert(force_fn(10.0, 9.8) == 98.0); // 98 newtons
 // ===================================================================
 //
 // Uncomment to see a compile-time error:
-//   meter + second → dimension mismatch!
+//   x0 has type dim(1,0,0) [meter] and t has type dim(0,1,0) [second].
+//   Adding them requires matching dimensions, but dim(1,0,0) != dim(0,1,0).
+//   The dimensional type rule detects this mismatch and throws at consteval
+//   time, producing a clear compile error: "dimension mismatch in arithmetic".
 //
 //   static constexpr auto bad =
 //       ann(E::var("x0") + E::var("t"), t_meter);
