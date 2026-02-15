@@ -122,3 +122,67 @@ TEST(Compile, CustomDSLNode) {
     static_assert(fn(5.0) == 5.0);
     static_assert(fn(-3.0) == 3.0);
 }
+
+// --- Test MacroCaller fields ---
+
+TEST(Defmacro, HasTagAndFnFields) {
+    static_assert(str_eq(Add.tag, "add"));
+    static_assert(str_eq(Neg.tag, "neg"));
+}
+
+TEST(Defmacro, BuildsTernaryNode) {
+    constexpr auto c = Expr::var("c");
+    constexpr auto t = Expr::lit(1.0);
+    constexpr auto f = Expr::lit(2.0);
+    constexpr auto e = If(c, t, f);
+    static_assert(str_eq(e.ast.nodes[e.id].tag, "if_"));
+    static_assert(e.ast.nodes[e.id].child_count == 3);
+}
+
+// --- Test auto-compile (macros discovered from Expression type) ---
+
+TEST(AutoCompile, UnaryMacro) {
+    constexpr auto x = Expr::var("x");
+    constexpr auto e = Neg(x);
+    constexpr auto fn = compile<e>(); // no macro list!
+    static_assert(fn(5.0) == -5.0);
+}
+
+TEST(AutoCompile, BinaryMacro) {
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
+    constexpr auto e = Add(x, y);
+    constexpr auto fn = compile<e>();
+    static_assert(fn(3.0, 4.0) == 7.0);
+}
+
+TEST(AutoCompile, NestedMacros) {
+    constexpr auto x = Expr::var("x");
+    constexpr auto y = Expr::var("y");
+    constexpr auto e = Neg(Add(x, y));
+    constexpr auto fn = compile<e>();
+    static_assert(fn(3.0, 4.0) == -7.0);
+}
+
+TEST(AutoCompile, TernaryMacro) {
+    constexpr auto x = Expr::var("x");
+    constexpr auto e = If(x, Expr::lit(1.0), Expr::lit(0.0));
+    constexpr auto fn = compile<e>();
+    static_assert(fn(1.0) == 1.0);
+    static_assert(fn(0.0) == 0.0);
+}
+
+TEST(AutoCompile, BackwardCompatExplicitMacros) {
+    constexpr auto x = Expr::var("x");
+    constexpr auto e = make_node("neg", x); // raw node, no macro tracking
+    constexpr auto fn = compile<e, Neg>();  // must pass explicitly
+    static_assert(fn(5.0) == -5.0);
+}
+
+TEST(AutoCompile, CustomDSLAutoDiscover) {
+    constexpr auto x = Expr::var("x");
+    constexpr auto e = If(Gt(x, Expr::lit(0.0)), x, Neg(x));
+    constexpr auto fn = compile<e>(); // auto-discovers If, Gt, Neg
+    static_assert(fn(5.0) == 5.0);
+    static_assert(fn(-3.0) == 3.0);
+}
