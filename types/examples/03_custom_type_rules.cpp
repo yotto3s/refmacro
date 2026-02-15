@@ -17,7 +17,6 @@ using reftype::BaseKind;
 using reftype::def_typerule;
 using reftype::get_base_kind;
 using reftype::report_error;
-using reftype::strip_types;
 using reftype::TInt;
 using reftype::tint;
 using reftype::tref;
@@ -101,10 +100,7 @@ inline constexpr auto TRClamp = def_typerule(
 
 // Helper: type check with TRClamp, strip annotations, compile with all macros
 template <auto expr, auto env> consteval auto clamp_compile() {
-    constexpr auto result = type_check<TRClamp>(expr, env);
-    static_assert(result.valid, "clamp_compile: type check failed");
-    constexpr auto stripped = strip_types(expr);
-    return reftype::detail::compile_with_macros_from<stripped>(expr);
+    return reftype::typed_compile<expr, env, TRClamp>();
 }
 
 static constexpr auto clamp_type =
