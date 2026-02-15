@@ -9,14 +9,14 @@
 using namespace refmacro;
 
 // "gt" node: gt(a, b) compiles to a > b ? 1.0 : 0.0
-constexpr auto Gt = defmacro("gt", [](auto lhs, auto rhs) {
+constexpr auto Gt = defmacro<"gt">([](auto lhs, auto rhs) {
     return
         [=](auto... a) constexpr { return lhs(a...) > rhs(a...) ? 1.0 : 0.0; };
 });
 
 // "if_" node: if_(cond, then, else)
 // Treats cond != 0 as true.
-constexpr auto If = defmacro("if_", [](auto cond, auto then_br, auto else_br) {
+constexpr auto If = defmacro<"if_">([](auto cond, auto then_br, auto else_br) {
     return [=](auto... a) constexpr {
         return cond(a...) != 0.0 ? then_br(a...) : else_br(a...);
     };

@@ -52,7 +52,7 @@ consteval Expression<Cap> make_node(const char* tag) {
     return result;
 }
 
-// N-ary (1-8 children)
+// N-ary (1-8 children) - same macro type
 template <std::size_t Cap = 64, auto... Ms,
           std::same_as<Expression<Cap, Ms...>>... Rest>
     requires(sizeof...(Rest) <= 7)
@@ -67,32 +67,78 @@ make_node(const char* tag, Expression<Cap, Ms...> c0, Rest... rest) {
     return result;
 }
 
+// N-ary - mixed macro types (strips macros)
+template <std::size_t Cap = 64, typename... Exprs>
+    requires(sizeof...(Exprs) > 0 && sizeof...(Exprs) <= 8)
+consteval Expression<Cap> make_node(const char* tag, Exprs... children) {
+    Expression<Cap> result;
+    // Convert all to Expression<Cap> and merge ASTs
+    int ids[sizeof...(Exprs)];
+    std::size_t idx = 0;
+    bool first = true;
+    (([&] {
+         Expression<Cap> child =
+             children; // converting constructor strips macros
+         if (first) {
+             result.ast = child.ast;
+             ids[idx++] = child.id;
+             first = false;
+         } else {
+             int off = result.ast.merge(child.ast);
+             ids[idx++] = child.id + off;
+         }
+     }()),
+     ...);
+    result.id = result.ast.add_tagged_node(tag, ids, sizeof...(Exprs));
+    return result;
+}
+
 // --- Comparison operator sugar (creates AST nodes) ---
 
-template <std::size_t Cap, auto... Ms>
-consteval Expression<Cap, Ms...> operator==(Expression<Cap, Ms...> lhs,
-                                            Expression<Cap, Ms...> rhs) {
-    return make_node("eq", lhs, rhs);
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator==(Expression<Cap, Ms1...> lhs,
+                          Expression<Cap, Ms2...> rhs) {
+    Expression<Cap> result;
+    result.ast = lhs.ast;
+    int off = result.ast.merge(rhs.ast);
+    result.id = result.ast.add_tagged_node("eq", {lhs.id, rhs.id + off});
+    return result;
 }
-template <std::size_t Cap, auto... Ms>
-consteval Expression<Cap, Ms...> operator<(Expression<Cap, Ms...> lhs,
-                                           Expression<Cap, Ms...> rhs) {
-    return make_node("lt", lhs, rhs);
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator<(Expression<Cap, Ms1...> lhs,
+                         Expression<Cap, Ms2...> rhs) {
+    Expression<Cap> result;
+    result.ast = lhs.ast;
+    int off = result.ast.merge(rhs.ast);
+    result.id = result.ast.add_tagged_node("lt", {lhs.id, rhs.id + off});
+    return result;
 }
-template <std::size_t Cap, auto... Ms>
-consteval Expression<Cap, Ms...> operator>(Expression<Cap, Ms...> lhs,
-                                           Expression<Cap, Ms...> rhs) {
-    return make_node("gt", lhs, rhs);
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator>(Expression<Cap, Ms1...> lhs,
+                         Expression<Cap, Ms2...> rhs) {
+    Expression<Cap> result;
+    result.ast = lhs.ast;
+    int off = result.ast.merge(rhs.ast);
+    result.id = result.ast.add_tagged_node("gt", {lhs.id, rhs.id + off});
+    return result;
 }
-template <std::size_t Cap, auto... Ms>
-consteval Expression<Cap, Ms...> operator<=(Expression<Cap, Ms...> lhs,
-                                            Expression<Cap, Ms...> rhs) {
-    return make_node("le", lhs, rhs);
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator<=(Expression<Cap, Ms1...> lhs,
+                          Expression<Cap, Ms2...> rhs) {
+    Expression<Cap> result;
+    result.ast = lhs.ast;
+    int off = result.ast.merge(rhs.ast);
+    result.id = result.ast.add_tagged_node("le", {lhs.id, rhs.id + off});
+    return result;
 }
-template <std::size_t Cap, auto... Ms>
-consteval Expression<Cap, Ms...> operator>=(Expression<Cap, Ms...> lhs,
-                                            Expression<Cap, Ms...> rhs) {
-    return make_node("ge", lhs, rhs);
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator>=(Expression<Cap, Ms1...> lhs,
+                          Expression<Cap, Ms2...> rhs) {
+    Expression<Cap> result;
+    result.ast = lhs.ast;
+    int off = result.ast.merge(rhs.ast);
+    result.id = result.ast.add_tagged_node("ge", {lhs.id, rhs.id + off});
+    return result;
 }
 
 // double on LHS (comparison)
@@ -151,19 +197,30 @@ consteval auto operator>=(Expression<Cap, Ms...> lhs, double rhs) {
 
 // --- Logical operator sugar ---
 
-template <std::size_t Cap, auto... Ms>
-consteval Expression<Cap, Ms...> operator&&(Expression<Cap, Ms...> lhs,
-                                            Expression<Cap, Ms...> rhs) {
-    return make_node("land", lhs, rhs);
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator&&(Expression<Cap, Ms1...> lhs,
+                          Expression<Cap, Ms2...> rhs) {
+    Expression<Cap> result;
+    result.ast = lhs.ast;
+    int off = result.ast.merge(rhs.ast);
+    result.id = result.ast.add_tagged_node("land", {lhs.id, rhs.id + off});
+    return result;
+}
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval auto operator||(Expression<Cap, Ms1...> lhs,
+                          Expression<Cap, Ms2...> rhs) {
+    Expression<Cap> result;
+    result.ast = lhs.ast;
+    int off = result.ast.merge(rhs.ast);
+    result.id = result.ast.add_tagged_node("lor", {lhs.id, rhs.id + off});
+    return result;
 }
 template <std::size_t Cap, auto... Ms>
-consteval Expression<Cap, Ms...> operator||(Expression<Cap, Ms...> lhs,
-                                            Expression<Cap, Ms...> rhs) {
-    return make_node("lor", lhs, rhs);
-}
-template <std::size_t Cap, auto... Ms>
-consteval Expression<Cap, Ms...> operator!(Expression<Cap, Ms...> x) {
-    return make_node("lnot", x);
+consteval auto operator!(Expression<Cap, Ms...> x) {
+    Expression<Cap> result;
+    result.ast = x.ast;
+    result.id = result.ast.add_tagged_node("lnot", {x.id});
+    return result;
 }
 
 // Pipe operator for transform composition

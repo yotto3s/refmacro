@@ -8,17 +8,16 @@ using namespace refmacro;
 // --- Define macros for testing ---
 
 // Unary: negation
-constexpr auto Neg = defmacro("neg", [](auto x) {
-    return [=](auto... args) constexpr { return -x(args...); };
-});
+constexpr auto Neg = defmacro<"neg">(
+    [](auto x) { return [=](auto... args) constexpr { return -x(args...); }; });
 
 // Binary: addition
-constexpr auto Add = defmacro("add", [](auto lhs, auto rhs) {
+constexpr auto Add = defmacro<"add">([](auto lhs, auto rhs) {
     return [=](auto... args) constexpr { return lhs(args...) + rhs(args...); };
 });
 
 // Binary: multiplication
-constexpr auto Mul = defmacro("mul", [](auto lhs, auto rhs) {
+constexpr auto Mul = defmacro<"mul">([](auto lhs, auto rhs) {
     return [=](auto... args) constexpr { return lhs(args...) * rhs(args...); };
 });
 
@@ -105,13 +104,13 @@ TEST(Compile, RuntimeCall) {
 // --- Test that macros are truly generic (custom DSL node) ---
 
 constexpr auto If =
-    defmacro("if_", [](auto cond, auto then_val, auto else_val) {
+    defmacro<"if_">([](auto cond, auto then_val, auto else_val) {
         return [=](auto... args) constexpr {
             return cond(args...) ? then_val(args...) : else_val(args...);
         };
     });
 
-constexpr auto Gt = defmacro("gt", [](auto lhs, auto rhs) {
+constexpr auto Gt = defmacro<"gt">([](auto lhs, auto rhs) {
     return [=](auto... args) constexpr { return lhs(args...) > rhs(args...); };
 });
 

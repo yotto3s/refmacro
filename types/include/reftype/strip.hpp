@@ -21,10 +21,11 @@ using refmacro::NodeView;
 //   - bare type nodes (tint, tbool, treal, tref, tarr) => compile error
 //   - everything else => rebuild with recursively stripped children
 
-template <std::size_t Cap = 128>
-consteval Expression<Cap> strip_types(Expression<Cap> e) {
+template <std::size_t Cap = 128, auto... Ms>
+consteval Expression<Cap> strip_types(Expression<Cap, Ms...> e) {
+    Expression<Cap> plain = e; // strip macros
     return refmacro::transform(
-        e, [](NodeView<Cap> n, auto rec) consteval -> Expression<Cap> {
+        plain, [](NodeView<Cap> n, auto rec) consteval -> Expression<Cap> {
             // ann(expr, type) => strip annotation, recurse on expr only
             if (n.tag() == "ann")
                 return rec(n.child(0));

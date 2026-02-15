@@ -90,9 +90,13 @@ consteval bool nodes_equal(const refmacro::AST<CapA>& ast_a, int id_a,
 
 } // namespace detail
 
-template <std::size_t Cap>
-consteval bool types_equal(const Expression<Cap>& a, const Expression<Cap>& b) {
-    return detail::nodes_equal(a.ast, a.id, b.ast, b.id);
+template <std::size_t Cap, auto... Ms1, auto... Ms2>
+consteval bool types_equal(const Expression<Cap, Ms1...>& a,
+                           const Expression<Cap, Ms2...>& b) {
+    Expression<Cap> plain_a = a; // strip macros
+    Expression<Cap> plain_b = b; // strip macros
+    return detail::nodes_equal(plain_a.ast, plain_a.id, plain_b.ast,
+                               plain_b.id);
 }
 
 // --- Base type widening ---
