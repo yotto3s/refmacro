@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <refmacro/control.hpp>
 #include <refmacro/math.hpp>
 #include <reftype/fm/parser.hpp>
 

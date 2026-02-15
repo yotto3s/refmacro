@@ -1,6 +1,7 @@
 #ifndef REFTYPE_FM_SOLVER_HPP
 #define REFTYPE_FM_SOLVER_HPP
 
+#include <refmacro/control.hpp>
 #include <refmacro/expr.hpp>
 #include <reftype/fm/disjunction.hpp>
 #include <reftype/fm/eliminate.hpp>
@@ -57,13 +58,16 @@ namespace detail {
 // Takes VarInfo by value: parse_to_system mutates it to register
 // discovered variables, and we must not alter the caller's copy.
 template <std::size_t Cap, std::size_t MaxClauses = 8,
-          std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
+          std::size_t MaxIneqs = 64, std::size_t MaxVars = 16, auto... Ms1,
+          auto... Ms2>
 consteval bool
-is_valid_implication_impl(const refmacro::Expression<Cap>& premise,
-                          const refmacro::Expression<Cap>& conclusion,
+is_valid_implication_impl(const refmacro::Expression<Cap, Ms1...>& premise,
+                          const refmacro::Expression<Cap, Ms2...>& conclusion,
                           VarInfo<MaxVars> vars) {
-    auto p_dnf = parse_to_system<Cap, MaxClauses, MaxIneqs>(premise, vars);
-    auto q_dnf = parse_to_system<Cap, MaxClauses, MaxIneqs>(conclusion, vars);
+    refmacro::Expression<Cap> p = premise;
+    refmacro::Expression<Cap> q = conclusion;
+    auto p_dnf = parse_to_system<Cap, MaxClauses, MaxIneqs>(p, vars);
+    auto q_dnf = parse_to_system<Cap, MaxClauses, MaxIneqs>(q, vars);
     // Propagate final VarInfo to all P clauses (Q clauses already have it
     // since vars accumulated through both parse calls in order).
     for (std::size_t i = 0; i < p_dnf.clause_count; ++i)
@@ -78,7 +82,7 @@ is_valid_implication_impl(const refmacro::Expression<Cap>& premise,
 
     // Q is disjunctive: fall back to brute-force.
     // Reuse accumulated vars so variable types (integer/real) are preserved.
-    auto combined = premise && !conclusion;
+    auto combined = p && !q;
     auto result = parse_to_system<Cap, MaxClauses, MaxIneqs>(combined, vars);
     return is_unsat(result);
 }
@@ -87,10 +91,11 @@ is_valid_implication_impl(const refmacro::Expression<Cap>& premise,
 
 // Check if P => Q is valid (all variables default to integer).
 template <std::size_t Cap, std::size_t MaxClauses = 8,
-          std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
+          std::size_t MaxIneqs = 64, std::size_t MaxVars = 16, auto... Ms1,
+          auto... Ms2>
 consteval bool
-is_valid_implication(const refmacro::Expression<Cap>& premise,
-                     const refmacro::Expression<Cap>& conclusion) {
+is_valid_implication(const refmacro::Expression<Cap, Ms1...>& premise,
+                     const refmacro::Expression<Cap, Ms2...>& conclusion) {
     return detail::is_valid_implication_impl<Cap, MaxClauses, MaxIneqs,
                                              MaxVars>(premise, conclusion,
                                                       VarInfo<MaxVars>{});
@@ -98,28 +103,32 @@ is_valid_implication(const refmacro::Expression<Cap>& premise,
 
 // Overload with caller-supplied VarInfo for real-valued variables.
 template <std::size_t Cap, std::size_t MaxClauses = 8,
-          std::size_t MaxIneqs = 64, std::size_t MaxVars = 16>
-consteval bool is_valid_implication(const refmacro::Expression<Cap>& premise,
-                                    const refmacro::Expression<Cap>& conclusion,
-                                    VarInfo<MaxVars> vars) {
+          std::size_t MaxIneqs = 64, std::size_t MaxVars = 16, auto... Ms1,
+          auto... Ms2>
+consteval bool
+is_valid_implication(const refmacro::Expression<Cap, Ms1...>& premise,
+                     const refmacro::Expression<Cap, Ms2...>& conclusion,
+                     VarInfo<MaxVars> vars) {
     return detail::is_valid_implication_impl<Cap, MaxClauses, MaxIneqs,
                                              MaxVars>(premise, conclusion,
                                                       vars);
 }
 
 // Check if a formula is always true (!formula is UNSAT).
-template <std::size_t Cap>
-consteval bool is_valid(const refmacro::Expression<Cap>& formula) {
-    auto negated = !formula;
+template <std::size_t Cap, auto... Ms>
+consteval bool is_valid(const refmacro::Expression<Cap, Ms...>& formula) {
+    refmacro::Expression<Cap> plain = formula;
+    auto negated = !plain;
     auto result = parse_to_system(negated);
     return is_unsat(result);
 }
 
 // Overload with caller-supplied VarInfo for real-valued variables.
-template <std::size_t Cap, std::size_t MaxVars = 16>
-consteval bool is_valid(const refmacro::Expression<Cap>& formula,
+template <std::size_t Cap, std::size_t MaxVars = 16, auto... Ms>
+consteval bool is_valid(const refmacro::Expression<Cap, Ms...>& formula,
                         VarInfo<MaxVars> vars) {
-    auto negated = !formula;
+    refmacro::Expression<Cap> plain = formula;
+    auto negated = !plain;
     auto result = parse_to_system(negated, vars);
     return is_unsat(result);
 }

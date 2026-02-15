@@ -35,9 +35,9 @@ template <typename Spec> struct MacroCaller {
     consteval MacroCaller() { copy_str(tag, Spec::tag.data); }
 
     // Nullary
-    consteval auto operator()() const {
+    template <std::size_t Cap = 64> consteval auto operator()() const {
         constexpr MacroCaller self{};
-        Expression<64, self> result;
+        Expression<Cap, self> result;
         result.id = result.ast.add_tagged_node(tag, {});
         return result;
     }
