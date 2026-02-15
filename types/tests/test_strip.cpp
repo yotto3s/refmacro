@@ -8,6 +8,7 @@
 
 using refmacro::Expression;
 using reftype::ann;
+using reftype::def_typerule;
 using reftype::pos_int;
 using reftype::strip_types;
 using reftype::TBool;
@@ -262,4 +263,81 @@ TEST(Pipeline, ConditionalCompile) {
     // p=true → 1, p=false → 2
     static_assert(f(true) == 1);
     static_assert(f(false) == 2);
+}
+
+// ============================================================
+// compile_from: compile with macros recovered from original
+// ============================================================
+
+TEST(CompileFrom, RecoversAutoTrackedMacros) {
+    // Expression with auto-tracked MAdd
+    static constexpr auto original = E::lit(2) + E::lit(3);
+    // Strip macros (simulates strip_types output)
+    static constexpr auto stripped = strip_types(ann(original, TInt));
+    // compile_from recovers MAdd from original's type
+    constexpr auto f = reftype::compile_from<stripped>(original);
+    static_assert(f() == 5);
+}
+
+TEST(CompileFrom, WithExplicitExtraMacros) {
+    // Expression with auto-tracked MAdd, compile with explicit MMul too
+    static constexpr auto original = E::lit(2) + E::lit(3);
+    static constexpr auto stripped = strip_types(ann(original, TInt));
+    constexpr auto f =
+        reftype::compile_from<stripped, refmacro::MMul>(original);
+    static_assert(f() == 5);
+}
+
+// ============================================================
+// typed_strip: type check + strip (no compile)
+// ============================================================
+
+TEST(TypedStrip, BasicLiteral) {
+    // ann(lit(5), TInt) → stripped to lit(5)
+    static constexpr auto e = ann(E::lit(5), TInt);
+    static constexpr auto stripped = reftype::typed_strip<e>();
+    static constexpr auto expected = E::lit(5);
+    static_assert(types_equal(stripped, expected));
+}
+
+TEST(TypedStrip, WithEnvironment) {
+    // ann(var("x") + lit(1), TInt) with env → stripped to var("x") + lit(1)
+    static constexpr auto e = ann(E::var("x") + E::lit(1), TInt);
+    static constexpr auto env = reftype::TypeEnv<128>{}.bind("x", TInt);
+    static constexpr auto stripped = reftype::typed_strip<e, env>();
+    static constexpr auto expected = E::var("x") + E::lit(1);
+    static_assert(types_equal(stripped, expected));
+}
+
+TEST(TypedStrip, NestedAnnotations) {
+    // ann(ann(lit(5), TInt) + lit(1), TInt) → lit(5) + lit(1)
+    static constexpr auto inner = ann(E::lit(5), TInt);
+    static constexpr auto e = ann(inner + E::lit(1), TInt);
+    static constexpr auto stripped = reftype::typed_strip<e>();
+    static constexpr auto expected = E::lit(5) + E::lit(1);
+    static_assert(types_equal(stripped, expected));
+}
+
+TEST(TypedStrip, WithExtraTypeRules) {
+    // Define a minimal custom type rule for "custom" tag
+    static constexpr auto TRCustom = reftype::def_typerule(
+        "custom", [](const auto& expr, [[maybe_unused]] const auto& env,
+                     [[maybe_unused]] auto synth_rec) {
+            constexpr auto Cap =
+                sizeof(expr.ast.nodes) / sizeof(expr.ast.nodes[0]);
+            // Custom node: just return TInt
+            return reftype::TypeResult<Cap>{reftype::TInt, true};
+        });
+
+    // Build annotated expression with custom node
+    static constexpr auto custom_node =
+        refmacro::make_node<128>("custom", E::lit(5));
+    static constexpr auto e = reftype::ann(custom_node, reftype::TInt);
+    static constexpr auto env = reftype::TypeEnv<128>{};
+
+    // typed_strip with ExtraRules: type checks with TRCustom, then strips
+    static constexpr auto stripped = reftype::typed_strip<e, env, TRCustom>();
+
+    // Stripped result should be custom(lit(5)) without annotation
+    static_assert(reftype::types_equal(stripped, custom_node));
 }
