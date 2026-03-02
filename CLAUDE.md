@@ -36,5 +36,5 @@ Everything else is user-defined via macros.
 - `node_view.hpp` — NodeView cursor for tree walking
 - `transforms.hpp` — rewrite(), transform(), fold() primitives (accept Expression<Cap, Ms...>)
 - `pretty_print.hpp` — consteval AST rendering (PrintBuffer)
-- `math.hpp` — Math macros, auto-tracking operators, simplify, differentiate
+- `math.hpp` — Math macros, auto-tracking operators, simplify, differentiate (auto-injects math macros)
 - `refmacro.hpp` — umbrella include

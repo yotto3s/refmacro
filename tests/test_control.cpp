@@ -280,6 +280,30 @@ TEST(LambdaApply, LetShadowing) {
     EXPECT_DOUBLE_EQ(fn(), 2.0);
 }
 
+// --- TG5: Pure control-flow through compile<e>() ---
+
+TEST(ControlMacros, PureControlFlowCompile) {
+    // Complex pure control-flow expression without any math macros.
+    // Implements a three-way classifier:
+    //   if x > 5 then (if x > 10 then 3 else 2) else (if x == 0 then -1 else 1)
+    constexpr auto x = Expr::var("x");
+    constexpr auto inner_high =
+        MCond(x > Expr::lit(10.0), Expr::lit(3.0), Expr::lit(2.0));
+    constexpr auto inner_low =
+        MCond(x == Expr::lit(0.0), Expr::lit(-1.0), Expr::lit(1.0));
+    constexpr auto classifier =
+        MCond(x > Expr::lit(5.0), inner_high, inner_low);
+
+    // All macros (MCond, MGt, MEq) should be auto-discovered
+    constexpr auto fn = compile<classifier>();
+
+    EXPECT_DOUBLE_EQ(fn(20.0), 3.0); // x > 10 -> 3
+    EXPECT_DOUBLE_EQ(fn(7.0), 2.0);  // 5 < x <= 10 -> 2
+    EXPECT_DOUBLE_EQ(fn(0.0), -1.0); // x == 0 -> -1
+    EXPECT_DOUBLE_EQ(fn(3.0), 1.0);  // 0 < x <= 5 -> 1
+    EXPECT_DOUBLE_EQ(fn(-2.0), 1.0); // x < 0 -> 1 (not == 0)
+}
+
 TEST(LambdaApply, StandaloneApplyLambda) {
     // Directly use apply(lambda(...), ...) without let_ sugar
     constexpr auto x = Expr::var("x");

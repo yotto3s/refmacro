@@ -189,6 +189,20 @@ TEST(Diff, NegVar) {
                   -1.0);
 }
 
+// --- Compile raw differentiate result (no simplify) ---
+TEST(Pipeline, CompileRawDifferentiate) {
+    // Compile the result of differentiate() directly without piping through
+    // simplify. The raw derivative of x^2 is x*1 + 1*x (product rule).
+    constexpr auto x = Expr::var("x");
+    constexpr auto f = x * x;
+    constexpr auto df = differentiate(f, "x");
+    constexpr auto fn = compile<df>();
+    // d/dx(x^2) = x*1 + 1*x = x + x = 2x (semantically)
+    static_assert(fn(3.0) == 6.0);
+    static_assert(fn(0.0) == 0.0);
+    EXPECT_DOUBLE_EQ(fn(5.0), 10.0);
+}
+
 // --- Full pipeline: build -> differentiate -> simplify -> compile ---
 TEST(Pipeline, Quadratic) {
     constexpr auto x = Expr::var("x");
