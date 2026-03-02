@@ -46,12 +46,12 @@ TEST(MathOps, DoubleRhsAdd) {
     static_assert(str_eq(e.ast.nodes[e.id].tag, "add"));
 }
 
-// --- Test math_compile (convenience wrapper) ---
+// --- Test compile ---
 
 TEST(MathCompile, Linear) {
     constexpr auto x = Expr::var("x");
     constexpr auto e = 3.0 * x + 5.0;
-    constexpr auto fn = math_compile<e>();
+    constexpr auto fn = compile<e>();
     static_assert(fn(2.0) == 11.0);
 }
 
@@ -59,14 +59,14 @@ TEST(MathCompile, Polynomial) {
     constexpr auto x = Expr::var("x");
     constexpr auto y = Expr::var("y");
     constexpr auto e = x * x + 2.0 * y;
-    constexpr auto fn = math_compile<e>();
+    constexpr auto fn = compile<e>();
     static_assert(fn(3.0, 4.0) == 17.0);
 }
 
 TEST(MathCompile, AllOps) {
     constexpr auto x = Expr::var("x");
     constexpr auto e = -(x * x - x / 2.0);
-    constexpr auto fn = math_compile<e>();
+    constexpr auto fn = compile<e>();
     // x=4: -(16 - 2) = -14
     static_assert(fn(4.0) == -14.0);
 }
@@ -74,7 +74,7 @@ TEST(MathCompile, AllOps) {
 TEST(MathCompile, Runtime) {
     constexpr auto x = Expr::var("x");
     constexpr auto e = x * x + 1.0;
-    constexpr auto fn = math_compile<e>();
+    constexpr auto fn = compile<e>();
     EXPECT_DOUBLE_EQ(fn(3.0), 10.0);
     EXPECT_DOUBLE_EQ(fn(0.0), 1.0);
 }
@@ -198,7 +198,7 @@ TEST(Pipeline, Quadratic) {
     };
     constexpr auto simp = [](Expr e) consteval { return simplify(e); };
     constexpr auto df = f | diff_x | simp;
-    constexpr auto fn = math_compile<df>();
+    constexpr auto fn = compile<df>();
     static_assert(fn(3.0) == 8.0); // 2*3 + 2
     static_assert(fn(0.0) == 2.0);
 }
@@ -211,7 +211,7 @@ TEST(Pipeline, SecondDerivative) {
     };
     constexpr auto simp = [](Expr e) consteval { return simplify(e); };
     constexpr auto d2f = f | diff_x | simp | diff_x | simp;
-    constexpr auto fn = math_compile<d2f>();
+    constexpr auto fn = compile<d2f>();
     static_assert(fn(2.0) == 12.0); // 6*2
 }
 
@@ -219,14 +219,14 @@ TEST(Pipeline, SecondDerivative) {
 
 TEST(ExprBinding, SingleVar) {
     constexpr auto e = expr([](auto x) { return x * x; }, "x");
-    constexpr auto fn = math_compile<e>();
+    constexpr auto fn = compile<e>();
     static_assert(fn(3.0) == 9.0);
 }
 
 TEST(ExprBinding, TwoVars) {
     constexpr auto e =
         expr([](auto x, auto y) { return x * x + 2.0 * y; }, "x", "y");
-    constexpr auto fn = math_compile<e>();
+    constexpr auto fn = compile<e>();
     static_assert(fn(3.0, 4.0) == 17.0);
 }
 
@@ -237,7 +237,7 @@ TEST(ExprBinding, Pipeline) {
     };
     constexpr auto simp = [](Expr e) consteval { return simplify(e); };
     constexpr auto df = f | diff_x | simp;
-    constexpr auto fn = math_compile<df>();
+    constexpr auto fn = compile<df>();
     static_assert(fn(3.0) == 8.0);
 }
 
