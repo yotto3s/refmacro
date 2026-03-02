@@ -16,7 +16,7 @@ int main() {
 
     // --- rewrite: custom constant folding rule ---
     // Eliminate additions of zero: (e + 0) → e
-    constexpr auto remove_add_zero = [](Expr e) consteval {
+    constexpr auto remove_add_zero = [](auto e) consteval {
         return rewrite(e, [](NodeView<64> n) consteval -> std::optional<Expr> {
             if (n.tag() == "add" && n.child_count() == 2) {
                 if (n.child(1).tag() == "lit" && n.child(1).payload() == 0.0)
@@ -38,7 +38,7 @@ int main() {
     static_assert(fn(3.0, 4.0) == 12.0); // x * y
 
     // --- transform: scale all literals by 2 ---
-    constexpr auto double_lits = [](Expr e) consteval {
+    constexpr auto double_lits = [](auto e) consteval {
         return transform(e, [](NodeView<64> n, auto recurse) consteval -> Expr {
             if (n.tag() == "lit")
                 return Expr::lit(n.payload() * 2.0);

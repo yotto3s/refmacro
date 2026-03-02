@@ -14,13 +14,13 @@ using namespace refmacro;
 
 int main() {
     // ── Shared transform closures ──────────────────────────────
-    constexpr auto diff_x = [](Expr e) consteval {
+    constexpr auto diff_x = [](auto e) consteval {
         return differentiate(e, "x");
     };
-    constexpr auto diff_y = [](Expr e) consteval {
+    constexpr auto diff_y = [](auto e) consteval {
         return differentiate(e, "y");
     };
-    constexpr auto simp = [](Expr e) consteval { return simplify(e); };
+    constexpr auto simp = [](auto e) consteval { return simplify(e); };
 
     // ── Act 1: Code is Data ──────────────────────────────────
     //

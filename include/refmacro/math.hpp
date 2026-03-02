@@ -172,8 +172,8 @@ consteval Expression<Cap, Ms...> simplify(Expression<Cap, Ms...> e) {
 // --- differentiate: symbolic differentiation via structural recursion ---
 
 template <std::size_t Cap = 64, auto... Ms>
-consteval Expression<Cap, Ms...> differentiate(Expression<Cap, Ms...> e,
-                                               const char* var) {
+consteval Expression<Cap, MAdd, MSub, MMul, MDiv, MNeg, Ms...>
+differentiate(Expression<Cap, Ms...> e, const char* var) {
     Expression<Cap> plain = e; // strip macros
     auto result = transform(
         plain,

@@ -9,10 +9,10 @@
 using namespace refmacro;
 
 int main() {
-    constexpr auto diff_x = [](Expr e) consteval {
+    constexpr auto diff_x = [](auto e) consteval {
         return differentiate(e, "x");
     };
-    constexpr auto simp = [](Expr e) consteval { return simplify(e); };
+    constexpr auto simp = [](auto e) consteval { return simplify(e); };
 
     // --- First derivative of a polynomial ---
     // f(x) = x^3 (represented as x*x*x)
@@ -37,7 +37,7 @@ int main() {
     // --- Multivariate: gradient of f(x,y) = x*y + x + y ---
     constexpr auto y = Expr::var("y");
     constexpr auto g = x * y + x + y;
-    constexpr auto diff_y = [](Expr e) consteval {
+    constexpr auto diff_y = [](auto e) consteval {
         return differentiate(e, "y");
     };
 

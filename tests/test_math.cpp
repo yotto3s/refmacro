@@ -193,10 +193,10 @@ TEST(Diff, NegVar) {
 TEST(Pipeline, Quadratic) {
     constexpr auto x = Expr::var("x");
     constexpr auto f = x * x + 2.0 * x + 1.0;
-    constexpr auto diff_x = [](Expr e) consteval {
+    constexpr auto diff_x = [](auto e) consteval {
         return differentiate(e, "x");
     };
-    constexpr auto simp = [](Expr e) consteval { return simplify(e); };
+    constexpr auto simp = [](auto e) consteval { return simplify(e); };
     constexpr auto df = f | diff_x | simp;
     constexpr auto fn = compile<df>();
     static_assert(fn(3.0) == 8.0); // 2*3 + 2
@@ -206,10 +206,10 @@ TEST(Pipeline, Quadratic) {
 TEST(Pipeline, SecondDerivative) {
     constexpr auto x = Expr::var("x");
     constexpr auto f = x * x * x;
-    constexpr auto diff_x = [](Expr e) consteval {
+    constexpr auto diff_x = [](auto e) consteval {
         return differentiate(e, "x");
     };
-    constexpr auto simp = [](Expr e) consteval { return simplify(e); };
+    constexpr auto simp = [](auto e) consteval { return simplify(e); };
     constexpr auto d2f = f | diff_x | simp | diff_x | simp;
     constexpr auto fn = compile<d2f>();
     static_assert(fn(2.0) == 12.0); // 6*2
@@ -232,10 +232,10 @@ TEST(ExprBinding, TwoVars) {
 
 TEST(ExprBinding, Pipeline) {
     constexpr auto f = expr([](auto x) { return x * x + 2.0 * x + 1.0; }, "x");
-    constexpr auto diff_x = [](Expr e) consteval {
+    constexpr auto diff_x = [](auto e) consteval {
         return differentiate(e, "x");
     };
-    constexpr auto simp = [](Expr e) consteval { return simplify(e); };
+    constexpr auto simp = [](auto e) consteval { return simplify(e); };
     constexpr auto df = f | diff_x | simp;
     constexpr auto fn = compile<df>();
     static_assert(fn(3.0) == 8.0);

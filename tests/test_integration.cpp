@@ -40,10 +40,10 @@ TEST(Integration, LinearFunction) {
     static_assert(fn(2.0) == 11.0);
     static_assert(fn(0.0) == 5.0);
 
-    constexpr auto diff_x = [](Expr e) consteval {
+    constexpr auto diff_x = [](auto e) consteval {
         return differentiate(e, "x");
     };
-    constexpr auto simp = [](Expr e) consteval { return simplify(e); };
+    constexpr auto simp = [](auto e) consteval { return simplify(e); };
     constexpr auto df = f | diff_x | simp;
     constexpr auto dfn = compile<df>();
     static_assert(dfn(100.0) == 3.0);
@@ -55,10 +55,10 @@ TEST(Integration, QuadraticRoots) {
     constexpr auto fn = compile<f>();
     static_assert(fn(2.0) == 0.0);
 
-    constexpr auto diff_x = [](Expr e) consteval {
+    constexpr auto diff_x = [](auto e) consteval {
         return differentiate(e, "x");
     };
-    constexpr auto simp = [](Expr e) consteval { return simplify(e); };
+    constexpr auto simp = [](auto e) consteval { return simplify(e); };
     constexpr auto df = f | diff_x | simp;
     constexpr auto dfn = compile<df>();
     static_assert(dfn(2.0) == 0.0); // minimum
@@ -85,10 +85,10 @@ TEST(Integration, MultivarGradient) {
 TEST(Integration, SecondDerivative) {
     constexpr auto x = Expr::var("x");
     constexpr auto f = x * x * x;
-    constexpr auto diff_x = [](Expr e) consteval {
+    constexpr auto diff_x = [](auto e) consteval {
         return differentiate(e, "x");
     };
-    constexpr auto simp = [](Expr e) consteval { return simplify(e); };
+    constexpr auto simp = [](auto e) consteval { return simplify(e); };
     constexpr auto d2f = f | diff_x | simp | diff_x | simp;
     constexpr auto fn = compile<d2f>();
     static_assert(fn(2.0) == 12.0); // 6*2
