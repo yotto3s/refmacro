@@ -34,7 +34,7 @@ int main() {
     std::cout << "  An expression is just data — an AST you can print:\n";
     std::cout << "  f(x) = " << pretty_print(f).data << "\n\n";
 
-    constexpr auto f_fn = math_compile<f>();
+    constexpr auto f_fn = compile<f>();
     static_assert(f_fn(3.0) == 12.0);
     static_assert(f_fn(10.0) == 110.0);
 
@@ -58,8 +58,8 @@ int main() {
     std::cout << "  f'(x)     = " << pretty_print(df).data << "\n";
     std::cout << "  f''(x)    = " << pretty_print(d2f).data << "\n\n";
 
-    constexpr auto df_fn = math_compile<df>();
-    constexpr auto d2f_fn = math_compile<d2f>();
+    constexpr auto df_fn = compile<df>();
+    constexpr auto d2f_fn = compile<d2f>();
     static_assert(df_fn(3.0) == 7.0);
     static_assert(d2f_fn() == 2.0);
 
@@ -114,8 +114,8 @@ int main() {
     constexpr auto e1_expanded = rewrite(e1, expand);
     constexpr auto e1_clean = simplify(e1_expanded);
 
-    constexpr auto e1_fn = math_compile<e1>();
-    constexpr auto e1_clean_fn = math_compile<e1_clean>();
+    constexpr auto e1_fn = compile<e1>();
+    constexpr auto e1_clean_fn = compile<e1_clean>();
     static_assert(e1_fn(3.0) == e1_clean_fn(3.0));
 
     std::cout << "  expand: a*(b+c) -> a*b + a*c\n";
@@ -131,8 +131,8 @@ int main() {
     constexpr auto e2_expanded = rewrite(e2, expand);
     constexpr auto e2_clean = simplify(e2_expanded);
 
-    constexpr auto e2_fn = math_compile<e2>();
-    constexpr auto e2_clean_fn = math_compile<e2_clean>();
+    constexpr auto e2_fn = compile<e2>();
+    constexpr auto e2_clean_fn = compile<e2_clean>();
     static_assert(e2_fn(3.0) == e2_clean_fn(3.0));
 
     std::cout << "  Nested distribution (fixed-point):\n";
@@ -142,7 +142,7 @@ int main() {
 
     // Demo: collect turns x + x → 2 * x in the derivative
     constexpr auto df_collected = rewrite(df, collect);
-    constexpr auto df_coll_fn = math_compile<df_collected>();
+    constexpr auto df_coll_fn = compile<df_collected>();
     static_assert(df_fn(5.0) == df_coll_fn(5.0));
 
     std::cout << "  collect: x+x -> 2*x\n";
@@ -171,9 +171,9 @@ int main() {
     std::cout << "  dg/dx  = " << pretty_print(gx).data << "\n";
     std::cout << "  dg/dy  = " << pretty_print(gy).data << "\n\n";
 
-    constexpr auto g_fn = math_compile<g>();
-    constexpr auto gx_fn = math_compile<gx>();
-    constexpr auto gy_fn = math_compile<gy>();
+    constexpr auto g_fn = compile<g>();
+    constexpr auto gx_fn = compile<gx>();
+    constexpr auto gy_fn = compile<gy>();
     static_assert(g_fn(2.0, 3.0) == 19.0);
     static_assert(gx_fn(2.0, 3.0) == 7.0);
     static_assert(gy_fn(2.0, 3.0) == 8.0);
