@@ -35,7 +35,7 @@ constexpr auto f = x * x + 2.0 * x + 1.0;
 static_assert(pretty_print(f) == "(((x * x) + (2 * x)) + 1)");
 
 // Compile to a callable lambda
-constexpr auto fn = math_compile<f>();
+constexpr auto fn = compile<f>();
 static_assert(fn(3.0) == 16.0);  // (3+1)^2 = 16
 ```
 
@@ -50,7 +50,7 @@ constexpr auto Abs = defmacro("abs", [](auto x) {
 });
 
 constexpr auto e = Abs(Expr::var("x"));
-constexpr auto fn = compile<e, Abs>();
+constexpr auto fn = compile<e>();
 static_assert(fn(-3.0) == 3.0);
 ```
 
@@ -82,13 +82,13 @@ constexpr auto If = defmacro("if_", [](auto cond, auto then_br, auto else_br) {
     };
 });
 
-consteval Expr gt(Expr lhs, Expr rhs) { return make_node("gt", lhs, rhs); }
-consteval Expr if_(Expr c, Expr t, Expr e) { return make_node("if_", c, t, e); }
+consteval Expr Gt(Expr lhs, Expr rhs) { return make_node("gt", lhs, rhs); }
+consteval Expr If(Expr c, Expr t, Expr e) { return make_node("if_", c, t, e); }
 
-// relu(x) = if_(gt(x, 0), x, 0)
+// relu(x) = If(Gt(x, 0), x, 0)
 constexpr auto x = Expr::var("x");
-constexpr auto relu_expr = if_(gt(x, Expr::lit(0.0)), x, Expr::lit(0.0));
-constexpr auto relu = compile<relu_expr, MAdd, MSub, MMul, MDiv, MNeg, Gt, If>();
+constexpr auto relu_expr = If(Gt(x, Expr::lit(0.0)), x, Expr::lit(0.0));
+constexpr auto relu = compile<relu_expr>();
 static_assert(relu(-5.0) == 0.0);
 static_assert(relu(3.0) == 3.0);
 ```
@@ -101,7 +101,7 @@ static_assert(relu(3.0) == 3.0);
 | `expr.hpp` | `Expr`, `lit()`, `var()`, `make_node()`, pipe operator |
 | `macro.hpp` | `defmacro()`, `Macro` type |
 | `compile.hpp` | `compile<expr, macros...>()`, `VarMap`, `Scope`, `TagStr` |
-| `control.hpp` | Control-flow macros, `lambda()`, `apply()`, `let_()`, `full_compile<>()` |
+| `control.hpp` | Control-flow macros, `lambda()`, `apply()`, `let_()` |
 | `node_view.hpp` | `NodeView` cursor for tree walking |
 | `transforms.hpp` | `rewrite()`, `transform()`, `fold()` primitives |
 | `pretty_print.hpp` | Consteval AST rendering |

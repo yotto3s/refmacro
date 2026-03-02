@@ -32,7 +32,7 @@ Everything else is user-defined via macros.
 - `expr.hpp` — Expression<Cap, auto... Macros>, lit(), var(), make_node()
 - `macro.hpp` — FixedString, MacroSpec, MacroCaller, defmacro<"tag">(fn)
 - `compile.hpp` — compile<expr>(), unified_compiler, VarMap, Scope, TagStr
-- `control.hpp` — Control-flow macros (MCond, comparisons, logical), lambda(), apply(), let_(), full_compile<>()
+- `control.hpp` — Control-flow macros (MCond, comparisons, logical), lambda(), apply(), let_()
 - `node_view.hpp` — NodeView cursor for tree walking
 - `transforms.hpp` — rewrite(), transform(), fold() primitives (accept Expression<Cap, Ms...>)
 - `pretty_print.hpp` — consteval AST rendering (PrintBuffer)
