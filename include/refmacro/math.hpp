@@ -93,12 +93,6 @@ consteval auto operator/(Expression<Cap, Ms...> lhs, double rhs) {
     return MDiv(lhs, Expression<Cap>::lit(rhs));
 }
 
-// --- Convenience: compile with all math macros ---
-
-template <auto e> consteval auto math_compile() {
-    return compile<e, MAdd, MSub, MMul, MDiv, MNeg>();
-}
-
 // --- simplify: algebraic identities + constant folding ---
 
 namespace detail {
