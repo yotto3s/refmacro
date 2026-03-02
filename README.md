@@ -4,7 +4,7 @@ A header-only C++26 compile-time AST metaprogramming framework with Lisp-like ma
 
 ## Features
 
-- **Lisp-like macro system**: `defmacro(tag, lower_fn)` defines AST node types with deferred lowering
+- **Lisp-like macro system**: `defmacro<"tag">(lower_fn)` defines AST node types with deferred lowering
 - **Compile-time AST construction**: Build expression trees with `var()`, `lit()`, operator overloads, and `make_node()`
 - **Control-flow macros**: Conditionals (`MCond`), comparisons (`MEq`, `MLt`, `MGt`, `MLe`, `MGe`), logical operators (`MLand`, `MLor`, `MLnot`), sequencing (`MProgn`)
 - **Lambda/apply/let bindings**: First-class `lambda()`, `apply()`, and `let_()` for compile-time lexical scoping
@@ -35,14 +35,14 @@ constexpr auto f = x * x + 2.0 * x + 1.0;
 static_assert(pretty_print(f) == "(((x * x) + (2 * x)) + 1)");
 
 // Compile to a callable lambda
-constexpr auto fn = math_compile<f>();
+constexpr auto fn = compile<f>();
 static_assert(fn(3.0) == 16.0);  // (3+1)^2 = 16
 ```
 
 ## Defining Custom Macros
 
 ```cpp
-constexpr auto Abs = defmacro("abs", [](auto x) {
+constexpr auto Abs = defmacro<"abs">([](auto x) {
     return [=](auto... a) constexpr {
         auto v = x(a...);
         return v < 0 ? -v : v;
@@ -50,7 +50,7 @@ constexpr auto Abs = defmacro("abs", [](auto x) {
 });
 
 constexpr auto e = Abs(Expr::var("x"));
-constexpr auto fn = compile<e, Abs>();
+constexpr auto fn = compile<e>();
 static_assert(fn(-3.0) == 3.0);
 ```
 
@@ -60,8 +60,8 @@ static_assert(fn(-3.0) == 3.0);
 constexpr auto x = Expr::var("x");
 constexpr auto f = x * x * x;
 
-constexpr auto diff_x = [](Expr e) consteval { return differentiate(e, "x"); };
-constexpr auto simp   = [](Expr e) consteval { return simplify(e); };
+constexpr auto diff_x = [](auto e) consteval { return differentiate(e, "x"); };
+constexpr auto simp   = [](auto e) consteval { return simplify(e); };
 
 constexpr auto df  = f | diff_x | simp;   // f'(x)  = 3x^2
 constexpr auto d2f = df | diff_x | simp;  // f''(x) = 6x
@@ -70,25 +70,22 @@ constexpr auto d2f = df | diff_x | simp;  // f''(x) = 6x
 ## Building a Custom DSL
 
 ```cpp
-constexpr auto Gt = defmacro("gt", [](auto lhs, auto rhs) {
+constexpr auto Gt = defmacro<"gt">([](auto lhs, auto rhs) {
     return [=](auto... a) constexpr {
         return lhs(a...) > rhs(a...) ? 1.0 : 0.0;
     };
 });
 
-constexpr auto If = defmacro("if_", [](auto cond, auto then_br, auto else_br) {
+constexpr auto If = defmacro<"if_">([](auto cond, auto then_br, auto else_br) {
     return [=](auto... a) constexpr {
         return cond(a...) != 0.0 ? then_br(a...) : else_br(a...);
     };
 });
 
-consteval Expr gt(Expr lhs, Expr rhs) { return make_node("gt", lhs, rhs); }
-consteval Expr if_(Expr c, Expr t, Expr e) { return make_node("if_", c, t, e); }
-
-// relu(x) = if_(gt(x, 0), x, 0)
+// relu(x) = If(Gt(x, 0), x, 0)
 constexpr auto x = Expr::var("x");
-constexpr auto relu_expr = if_(gt(x, Expr::lit(0.0)), x, Expr::lit(0.0));
-constexpr auto relu = compile<relu_expr, MAdd, MSub, MMul, MDiv, MNeg, Gt, If>();
+constexpr auto relu_expr = If(Gt(x, Expr::lit(0.0)), x, Expr::lit(0.0));
+constexpr auto relu = compile<relu_expr>();
 static_assert(relu(-5.0) == 0.0);
 static_assert(relu(3.0) == 3.0);
 ```
@@ -99,9 +96,9 @@ static_assert(relu(3.0) == 3.0);
 |--------|-------------|
 | `ast.hpp` | `ASTNode`, `AST<Cap>`, consteval string utilities |
 | `expr.hpp` | `Expr`, `lit()`, `var()`, `make_node()`, pipe operator |
-| `macro.hpp` | `defmacro()`, `Macro` type |
-| `compile.hpp` | `compile<expr, macros...>()`, `VarMap`, `Scope`, `TagStr` |
-| `control.hpp` | Control-flow macros, `lambda()`, `apply()`, `let_()`, `full_compile<>()` |
+| `macro.hpp` | `defmacro<"tag">(fn)`, `MacroCaller` |
+| `compile.hpp` | `compile<expr>()` (auto-discovers macros), `VarMap`, `Scope`, `TagStr` |
+| `control.hpp` | Control-flow macros, `lambda()`, `apply()`, `let_()` |
 | `node_view.hpp` | `NodeView` cursor for tree walking |
 | `transforms.hpp` | `rewrite()`, `transform()`, `fold()` primitives |
 | `pretty_print.hpp` | Consteval AST rendering |

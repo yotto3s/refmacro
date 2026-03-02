@@ -1,6 +1,6 @@
 // 02_custom_macro.cpp — Defining custom AST operations with defmacro
 //
-// Shows: defmacro(), custom node tags, compile<> with custom macros,
+// Shows: defmacro(), custom node tags, compile<>() with auto-tracked macros,
 //        mixing custom and math macros.
 
 #include <iostream>
@@ -31,14 +31,14 @@ int main() {
 
     // --- Use Abs alone ---
     constexpr auto e1 = Abs(x);
-    constexpr auto fn1 = compile<e1, Abs>();
+    constexpr auto fn1 = compile<e1>();
     static_assert(fn1(5.0) == 5.0);
     static_assert(fn1(-3.0) == 3.0);
 
     // --- Mix custom macros with math ---
     // clamp(x^2 - 10, 0, 100)
     constexpr auto e2 = Clamp(x * x - 10.0, Expr::lit(0.0), Expr::lit(100.0));
-    constexpr auto fn2 = compile<e2, MAdd, MSub, MMul, MDiv, MNeg, Clamp>();
+    constexpr auto fn2 = compile<e2>();
 
     static_assert(fn2(1.0) == 0.0);    // 1-10 = -9 → clamped to 0
     static_assert(fn2(4.0) == 6.0);    // 16-10 = 6

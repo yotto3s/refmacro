@@ -6,9 +6,6 @@
 // Provides: conditionals (MCond), comparisons (MEq, MLt, MGt, MLe, MGe),
 // logical operators (MLand, MLor, MLnot), sequencing (MProgn), and
 // lambda/apply/let for compile-time lexical scoping.
-//
-// ctrl_compile<e>()  — compile with control-flow macros only
-// full_compile<e>()  — compile with math + control-flow macros
 
 #include <refmacro/ast.hpp>
 #include <refmacro/compile.hpp>
@@ -181,20 +178,6 @@ consteval auto operator||(Expression<Cap, Ms1...> lhs,
 template <std::size_t Cap, auto... Ms>
 consteval auto operator!(Expression<Cap, Ms...> x) {
     return MLnot(x);
-}
-
-// --- Convenience: compile with all control-flow macros ---
-
-template <auto e> consteval auto ctrl_compile() {
-    return compile<e, MCond, MLand, MLor, MLnot, MEq, MLt, MGt, MLe, MGe,
-                   MProgn>();
-}
-
-// --- Full compile: math + control-flow macros ---
-
-template <auto e> consteval auto full_compile() {
-    return compile<e, MAdd, MSub, MMul, MDiv, MNeg, MCond, MLand, MLor, MLnot,
-                   MEq, MLt, MGt, MLe, MGe, MProgn>();
 }
 
 } // namespace refmacro

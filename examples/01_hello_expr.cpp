@@ -1,7 +1,7 @@
 // 01_hello_expr.cpp — Building and compiling your first expression
 //
 // Shows: Expr::lit(), Expr::var(), operator sugar, pretty_print(),
-//        math_compile(), static_assert, runtime output.
+//        compile(), static_assert, runtime output.
 
 #include <iostream>
 #include <refmacro/refmacro.hpp>
@@ -18,7 +18,7 @@ int main() {
     static_assert(text == "(((x * x) + (2 * x)) + 1)");
 
     // Compile the AST into a callable lambda
-    constexpr auto fn = math_compile<f>();
+    constexpr auto fn = compile<f>();
 
     // Verify at compile time
     static_assert(fn(0.0) == 1.0);  // (0+1)^2 = 1

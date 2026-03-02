@@ -10,14 +10,14 @@ using namespace refmacro;
 TEST(ControlMacros, CondTrueBranch) {
     // cond(true, 1.0, 2.0) -> 1.0
     constexpr auto e = MCond(Expr::lit(1.0), Expr::lit(10.0), Expr::lit(20.0));
-    constexpr auto fn = ctrl_compile<e>();
+    constexpr auto fn = compile<e>();
     static_assert(fn() == 10.0);
     EXPECT_DOUBLE_EQ(fn(), 10.0);
 }
 
 TEST(ControlMacros, CondFalseBranch) {
     constexpr auto e = MCond(Expr::lit(0.0), Expr::lit(10.0), Expr::lit(20.0));
-    constexpr auto fn = ctrl_compile<e>();
+    constexpr auto fn = compile<e>();
     static_assert(fn() == 20.0);
     EXPECT_DOUBLE_EQ(fn(), 20.0);
 }
@@ -26,7 +26,7 @@ TEST(ControlMacros, CondWithVars) {
     // abs(x): cond(x < 0, -x, x)
     constexpr auto x = Expr::var("x");
     constexpr auto abs_x = MCond(x < Expr::lit(0.0), -x, x);
-    constexpr auto fn = full_compile<abs_x>();
+    constexpr auto fn = compile<abs_x>();
     static_assert(fn(-3.0) == 3.0);
     static_assert(fn(5.0) == 5.0);
     EXPECT_DOUBLE_EQ(fn(-3.0), 3.0);
@@ -37,7 +37,7 @@ TEST(ControlMacros, LogicalAnd) {
     constexpr auto x = Expr::var("x");
     constexpr auto y = Expr::var("y");
     constexpr auto e = x && y;
-    constexpr auto fn = ctrl_compile<e>();
+    constexpr auto fn = compile<e>();
     // Both truthy
     EXPECT_TRUE(fn(1.0, 1.0));
     // One falsy
@@ -49,7 +49,7 @@ TEST(ControlMacros, LogicalOr) {
     constexpr auto x = Expr::var("x");
     constexpr auto y = Expr::var("y");
     constexpr auto e = x || y;
-    constexpr auto fn = ctrl_compile<e>();
+    constexpr auto fn = compile<e>();
     EXPECT_TRUE(fn(1.0, 0.0));
     EXPECT_TRUE(fn(0.0, 1.0));
     EXPECT_FALSE(fn(0.0, 0.0));
@@ -58,7 +58,7 @@ TEST(ControlMacros, LogicalOr) {
 TEST(ControlMacros, LogicalNot) {
     constexpr auto x = Expr::var("x");
     constexpr auto e = !x;
-    constexpr auto fn = ctrl_compile<e>();
+    constexpr auto fn = compile<e>();
     EXPECT_TRUE(fn(0.0));
     EXPECT_FALSE(fn(1.0));
 }
@@ -67,7 +67,7 @@ TEST(ControlMacros, EqualityComparison) {
     constexpr auto x = Expr::var("x");
     constexpr auto y = Expr::var("y");
     constexpr auto e = x == y;
-    constexpr auto fn = ctrl_compile<e>();
+    constexpr auto fn = compile<e>();
     EXPECT_TRUE(fn(3.0, 3.0));
     EXPECT_FALSE(fn(3.0, 4.0));
 }
@@ -75,7 +75,7 @@ TEST(ControlMacros, EqualityComparison) {
 TEST(ControlMacros, LessThan) {
     constexpr auto x = Expr::var("x");
     constexpr auto e = x < Expr::lit(5.0);
-    constexpr auto fn = ctrl_compile<e>();
+    constexpr auto fn = compile<e>();
     EXPECT_TRUE(fn(3.0));
     EXPECT_FALSE(fn(5.0));
     EXPECT_FALSE(fn(7.0));
@@ -84,7 +84,7 @@ TEST(ControlMacros, LessThan) {
 TEST(ControlMacros, GreaterThan) {
     constexpr auto x = Expr::var("x");
     constexpr auto e = x > Expr::lit(5.0);
-    constexpr auto fn = ctrl_compile<e>();
+    constexpr auto fn = compile<e>();
     EXPECT_FALSE(fn(3.0));
     EXPECT_FALSE(fn(5.0));
     EXPECT_TRUE(fn(7.0));
@@ -93,7 +93,7 @@ TEST(ControlMacros, GreaterThan) {
 TEST(ControlMacros, LessEqual) {
     constexpr auto x = Expr::var("x");
     constexpr auto e = x <= Expr::lit(5.0);
-    constexpr auto fn = ctrl_compile<e>();
+    constexpr auto fn = compile<e>();
     EXPECT_TRUE(fn(3.0));
     EXPECT_TRUE(fn(5.0));
     EXPECT_FALSE(fn(7.0));
@@ -102,7 +102,7 @@ TEST(ControlMacros, LessEqual) {
 TEST(ControlMacros, GreaterEqual) {
     constexpr auto x = Expr::var("x");
     constexpr auto e = x >= Expr::lit(5.0);
-    constexpr auto fn = ctrl_compile<e>();
+    constexpr auto fn = compile<e>();
     EXPECT_FALSE(fn(3.0));
     EXPECT_TRUE(fn(5.0));
     EXPECT_TRUE(fn(7.0));
@@ -113,7 +113,7 @@ TEST(ControlMacros, Progn) {
     constexpr auto x = Expr::var("x");
     constexpr auto y = Expr::var("y");
     constexpr auto e = MProgn(x, y);
-    constexpr auto fn = ctrl_compile<e>();
+    constexpr auto fn = compile<e>();
     EXPECT_DOUBLE_EQ(fn(10.0, 20.0), 20.0);
 }
 
@@ -122,11 +122,11 @@ TEST(ControlMacros, ComparisonWithDouble) {
     constexpr auto x = Expr::var("x");
 
     constexpr auto e1 = 5.0 == x;
-    constexpr auto fn1 = ctrl_compile<e1>();
+    constexpr auto fn1 = compile<e1>();
     EXPECT_TRUE(fn1(5.0));
 
     constexpr auto e2 = 5.0 < x;
-    constexpr auto fn2 = ctrl_compile<e2>();
+    constexpr auto fn2 = compile<e2>();
     EXPECT_TRUE(fn2(6.0));
     EXPECT_FALSE(fn2(4.0));
 }
@@ -186,7 +186,7 @@ TEST(ControlPrettyPrint, Progn) {
 TEST(ControlMacros, FullCompileAbsValue) {
     constexpr auto x = Expr::var("x");
     constexpr auto abs_x = MCond(x < Expr::lit(0.0), -x, x);
-    constexpr auto fn = full_compile<abs_x>();
+    constexpr auto fn = compile<abs_x>();
     EXPECT_DOUBLE_EQ(fn(-7.0), 7.0);
     EXPECT_DOUBLE_EQ(fn(3.0), 3.0);
     EXPECT_DOUBLE_EQ(fn(0.0), 0.0);
@@ -197,7 +197,7 @@ TEST(ControlMacros, SafeDiv) {
     constexpr auto x = Expr::var("x");
     constexpr auto y = Expr::var("y");
     constexpr auto safe_div = MCond(y == Expr::lit(0.0), Expr::lit(0.0), x / y);
-    constexpr auto fn = full_compile<safe_div>();
+    constexpr auto fn = compile<safe_div>();
     // fn(y, x) due to DFS ordering
     EXPECT_DOUBLE_EQ(fn(2.0, 10.0), 5.0);
     EXPECT_DOUBLE_EQ(fn(0.0, 10.0), 0.0);
@@ -209,7 +209,7 @@ TEST(ControlMacros, Clamp) {
     constexpr auto lo = Expr::var("lo");
     constexpr auto hi = Expr::var("hi");
     constexpr auto clamped = MCond(x < lo, lo, MCond(x > hi, hi, x));
-    constexpr auto fn = full_compile<clamped>();
+    constexpr auto fn = compile<clamped>();
     EXPECT_DOUBLE_EQ(fn(5.0, 0.0, 10.0), 5.0);
     EXPECT_DOUBLE_EQ(fn(-1.0, 0.0, 10.0), 0.0);
     EXPECT_DOUBLE_EQ(fn(15.0, 0.0, 10.0), 10.0);
@@ -223,7 +223,7 @@ TEST(LambdaApply, BasicLet) {
     // Note: call-by-name semantics — x*x is re-evaluated per use of tmp
     constexpr auto x = Expr::var("x");
     constexpr auto e = let_("tmp", x * x, Expr::var("tmp") + Expr::var("tmp"));
-    constexpr auto fn = full_compile<e>();
+    constexpr auto fn = compile<e>();
     static_assert(fn(3.0) == 18.0);
     EXPECT_DOUBLE_EQ(fn(3.0), 18.0); // 9 + 9
     EXPECT_DOUBLE_EQ(fn(5.0), 50.0); // 25 + 25
@@ -233,7 +233,7 @@ TEST(LambdaApply, LetWithConstant) {
     // let c = 42 in c + x
     constexpr auto x = Expr::var("x");
     constexpr auto e = let_("c", Expr::lit(42.0), Expr::var("c") + x);
-    constexpr auto fn = full_compile<e>();
+    constexpr auto fn = compile<e>();
     EXPECT_DOUBLE_EQ(fn(8.0), 50.0);
 }
 
@@ -245,7 +245,7 @@ TEST(LambdaApply, NestedLet) {
     constexpr auto a = Expr::var("a");
     constexpr auto b = Expr::var("b");
     constexpr auto e = let_("a", x + 1.0, let_("b", a * 2.0, b + a));
-    constexpr auto fn = full_compile<e>();
+    constexpr auto fn = compile<e>();
     // x=3: a=4, b=8, result=12
     EXPECT_DOUBLE_EQ(fn(3.0), 12.0);
     // x=0: a=1, b=2, result=3
@@ -256,7 +256,7 @@ TEST(LambdaApply, LetNoFreeVars) {
     // let x = 10 in x + x (no free variables — 0-arg function)
     constexpr auto e =
         let_("x", Expr::lit(10.0), Expr::var("x") + Expr::var("x"));
-    constexpr auto fn = full_compile<e>();
+    constexpr auto fn = compile<e>();
     EXPECT_DOUBLE_EQ(fn(), 20.0);
 }
 
@@ -265,7 +265,7 @@ TEST(LambdaApply, LetWithControlFlow) {
     constexpr auto x = Expr::var("x");
     constexpr auto t = Expr::var("threshold");
     constexpr auto e = let_("threshold", Expr::lit(5.0), MCond(x > t, x, t));
-    constexpr auto fn = full_compile<e>();
+    constexpr auto fn = compile<e>();
     EXPECT_DOUBLE_EQ(fn(3.0), 5.0); // below threshold
     EXPECT_DOUBLE_EQ(fn(7.0), 7.0); // above threshold
     EXPECT_DOUBLE_EQ(fn(5.0), 5.0); // equal
@@ -275,9 +275,33 @@ TEST(LambdaApply, LetShadowing) {
     // Inner let shadows outer binding: let x=1 in let x=2 in x -> 2
     constexpr auto e =
         let_("x", Expr::lit(1.0), let_("x", Expr::lit(2.0), Expr::var("x")));
-    constexpr auto fn = full_compile<e>();
+    constexpr auto fn = compile<e>();
     static_assert(fn() == 2.0);
     EXPECT_DOUBLE_EQ(fn(), 2.0);
+}
+
+// --- TG5: Pure control-flow through compile<e>() ---
+
+TEST(ControlMacros, PureControlFlowCompile) {
+    // Complex pure control-flow expression without any math macros.
+    // Implements a three-way classifier:
+    //   if x > 5 then (if x > 10 then 3 else 2) else (if x == 0 then -1 else 1)
+    constexpr auto x = Expr::var("x");
+    constexpr auto inner_high =
+        MCond(x > Expr::lit(10.0), Expr::lit(3.0), Expr::lit(2.0));
+    constexpr auto inner_low =
+        MCond(x == Expr::lit(0.0), Expr::lit(-1.0), Expr::lit(1.0));
+    constexpr auto classifier =
+        MCond(x > Expr::lit(5.0), inner_high, inner_low);
+
+    // All macros (MCond, MGt, MEq) should be auto-discovered
+    constexpr auto fn = compile<classifier>();
+
+    EXPECT_DOUBLE_EQ(fn(20.0), 3.0); // x > 10 -> 3
+    EXPECT_DOUBLE_EQ(fn(7.0), 2.0);  // 5 < x <= 10 -> 2
+    EXPECT_DOUBLE_EQ(fn(0.0), -1.0); // x == 0 -> -1
+    EXPECT_DOUBLE_EQ(fn(3.0), 1.0);  // 0 < x <= 5 -> 1
+    EXPECT_DOUBLE_EQ(fn(-2.0), 1.0); // x < 0 -> 1 (not == 0)
 }
 
 TEST(LambdaApply, StandaloneApplyLambda) {
@@ -285,7 +309,7 @@ TEST(LambdaApply, StandaloneApplyLambda) {
     constexpr auto x = Expr::var("x");
     constexpr auto e =
         apply(lambda("tmp", Expr::var("tmp") + Expr::var("tmp")), x * x);
-    constexpr auto fn = full_compile<e>();
+    constexpr auto fn = compile<e>();
     static_assert(fn(3.0) == 18.0);
     EXPECT_DOUBLE_EQ(fn(3.0), 18.0);
     EXPECT_DOUBLE_EQ(fn(5.0), 50.0);
@@ -295,7 +319,7 @@ TEST(LambdaApply, LambdaBoundVarExcludedFromVarMap) {
     // lambda("y", var("y") + var("x")): only x should be a free variable
     constexpr auto x = Expr::var("x");
     constexpr auto e = let_("y", Expr::lit(10.0), Expr::var("y") + x);
-    constexpr auto fn = full_compile<e>();
+    constexpr auto fn = compile<e>();
     // fn takes 1 arg (x), y is bound by let
     EXPECT_DOUBLE_EQ(fn(5.0), 15.0); // y=10, x=5 -> 15
 }
@@ -304,7 +328,7 @@ TEST(ControlMacros, CondTruthyValues) {
     // Test various truthy/falsy values for MCond condition
     constexpr auto x = Expr::var("x");
     constexpr auto e = MCond(x, Expr::lit(1.0), Expr::lit(0.0));
-    constexpr auto fn = ctrl_compile<e>();
+    constexpr auto fn = compile<e>();
     // Non-zero values are truthy
     EXPECT_DOUBLE_EQ(fn(-1.0), 1.0);
     EXPECT_DOUBLE_EQ(fn(0.5), 1.0);

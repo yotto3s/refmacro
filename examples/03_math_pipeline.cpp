@@ -9,10 +9,10 @@
 using namespace refmacro;
 
 int main() {
-    constexpr auto diff_x = [](Expr e) consteval {
+    constexpr auto diff_x = [](auto e) consteval {
         return differentiate(e, "x");
     };
-    constexpr auto simp = [](Expr e) consteval { return simplify(e); };
+    constexpr auto simp = [](auto e) consteval { return simplify(e); };
 
     // --- First derivative of a polynomial ---
     // f(x) = x^3 (represented as x*x*x)
@@ -21,9 +21,9 @@ int main() {
     constexpr auto df = f | diff_x | simp;
     constexpr auto d2f = df | diff_x | simp;
 
-    constexpr auto fn = math_compile<f>();
-    constexpr auto dfn = math_compile<df>();
-    constexpr auto d2fn = math_compile<d2f>();
+    constexpr auto fn = compile<f>();
+    constexpr auto dfn = compile<df>();
+    constexpr auto d2fn = compile<d2f>();
 
     std::cout << "f(x)   = " << pretty_print(f).data << "\n";
     std::cout << "f'(x)  = " << pretty_print(df).data << "\n";
@@ -37,15 +37,15 @@ int main() {
     // --- Multivariate: gradient of f(x,y) = x*y + x + y ---
     constexpr auto y = Expr::var("y");
     constexpr auto g = x * y + x + y;
-    constexpr auto diff_y = [](Expr e) consteval {
+    constexpr auto diff_y = [](auto e) consteval {
         return differentiate(e, "y");
     };
 
     constexpr auto gx = g | diff_x | simp; // dg/dx = y + 1
     constexpr auto gy = g | diff_y | simp; // dg/dy = x + 1
 
-    constexpr auto gx_fn = math_compile<gx>();
-    constexpr auto gy_fn = math_compile<gy>();
+    constexpr auto gx_fn = compile<gx>();
+    constexpr auto gy_fn = compile<gy>();
 
     // Note: after differentiation + simplification, eliminated variables
     // change the function arity. dg/dx = y+1 takes only y.
