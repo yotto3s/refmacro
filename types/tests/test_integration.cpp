@@ -250,7 +250,7 @@ TEST(Integration, TypedMatchesUntyped) {
     static constexpr auto typed_expr =
         ann(E::lit(10) - E::lit(3) * E::lit(2), TInt);
 
-    constexpr auto f_untyped = refmacro::full_compile<untyped_expr>();
+    constexpr auto f_untyped = refmacro::compile<untyped_expr>();
     constexpr auto f_typed = typed_full_compile<typed_expr>();
 
     static_assert(f_untyped() == f_typed());
