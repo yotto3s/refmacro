@@ -1,7 +1,7 @@
 // 06_control_flow.cpp — Control-flow macros: conditionals, comparisons, logic
 //
 // Shows: MCond, comparison operators (==, <, >), logical operators (&&, ||, !),
-//        full_compile<> with math + control macros, pretty_print().
+//        compile<>() with math + control macros, pretty_print().
 
 #include <iostream>
 #include <refmacro/refmacro.hpp>
@@ -14,7 +14,7 @@ int main() {
 
     // --- abs(x) via conditional ---
     constexpr auto abs_expr = MCond(x < Expr::lit(0.0), -x, x);
-    constexpr auto abs_fn = full_compile<abs_expr>();
+    constexpr auto abs_fn = compile<abs_expr>();
     static_assert(abs_fn(-3.0) == 3.0);
     static_assert(abs_fn(5.0) == 5.0);
 
@@ -26,7 +26,7 @@ int main() {
     constexpr auto lo = Expr::var("lo");
     constexpr auto hi = Expr::var("hi");
     constexpr auto clamp_expr = MCond(x < lo, lo, MCond(x > hi, hi, x));
-    constexpr auto clamp_fn = full_compile<clamp_expr>();
+    constexpr auto clamp_fn = compile<clamp_expr>();
 
     std::cout << "\nclamp(x, lo, hi) = " << pretty_print(clamp_expr).data
               << "\n";
@@ -38,7 +38,7 @@ int main() {
     // DFS visits y first (in y == 0), so arg order is (y, x)
     constexpr auto safe_div_expr =
         MCond(y == Expr::lit(0.0), Expr::lit(0.0), x / y);
-    constexpr auto safe_div = full_compile<safe_div_expr>();
+    constexpr auto safe_div = compile<safe_div_expr>();
 
     std::cout << "\nsafe_div(x, y) = " << pretty_print(safe_div_expr).data
               << "\n";
@@ -47,7 +47,7 @@ int main() {
 
     // --- logical: is x in range [lo, hi]? ---
     constexpr auto in_range_expr = (x >= lo) && (x <= hi);
-    constexpr auto in_range = full_compile<in_range_expr>();
+    constexpr auto in_range = compile<in_range_expr>();
 
     std::cout << "\nin_range(x, lo, hi) = " << pretty_print(in_range_expr).data
               << "\n";
