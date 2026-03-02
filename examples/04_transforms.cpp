@@ -34,7 +34,7 @@ int main() {
     std::cout << "Before: " << pretty_print(e1).data << "\n";
     std::cout << "After:  " << pretty_print(e1_clean).data << "\n";
 
-    constexpr auto fn = math_compile<e1_clean>();
+    constexpr auto fn = compile<e1_clean>();
     static_assert(fn(3.0, 4.0) == 12.0); // x * y
 
     // --- transform: scale all literals by 2 ---
@@ -59,7 +59,7 @@ int main() {
     std::cout << "\nBefore doubling: " << pretty_print(e2).data << "\n";
     std::cout << "After doubling:  " << pretty_print(e2_doubled).data << "\n";
 
-    constexpr auto fn2 = math_compile<e2_doubled>();
+    constexpr auto fn2 = compile<e2_doubled>();
     static_assert(fn2(1.0) == 8.0); // 1*6 + 2
 
     std::cout << "f(1) = " << fn2(1.0) << " (expected 8)\n";
